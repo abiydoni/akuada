@@ -1,0 +1,292 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1700" width="1200" height="1700" style="background:#0f172a; font-family:'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="grad-header" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="50%" stop-color="#7c3aed" />
+      <stop offset="100%" stop-color="#ec4899" />
+    </linearGradient>
+
+    <linearGradient id="grad-buyer" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+
+    <linearGradient id="grad-platform" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4c1d95" />
+      <stop offset="100%" stop-color="#6d28d9" />
+    </linearGradient>
+
+    <linearGradient id="grad-vendor" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+
+    <linearGradient id="grad-admin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#78350f" />
+      <stop offset="100%" stop-color="#b45309" />
+    </linearGradient>
+
+    <!-- Drop Shadows -->
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+    <filter id="shadow-sm" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.25" />
+    </filter>
+
+    <!-- Arrow Marker -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8" />
+    </marker>
+    <marker id="arrow-indigo" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#818cf8" />
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#34d399" />
+    </marker>
+    <marker id="arrow-pink" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#f472b6" />
+    </marker>
+  </defs>
+
+  <!-- ==================== HEADER ==================== -->
+  <rect x="30" y="30" width="1140" height="110" rx="20" fill="url(#grad-header)" filter="url(#shadow)" />
+  <circle cx="85" cy="85" r="32" fill="#ffffff" fill-opacity="0.18" />
+  <text x="85" y="93" font-size="28" font-weight="900" fill="#ffffff" text-anchor="middle">AA</text>
+  
+  <text x="140" y="73" font-size="26" font-weight="800" fill="#ffffff" letter-spacing="-0.5">ALUR KERJA PENGADAAN B2B - AKUADA MARKETPLACE</text>
+  <text x="140" y="100" font-size="14" font-weight="500" fill="#e0e7ff">Integrasi End-to-End: Buyer (Korporasi) • Marketplace Engine • Vendor (Supplier) • Superadmin</text>
+  <rect x="990" y="60" width="150" height="50" rx="12" fill="#0f172a" fill-opacity="0.4" />
+  <text x="1065" y="82" font-size="12" font-weight="700" fill="#fbcfe8" text-anchor="middle">B2B E-PROCUREMENT</text>
+  <text x="1065" y="99" font-size="11" font-weight="500" fill="#cbd5e1" text-anchor="middle">PO • BAST • FAKTUR • TOP</text>
+
+  <!-- ==================== ACTOR SWIMLANE HEADERS ==================== -->
+  <!-- Buyer Column -->
+  <rect x="50" y="160" width="250" height="56" rx="14" fill="url(#grad-buyer)" filter="url(#shadow-sm)" stroke="#3b82f6" stroke-width="1.5" />
+  <text x="175" y="185" font-size="15" font-weight="800" fill="#ffffff" text-anchor="middle">BUYER (KORPORAT)</text>
+  <text x="175" y="202" font-size="11" font-weight="500" fill="#93c5fd" text-anchor="middle">Tim Procurement / Pengadaan</text>
+
+  <!-- Platform Column -->
+  <rect x="330" y="160" width="250" height="56" rx="14" fill="url(#grad-platform)" filter="url(#shadow-sm)" stroke="#8b5cf6" stroke-width="1.5" />
+  <text x="455" y="185" font-size="15" font-weight="800" fill="#ffffff" text-anchor="middle">MARKETPLACE (AKUADA)</text>
+  <text x="455" y="202" font-size="11" font-weight="500" fill="#c4b5fd" text-anchor="middle">Escrow, Engine &amp; Dual Invoice</text>
+
+  <!-- Vendor Column -->
+  <rect x="610" y="160" width="250" height="56" rx="14" fill="url(#grad-vendor)" filter="url(#shadow-sm)" stroke="#10b981" stroke-width="1.5" />
+  <text x="735" y="185" font-size="15" font-weight="800" fill="#ffffff" text-anchor="middle">VENDOR (SUPPLIER B2B)</text>
+  <text x="735" y="202" font-size="11" font-weight="500" fill="#6ee7b7" text-anchor="middle">Produsen / Distributor Resmi</text>
+
+  <!-- Admin Column -->
+  <rect x="890" y="160" width="260" height="56" rx="14" fill="url(#grad-admin)" filter="url(#shadow-sm)" stroke="#f59e0b" stroke-width="1.5" />
+  <text x="1020" y="185" font-size="15" font-weight="800" fill="#ffffff" text-anchor="middle">SUPERADMIN PLATFORM</text>
+  <text x="1020" y="202" font-size="11" font-weight="500" fill="#fcd34d" text-anchor="middle">Verifikasi, Risk, Limit &amp; Tax</text>
+
+  <!-- Swimlane Guideline Lines -->
+  <line x1="175" y1="225" x2="175" y2="1600" stroke="#334155" stroke-dasharray="6,6" stroke-width="1.5" />
+  <line x1="455" y1="225" x2="455" y2="1600" stroke="#334155" stroke-dasharray="6,6" stroke-width="1.5" />
+  <line x1="735" y1="225" x2="735" y2="1600" stroke="#334155" stroke-dasharray="6,6" stroke-width="1.5" />
+  <line x1="1020" y1="225" x2="1020" y2="1600" stroke="#334155" stroke-dasharray="6,6" stroke-width="1.5" />
+
+  <!-- ==================== TAHAP 1: INISIASI & PENAWARAN (Y: 240 - 520) ==================== -->
+  <rect x="35" y="235" width="1130" height="260" rx="16" fill="#1e293b" fill-opacity="0.6" stroke="#475569" stroke-width="1" />
+  <rect x="50" y="245" width="260" height="26" rx="6" fill="#3b82f6" />
+  <text x="60" y="263" font-size="12" font-weight="800" fill="#ffffff">TAHAP 1: PENJELAJAHAN &amp; NEGOSIASI HARGA</text>
+
+  <!-- Buyer 1A: Katalog -->
+  <rect x="65" y="285" width="220" height="90" rx="12" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow-sm)" />
+  <circle cx="85" cy="305" r="10" fill="#3b82f6" />
+  <text x="85" y="309" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">1A</text>
+  <text x="105" y="308" font-size="13" font-weight="700" fill="#ffffff">Cari Katalog Produk</text>
+  <text x="80" y="332" font-size="11" fill="#94a3b8">• Filter Kategori, Brand, TKDN %</text>
+  <text x="80" y="348" font-size="11" fill="#94a3b8">• Cek Tier Pricing &amp; Min. MOQ</text>
+  <text x="80" y="364" font-size="11" fill="#38bdf8">• Ajukan Permintaan Sample</text>
+
+  <!-- Buyer 1B: RFQ -->
+  <rect x="65" y="395" width="220" height="85" rx="12" fill="#0f172a" stroke="#ec4899" stroke-width="1.5" filter="url(#shadow-sm)" />
+  <circle cx="85" cy="415" r="10" fill="#ec4899" />
+  <text x="85" y="419" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">1B</text>
+  <text x="105" y="418" font-size="13" font-weight="700" fill="#ffffff">Ajukan RFQ Custom</text>
+  <text x="80" y="440" font-size="11" fill="#94a3b8">• Spesifikasi volume tender</text>
+  <text x="80" y="456" font-size="11" fill="#94a3b8">• Target harga satuan &amp; jadwal</text>
+
+  <!-- Arrow RFQ Buyer to Platform -->
+  <path d="M 285 437 L 345 437" stroke="#ec4899" stroke-width="2" marker-end="url(#arrow-pink)" />
+
+  <!-- Platform 1B: RFQ Routing -->
+  <rect x="350" y="405" width="210" height="65" rx="12" fill="#0f172a" stroke="#8b5cf6" stroke-width="1.5" filter="url(#shadow-sm)" />
+  <text x="455" y="428" font-size="12" font-weight="700" fill="#c4b5fd" text-anchor="middle">Routing Permintaan RFQ</text>
+  <text x="455" y="446" font-size="11" fill="#94a3b8" text-anchor="middle">Validasi &amp; forward ke vendor</text>
+
+  <!-- Arrow Platform to Vendor RFQ -->
+  <path d="M 560 437 L 625 437" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrow)" />
+
+  <!-- Vendor 1B: Submit Quotation -->
+  <rect x="630" y="395" width="210" height="85" rx="12" fill="#0f172a" stroke="#10b981" stroke-width="1.5" filter="url(#shadow-sm)" />
+  <circle cx="650" cy="415" r="10" fill="#10b981" />
+  <text x="650" y="419" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">2</text>
+  <text x="670" y="418" font-size="13" font-weight="700" fill="#ffffff">Kirim Penawaran (Quote)</text>
+  <text x="645" y="440" font-size="11" fill="#94a3b8">• Input harga khusus vendor</text>
+  <text x="645" y="456" font-size="11" fill="#94a3b8">• Konfirmasi lead time stok</text>
+
+  <!-- Arrow Quotation back to Buyer -->
+  <path d="M 735 395 C 735 350, 200 350, 185 390" fill="none" stroke="#34d399" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow-emerald)" />
+  <text x="455" y="340" font-size="11" font-weight="700" fill="#34d399" text-anchor="middle">Quotation Resmi Diterima &amp; Diapprove Buyer</text>
+
+  <!-- ==================== TAHAP 2: CHECKOUT & PURCHASE ORDER (Y: 515 - 770) ==================== -->
+  <rect x="35" y="515" width="1130" height="240" rx="16" fill="#1e293b" fill-opacity="0.6" stroke="#475569" stroke-width="1" />
+  <rect x="50" y="525" width="275" height="26" rx="6" fill="#8b5cf6" />
+  <text x="60" y="543" font-size="12" font-weight="800" fill="#ffffff">TAHAP 2: PENERBITAN PURCHASE ORDER &amp; TOP</text>
+
+  <!-- Buyer Checkout -->
+  <rect x="65" y="570" width="220" height="110" rx="12" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow-sm)" />
+  <circle cx="85" cy="590" r="10" fill="#3b82f6" />
+  <text x="85" y="594" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">3</text>
+  <text x="105" y="593" font-size="13" font-weight="700" fill="#ffffff">Checkout Pengadaan PO</text>
+  <text x="80" y="618" font-size="11" fill="#94a3b8">• Input No PO Internal Korporat</text>
+  <text x="80" y="634" font-size="11" fill="#94a3b8">• Pilih Termin TOP (14/30/60/90)</text>
+  <text x="80" y="650" font-size="11" fill="#94a3b8">• Request Faktur Pajak PPN 11%</text>
+  <text x="80" y="666" font-size="11" fill="#38bdf8">• Submit PO (Status: po_issued)</text>
+
+  <!-- Arrow Buyer Checkout to Platform -->
+  <path d="M 285 625 L 345 625" stroke="#818cf8" stroke-width="2" marker-end="url(#arrow-indigo)" />
+
+  <!-- Platform Limit Check & Fee Calculation -->
+  <rect x="350" y="565" width="210" height="120" rx="12" fill="#0f172a" stroke="#8b5cf6" stroke-width="1.5" filter="url(#shadow-sm)" />
+  <circle cx="370" cy="585" r="10" fill="#8b5cf6" />
+  <text x="370" y="589" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">4</text>
+  <text x="390" y="588" font-size="13" font-weight="700" fill="#ffffff">Validasi &amp; Pemotongan</text>
+  <text x="365" y="612" font-size="11" fill="#cbd5e1">• Cek Plafon Kredit TOP Buyer</text>
+  <text x="365" y="628" font-size="11" fill="#cbd5e1">• Potong credit_used_top</text>
+  <text x="365" y="644" font-size="11" fill="#cbd5e1">• Hitung Fee PKS Vendor (2.5%)</text>
+  <text x="365" y="660" font-size="11" fill="#a78bfa">• Terbitkan Nomor Order &amp; BAST</text>
+
+  <!-- Admin monitoring arrow -->
+  <path d="M 560 625 L 905 625" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrow)" />
+  <rect x="910" y="585" width="220" height="80" rx="12" fill="#0f172a" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow-sm)" />
+  <text x="1020" y="608" font-size="12" font-weight="700" fill="#fbbf24" text-anchor="middle">Credit Risk &amp; Limit Approval</text>
+  <text x="925" y="630" font-size="11" fill="#94a3b8">• Superadmin memantau plafon</text>
+  <text x="925" y="646" font-size="11" fill="#94a3b8">• Audit NIB/NPWP &amp; rating kredit</text>
+
+  <!-- Notification PO to Vendor -->
+  <path d="M 455 685 C 455 725, 735 725, 735 685" fill="none" stroke="#818cf8" stroke-width="2" marker-end="url(#arrow-indigo)" />
+  <text x="595" y="738" font-size="11" font-weight="700" fill="#818cf8" text-anchor="middle">Notifikasi PO Masuk &amp; Detail Pesanan</text>
+
+  <!-- ==================== TAHAP 3: FULFILLMENT, QC & PENGIRIMAN (Y: 775 - 1055) ==================== -->
+  <rect x="35" y="775" width="1130" height="260" rx="16" fill="#1e293b" fill-opacity="0.6" stroke="#475569" stroke-width="1" />
+  <rect x="50" y="785" width="280" height="26" rx="6" fill="#10b981" />
+  <text x="60" y="803" font-size="12" font-weight="800" fill="#ffffff">TAHAP 3: PRODUKSI, QC &amp; PENGIRIMAN VENDOR</text>
+
+  <!-- Vendor 6-Step Processing -->
+  <rect x="630" y="825" width="220" height="150" rx="12" fill="#0f172a" stroke="#10b981" stroke-width="1.5" filter="url(#shadow-sm)" />
+  <circle cx="650" cy="845" r="10" fill="#10b981" />
+  <text x="650" y="849" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">5</text>
+  <text x="670" y="848" font-size="13" font-weight="700" fill="#ffffff">Eksekusi Pesanan Vendor</text>
+  <text x="645" y="872" font-size="11" fill="#6ee7b7">✓ po_approved (Konfirmasi PO)</text>
+  <text x="645" y="888" font-size="11" fill="#94a3b8">• in_production (Produksi)</text>
+  <text x="645" y="904" font-size="11" fill="#94a3b8">• quality_control (Uji SNI/QC)</text>
+  <text x="645" y="920" font-size="11" fill="#94a3b8">• packaging (Palet Box)</text>
+  <text x="645" y="936" font-size="11" fill="#38bdf8">🚚 shipped (Input Surat Jalan)</text>
+  <text x="645" y="952" font-size="11" fill="#34d399">📦 delivered (Tiba di Gudang)</text>
+
+  <!-- Realtime Stepper back to Platform & Buyer -->
+  <path d="M 630 895 L 565 895" stroke="#34d399" stroke-width="2" marker-end="url(#arrow-emerald)" />
+
+  <rect x="350" y="845" width="210" height="100" rx="12" fill="#0f172a" stroke="#8b5cf6" stroke-width="1.5" filter="url(#shadow-sm)" />
+  <circle cx="370" cy="865" r="10" fill="#8b5cf6" />
+  <text x="370" y="869" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">6</text>
+  <text x="390" y="868" font-size="13" font-weight="700" fill="#ffffff">Live Stepper Timeline</text>
+  <text x="365" y="894" font-size="11" fill="#94a3b8">• Catat Order Status Log</text>
+  <text x="365" y="910" font-size="11" fill="#94a3b8">• Update 8-step visual badge</text>
+  <text x="365" y="926" font-size="11" fill="#a78bfa">• Notifikasi pengiriman real-time</text>
+
+  <path d="M 350 895 L 290 895" stroke="#818cf8" stroke-width="2" marker-end="url(#arrow-indigo)" />
+
+  <rect x="65" y="855" width="220" height="80" rx="12" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow-sm)" />
+  <text x="175" y="880" font-size="13" font-weight="700" fill="#93c5fd" text-anchor="middle">Tracking Barang Masuk</text>
+  <text x="80" y="904" font-size="11" fill="#94a3b8">• Pantau resi kurir / armada</text>
+  <text x="80" y="920" font-size="11" fill="#94a3b8">• Verifikasi fisik oleh tim gudang</text>
+
+  <!-- ==================== TAHAP 4: SERAH TERIMA & BAST DIGITAL (Y: 1055 - 1285) ==================== -->
+  <rect x="35" y="1055" width="1130" height="215" rx="16" fill="#1e293b" fill-opacity="0.6" stroke="#475569" stroke-width="1" />
+  <rect x="50" y="1065" width="290" height="26" rx="6" fill="#0284c7" />
+  <text x="60" y="1083" font-size="12" font-weight="800" fill="#ffffff">TAHAP 4: SERAH TERIMA &amp; PENGESAHAN BAST</text>
+
+  <!-- Buyer Signs BAST -->
+  <rect x="65" y="1110" width="220" height="110" rx="12" fill="#0f172a" stroke="#0284c7" stroke-width="2" filter="url(#shadow-sm)" />
+  <circle cx="85" cy="1130" r="10" fill="#0284c7" />
+  <text x="85" y="1134" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">7</text>
+  <text x="105" y="1133" font-size="13" font-weight="700" fill="#ffffff">Sahkan BAST Digital</text>
+  <text x="80" y="1158" font-size="11" fill="#38bdf8">✓ Input Nama Penandatangan BAST</text>
+  <text x="80" y="1174" font-size="11" fill="#94a3b8">• Status: bast_signed</text>
+  <text x="80" y="1190" font-size="11" fill="#94a3b8">• Dasar hukum penerimaan barang</text>
+  <text x="80" y="1206" font-size="11" fill="#fbbf24">• Memicu jatuh tempo TOP (e.g. 30 hr)</text>
+
+  <!-- Arrow BAST to Platform -->
+  <path d="M 285 1165 L 345 1165" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)" />
+
+  <rect x="350" y="1115" width="210" height="100" rx="12" fill="#0f172a" stroke="#8b5cf6" stroke-width="1.5" filter="url(#shadow-sm)" />
+  <circle cx="370" cy="1135" r="10" fill="#8b5cf6" />
+  <text x="370" y="1139" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">8</text>
+  <text x="390" y="1138" font-size="13" font-weight="700" fill="#ffffff">Kunci Tanggal Tempo TOP</text>
+  <text x="365" y="1162" font-size="11" fill="#94a3b8">• Due Date = BAST + TOP Days</text>
+  <text x="365" y="1178" font-size="11" fill="#94a3b8">• Otomasi pengingat tagihan</text>
+  <text x="365" y="1194" font-size="11" fill="#34d399">• Status transaksi: Valid Selesai</text>
+
+  <!-- ==================== TAHAP 5: INVOICING, PAJAK & SETTLEMENT (Y: 1290 - 1570) ==================== -->
+  <rect x="35" y="1290" width="1130" height="260" rx="16" fill="#1e293b" fill-opacity="0.6" stroke="#475569" stroke-width="1" />
+  <rect x="50" y="1300" width="310" height="26" rx="6" fill="#ec4899" />
+  <text x="60" y="1318" font-size="12" font-weight="800" fill="#ffffff">TAHAP 5: PERPAJAKAN, DUAL INVOICE &amp; SETTLEMENT</text>
+
+  <!-- Customer Invoice & Faktur Pajak -->
+  <rect x="65" y="1345" width="220" height="120" rx="12" fill="#0f172a" stroke="#ec4899" stroke-width="1.5" filter="url(#shadow-sm)" />
+  <circle cx="85" cy="1165" r="10" fill="#ec4899" />
+  <text x="85" y="1369" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">9A</text>
+  <text x="105" y="1368" font-size="13" font-weight="700" fill="#ffffff">Faktur Penjualan Buyer</text>
+  <text x="80" y="1394" font-size="11" fill="#f472b6">• Invoice Penjualan Resmi AkuAda</text>
+  <text x="80" y="1410" font-size="11" fill="#94a3b8">• DPP + PPN 11% Terpisah</text>
+  <text x="80" y="1426" font-size="11" fill="#94a3b8">• Nomor e-Faktur Pajak 010.xxx</text>
+  <text x="80" y="1442" font-size="11" fill="#34d399">• Laporan SPT Masa PPN Korporat</text>
+
+  <!-- Platform Dual Invoice Engine -->
+  <rect x="350" y="1345" width="210" height="120" rx="12" fill="#0f172a" stroke="#8b5cf6" stroke-width="1.5" filter="url(#shadow-sm)" />
+  <circle cx="370" cy="1365" r="10" fill="#8b5cf6" />
+  <text x="370" y="1369" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">10</text>
+  <text x="390" y="1368" font-size="13" font-weight="700" fill="#ffffff">Engine Bagi Hasil Platform</text>
+  <text x="365" y="1394" font-size="11" fill="#c4b5fd">• Hitung Platform Fee (2.5% PKS)</text>
+  <text x="365" y="1410" font-size="11" fill="#94a3b8">• Net Payout = DPP - Fee</text>
+  <text x="365" y="1426" font-size="11" fill="#94a3b8">• Rekonsiliasi Pelunasan TOP</text>
+  <text x="365" y="1442" font-size="11" fill="#34d399">• Kembalikan Plafon Kredit Buyer</text>
+
+  <!-- Vendor Payout Invoice -->
+  <rect x="630" y="1345" width="220" height="120" rx="12" fill="#0f172a" stroke="#10b981" stroke-width="1.5" filter="url(#shadow-sm)" />
+  <circle cx="650" cy="1365" r="10" fill="#10b981" />
+  <text x="650" y="1369" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">9B</text>
+  <text x="670" y="1368" font-size="13" font-weight="700" fill="#ffffff">Faktur Penagihan Vendor</text>
+  <text x="645" y="1394" font-size="11" fill="#6ee7b7">• Penagihan Vendor ke AkuAda</text>
+  <text x="645" y="1410" font-size="11" fill="#94a3b8">• Rincian Penjualan Kotor (Subtotal)</text>
+  <text x="645" y="1426" font-size="11" fill="#f87171">• Potongan Fee Platform PKS</text>
+  <text x="645" y="1442" font-size="11" fill="#34d399">• Nilai Bersih Cair (Net Payout)</text>
+
+  <!-- Admin Verification -->
+  <rect x="890" y="1345" width="240" height="120" rx="12" fill="#0f172a" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow-sm)" />
+  <circle cx="910" cy="1365" r="10" fill="#f59e0b" />
+  <text x="910" y="1369" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">11</text>
+  <text x="930" y="1368" font-size="13" font-weight="700" fill="#ffffff">Pelunasan &amp; Audit Admin</text>
+  <text x="905" y="1394" font-size="11" fill="#fbbf24">• Verifikasi pembayaran tempo Buyer</text>
+  <text x="905" y="1410" font-size="11" fill="#94a3b8">• Release Net Payout ke rekening vendor</text>
+  <text x="905" y="1426" font-size="11" fill="#94a3b8">• Status PO: completed</text>
+  <text x="905" y="1442" font-size="11" fill="#34d399">• Pembukuan akuntansi &amp; PPh 22</text>
+
+  <!-- Dual Invoice Arrows -->
+  <path d="M 350 1405 L 290 1405" stroke="#ec4899" stroke-width="2" marker-end="url(#arrow-pink)" />
+  <path d="M 560 1405 L 625 1405" stroke="#34d399" stroke-width="2" marker-end="url(#arrow-emerald)" />
+  <path d="M 850 1405 L 885 1405" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrow)" />
+
+  <!-- ==================== FOOTER / LEGEND ==================== -->
+  <rect x="50" y="1575" width="1100" height="65" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1" />
+  <text x="70" y="1600" font-size="12" font-weight="800" fill="#94a3b8">KETERANGAN &amp; STANDAR B2B:</text>
+  <text x="70" y="1623" font-size="11" fill="#cbd5e1"><tspan font-weight="700" fill="#38bdf8">PO:</tspan> Purchase Order resmi • <tspan font-weight="700" fill="#34d399">BAST:</tspan> Berita Acara Serah Terima digital • <tspan font-weight="700" fill="#a78bfa">TOP:</tspan> Term of Payment (14, 30, 60, 90 hari) • <tspan font-weight="700" fill="#f472b6">PPN:</tspan> Pajak Pertambahan Nilai 11% + Faktur DJP • <tspan font-weight="700" fill="#fbbf24">Fee PKS:</tspan> Komisi platform kesepakatan</text>
+  <text x="1130" y="1612" font-size="11" font-weight="600" fill="#64748b" text-anchor="end">Dokumen Arsitektur Sistem © AkuAda B2B Indonesia</text>
+</svg>
+

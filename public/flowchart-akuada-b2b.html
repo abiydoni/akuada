@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flowchart Pengadaan B2B AkuAda - Download & Cetak</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; padding: 0 !important; }
+      #diagram-card { border: none !important; box-shadow: none !important; }
+      @page { size: A4 portrait; margin: 10mm; }
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen py-8 px-4 flex flex-col items-center">
+
+  <!-- Top Action Control Bar -->
+  <div class="w-full max-w-6xl mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl no-print">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-purple-500/25">
+        AA
+      </div>
+      <div>
+        <h1 class="text-base sm:text-lg font-bold text-white tracking-tight">Flowchart Alur Pengadaan B2B AkuAda</h1>
+        <p class="text-xs text-slate-400">Unduh diagram resmi arsitektur sistem dalam format PNG resolusi tinggi, SVG vektor, atau cetak ke PDF.</p>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex items-center gap-2 flex-wrap justify-end">
+      <!-- Download PNG -->
+      <button onclick="downloadPNG()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-blue-600/25 active:scale-95">
+        <span class="material-symbols-outlined text-[18px]">image</span>
+        <span>Download PNG (HD)</span>
+      </button>
+
+      <!-- Download SVG -->
+      <button onclick="downloadSVG()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-purple-600/25 active:scale-95">
+        <span class="material-symbols-outlined text-[18px]">polyline</span>
+        <span>Download SVG (Vektor)</span>
+      </button>
+
+      <!-- Print / PDF -->
+      <button onclick="window.print()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center gap-2 border border-slate-700 active:scale-95">
+        <span class="material-symbols-outlined text-[18px]">print</span>
+        <span>Cetak / PDF</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Zoom & Scale Controls -->
+  <div class="w-full max-w-6xl mb-4 flex items-center justify-between text-xs text-slate-400 no-print px-2">
+    <div class="flex items-center gap-2">
+      <span class="material-symbols-outlined text-[18px] text-emerald-400">check_circle</span>
+      <span>Diagram siap unduh (Resolusi master 2400x3400 piksel)</span>
+    </div>
+    <div class="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-xl p-1">
+      <button onclick="zoomOut()" class="p-1.5 hover:bg-slate-800 rounded-lg text-slate-300 transition" title="Zoom Out">
+        <span class="material-symbols-outlined text-[18px]">remove</span>
+      </button>
+      <span id="zoom-level" class="px-2 font-mono text-xs font-bold text-slate-300">100%</span>
+      <button onclick="zoomIn()" class="p-1.5 hover:bg-slate-800 rounded-lg text-slate-300 transition" title="Zoom In">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+      </button>
+      <button onclick="zoomReset()" class="p-1.5 hover:bg-slate-800 rounded-lg text-slate-300 transition" title="Reset Zoom">
+        <span class="material-symbols-outlined text-[18px]">restart_alt</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Diagram Container -->
+  <div id="diagram-card" class="w-full max-w-6xl p-4 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800/80 shadow-2xl overflow-auto flex justify-center">
+    <div id="svg-wrapper" class="transition-transform duration-200 origin-top" style="transform: scale(1);">
+      <!-- SVG Object / Direct Embed -->
+      <img id="diagram-img" src="flowchart-akuada-b2b.svg" alt="Flowchart Pengadaan B2B AkuAda" class="w-full max-w-[1100px] h-auto rounded-2xl shadow-xl block" />
+    </div>
+  </div>
+
+  <!-- Hidden Canvas for PNG Generation -->
+  <canvas id="export-canvas" class="hidden"></canvas>
+
+  <script>
+    let currentZoom = 1;
+
+    function zoomIn() {
+      if (currentZoom < 2) {
+        currentZoom += 0.15;
+        updateZoom();
+      }
+    }
+
+    function zoomOut() {
+      if (currentZoom > 0.5) {
+        currentZoom -= 0.15;
+        updateZoom();
+      }
+    }
+
+    function zoomReset() {
+      currentZoom = 1;
+      updateZoom();
+    }
+
+    function updateZoom() {
+      document.getElementById('svg-wrapper').style.transform = `scale(${currentZoom})`;
+      document.getElementById('zoom-level').textContent = `${Math.round(currentZoom * 100)}%`;
+    }
+
+    // Download as SVG file
+    async function downloadSVG() {
+      try {
+        const response = await fetch('flowchart-akuada-b2b.svg');
+        const svgText = await response.text();
+        const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'flowchart-pengadaan-akuada-b2b.svg';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert('Gagal mengunduh SVG: ' + err.message);
+      }
+    }
+
+    // Download as PNG (High Resolution)
+    async function downloadPNG() {
+      const btn = event.currentTarget;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">sync</span> Memproses...';
+      btn.disabled = true;
+
+      try {
+        const response = await fetch('flowchart-akuada-b2b.svg');
+        const svgText = await response.text();
+
+        const img = new Image();
+        const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+        const URLObj = window.URL || window.webkitURL || window;
+        const blobURL = URLObj.createObjectURL(svgBlob);
+
+        img.onload = function() {
+          const canvas = document.getElementById('export-canvas');
+          // Scale 2x for ultra HD crisp rendering
+          const scale = 2;
+          canvas.width = 1200 * scale;
+          canvas.height = 1700 * scale;
+          const ctx = canvas.getContext('2d');
+
+          // Dark slate background
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          canvas.toBlob(function(pngBlob) {
+            const pngURL = URLObj.createObjectURL(pngBlob);
+            const a = document.createElement('a');
+            a.href = pngURL;
+            a.download = 'flowchart-pengadaan-akuada-b2b.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URLObj.revokeObjectURL(pngURL);
+            URLObj.revokeObjectURL(blobURL);
+
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+          }, 'image/png');
+        };
+
+        img.onerror = function() {
+          alert('Gagal merender gambar PNG.');
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        };
+
+        img.src = blobURL;
+      } catch (err) {
+        alert('Terjadi kesalahan: ' + err.message);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
+

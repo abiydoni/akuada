@@ -5,7 +5,7 @@
 
     <!-- Customer Top Navbar -->
     <header class="bg-slate-900 text-white border-b border-pink-900/60 sticky top-0 z-30 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <a href="<?= base_url('customer/dashboard') ?>" class="flex items-center gap-2 group">
                     <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-pink-600 via-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-md">
@@ -33,7 +33,7 @@
         </div>
     </header>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-grow flex flex-col md:flex-row gap-6">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-grow flex flex-col md:flex-row gap-6">
         
         <!-- Customer Sidebar Navigation -->
         <aside class="w-full md:w-64 flex-shrink-0">

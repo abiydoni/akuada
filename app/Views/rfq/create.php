@@ -14,7 +14,7 @@
     </div>
 </div>
 
-<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <form action="<?= base_url('rfq/store') ?>" method="POST" class="space-y-6">
         
         <!-- Section 1: Pengadaan Info -->
@@ -67,30 +67,30 @@
                 </button>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-xs text-left" id="rfqItemTable">
-                    <thead class="bg-slate-50 text-slate-600 font-bold text-[11px] uppercase">
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="w-full text-xs text-left border-collapse" id="rfqItemTable">
+                    <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold uppercase text-[11px] tracking-wider">
                         <tr>
-                            <th class="p-3">Nama Barang & Spesifikasi Teknis</th>
-                            <th class="p-3 w-28">Kuantitas</th>
-                            <th class="p-3 w-32">Satuan (UOM)</th>
-                            <th class="p-3 w-40">Target Harga (Rp)</th>
-                            <th class="p-3">Catatan Khusus</th>
-                            <th class="p-3 w-12 text-center">Hapus</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Nama Barang & Spesifikasi Teknis</th>
+                            <th class="px-4 py-3 whitespace-nowrap w-28 text-center">Kuantitas</th>
+                            <th class="px-4 py-3 whitespace-nowrap w-32">Satuan (UOM)</th>
+                            <th class="px-4 py-3 whitespace-nowrap w-44 text-right">Target Harga Satuan (Rp)</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Catatan Khusus</th>
+                            <th class="px-4 py-3 whitespace-nowrap w-12 text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100" id="rfqItemBody">
-                        <tr class="item-row">
-                            <td class="p-2">
-                                <input type="text" name="item_name[]" required placeholder="Contoh: Laptop Core i7 RAM 16GB SSD 512GB" 
-                                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-purple-600">
+                    <tbody class="divide-y divide-slate-100 bg-white" id="rfqItemBody">
+                        <tr class="item-row hover:bg-slate-50/50 transition-colors">
+                            <td class="p-2.5">
+                                <input type="text" name="item_name[]" required placeholder="Contoh: Genset Silent Diesel 50 KVA" 
+                                       class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-purple-600 font-medium">
                             </td>
-                            <td class="p-2">
-                                <input type="number" name="qty[]" min="1" value="10" required 
-                                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-purple-600 text-center font-bold">
+                            <td class="p-2.5">
+                                <input type="number" name="qty[]" min="1" value="1" required 
+                                       class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-purple-600 text-center font-bold">
                             </td>
-                            <td class="p-2">
-                                <select name="uom[]" class="w-full px-2 py-2 rounded-lg border border-slate-200 bg-white">
+                            <td class="p-2.5">
+                                <select name="uom[]" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-medium">
                                     <option value="Unit">Unit</option>
                                     <option value="Pcs">Pcs</option>
                                     <option value="Box">Box</option>
@@ -100,16 +100,19 @@
                                     <option value="Set">Set</option>
                                 </select>
                             </td>
-                            <td class="p-2">
-                                <input type="number" name="target_unit_price[]" placeholder="Rp / Satuan" 
-                                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-purple-600">
+                            <td class="p-2.5">
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 font-bold text-[11px]">Rp</span>
+                                    <input type="number" name="target_unit_price[]" placeholder="Harga Target" 
+                                           class="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-300 focus:border-purple-600 font-mono text-right font-medium">
+                                </div>
                             </td>
-                            <td class="p-2">
-                                <input type="text" name="item_notes[]" placeholder="Garansi 3 Th Onsite" 
-                                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-purple-600">
+                            <td class="p-2.5">
+                                <input type="text" name="item_notes[]" placeholder="Spesifikasi / Garansi / Merek" 
+                                       class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-purple-600">
                             </td>
-                            <td class="p-2 text-center">
-                                <button type="button" onclick="removeRow(this)" class="text-slate-400 hover:text-rose-600">
+                            <td class="p-2.5 text-center align-middle">
+                                <button type="button" onclick="removeRow(this)" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Hapus Baris">
                                     <span class="material-symbols-outlined text-[18px]">delete</span>
                                 </button>
                             </td>

@@ -161,50 +161,50 @@
         </div>
 
         <!-- 3. Line Items Table (Rincian Barang yang Dipesan Hotel/Perusahaan) -->
-        <div class="overflow-x-auto">
-            <table class="w-full text-xs text-left">
-                <thead class="bg-slate-900 text-white font-bold uppercase text-[10px]">
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-xs text-left border-collapse">
+                <thead class="bg-slate-900 text-white font-bold uppercase text-[10px] tracking-wider">
                     <tr>
-                        <th class="p-3 text-center w-12">No</th>
-                        <th class="p-3">Uraian Kebutuhan Operasional & Spesifikasi</th>
-                        <th class="p-3">Kode SKU</th>
-                        <th class="p-3 text-center">Kuantitas</th>
-                        <th class="p-3 text-right">Harga Satuan B2B</th>
-                        <th class="p-3 text-right">PPN 11%</th>
-                        <th class="p-3 text-right">Jumlah Total (IDR)</th>
+                        <th class="px-3 py-3 text-center w-12">No</th>
+                        <th class="px-4 py-3">Uraian Kebutuhan Operasional & Spesifikasi</th>
+                        <th class="px-4 py-3">Kode SKU</th>
+                        <th class="px-4 py-3 text-center">Kuantitas</th>
+                        <th class="px-4 py-3 text-right">Harga Satuan B2B</th>
+                        <th class="px-4 py-3 text-right">PPN 11%</th>
+                        <th class="px-4 py-3 text-right">Jumlah Total (IDR)</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-200">
+                <tbody class="divide-y divide-slate-200 bg-white">
                     <?php foreach ($order['items'] as $idx => $it): ?>
-                        <tr class="hover:bg-slate-50/60 transition">
-                            <td class="p-3 text-center text-slate-400 font-mono"><?= $idx + 1 ?></td>
-                            <td class="p-3">
+                        <tr class="hover:bg-slate-50/60 transition-colors">
+                            <td class="px-3 py-3 text-center text-slate-400 font-mono"><?= $idx + 1 ?></td>
+                            <td class="px-4 py-3">
                                 <strong class="text-slate-900 font-bold text-xs block"><?= esc($it['product_name']) ?></strong>
                                 <span class="text-[10px] text-slate-500">Kategori: Pengadaan Korporat Resmi AkuAda</span>
                             </td>
-                            <td class="p-3 font-mono text-slate-500"><?= esc($it['sku']) ?></td>
-                            <td class="p-3 text-center font-bold text-slate-800"><?= $it['qty'] ?> <span class="text-[10px] text-slate-500 font-normal"><?= esc($it['uom']) ?></span></td>
-                            <td class="p-3 text-right text-slate-700"><?= format_rupiah($it['unit_price']) ?></td>
-                            <td class="p-3 text-right text-blue-700 font-medium"><?= format_rupiah($it['ppn_amount']) ?></td>
-                            <td class="p-3 text-right font-extrabold text-slate-900"><?= format_rupiah($it['subtotal'] + $it['ppn_amount']) ?></td>
+                            <td class="px-4 py-3 font-mono text-slate-500"><?= esc($it['sku']) ?></td>
+                            <td class="px-4 py-3 text-center font-bold text-slate-800"><?= number_format($it['qty']) ?> <span class="text-[10px] text-slate-500 font-normal"><?= esc($it['uom']) ?></span></td>
+                            <td class="px-4 py-3 text-right font-mono text-slate-700"><?= format_rupiah($it['unit_price']) ?></td>
+                            <td class="px-4 py-3 text-right font-mono text-blue-700 font-medium"><?= format_rupiah($it['ppn_amount']) ?></td>
+                            <td class="px-4 py-3 text-right font-mono font-extrabold text-slate-900"><?= format_rupiah($it['subtotal'] + $it['ppn_amount']) ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
-                <tfoot class="border-t-2 border-slate-900 text-xs divide-y divide-slate-100 font-bold">
+                <tfoot class="border-t-2 border-slate-900 text-xs divide-y divide-slate-100 font-bold bg-slate-50/50">
                     <tr>
-                        <td colspan="5" class="p-3 text-right text-slate-600">Subtotal Nilai Pengadaan Barang (DPP):</td>
-                        <td colspan="2" class="p-3 text-right text-slate-900 font-bold"><?= format_rupiah($order['subtotal']) ?></td>
+                        <td colspan="5" class="px-4 py-2.5 text-right text-slate-600">Subtotal Nilai Pengadaan Barang (DPP):</td>
+                        <td colspan="2" class="px-4 py-2.5 text-right font-mono text-slate-900 font-bold"><?= format_rupiah($order['subtotal']) ?></td>
                     </tr>
                     <tr>
-                        <td colspan="5" class="p-3 text-right text-blue-700">Pajak Pertambahan Nilai (PPN 11% e-Faktur Terlampir):</td>
-                        <td colspan="2" class="p-3 text-right text-blue-700 font-bold"><?= format_rupiah($order['ppn_amount']) ?></td>
+                        <td colspan="5" class="px-4 py-2.5 text-right text-blue-700">Pajak Pertambahan Nilai (PPN 11% e-Faktur Terlampir):</td>
+                        <td colspan="2" class="px-4 py-2.5 text-right font-mono text-blue-700 font-bold"><?= format_rupiah($order['ppn_amount']) ?></td>
                     </tr>
                     <tr>
-                        <td colspan="5" class="p-3 text-right text-slate-600">Biaya Logistik & Pengiriman Terjamin:</td>
-                        <td colspan="2" class="p-3 text-right text-slate-900 font-bold"><?= format_rupiah($order['shipping_amount'] ?? 0) ?></td>
+                        <td colspan="5" class="px-4 py-2.5 text-right text-slate-600">Biaya Logistik & Pengiriman Terjamin:</td>
+                        <td colspan="2" class="px-4 py-2.5 text-right font-mono text-slate-900 font-bold"><?= format_rupiah($order['shipping_amount'] ?? 0) ?></td>
                     </tr>
                     <tr class="bg-gradient-to-r from-purple-50 via-indigo-50 to-pink-50 text-sm">
-                        <td colspan="5" class="p-4 text-right text-purple-950 font-black">
+                        <td colspan="5" class="px-4 py-3.5 text-right text-purple-950 font-black">
                             <span class="flex items-center justify-end gap-1.5">
                                 <span class="material-symbols-outlined text-purple-700 text-[20px]">payments</span>
                                 <span>TOTAL TAGIHAN PEMBAYARAN RESMI:</span>

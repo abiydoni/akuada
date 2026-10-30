@@ -97,39 +97,39 @@
             </div>
 
             <!-- Volume Tier Pricing Table (Crucial for B2B Wholesale) -->
-            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                <div class="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
+            <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                <div class="bg-slate-50/80 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
                     <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-purple-600 text-[18px]">price_change</span>
                         Tabel Harga Grosir Korporat (Tiering)
                     </span>
-                    <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-semibold">Diskon Volume</span>
+                    <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">Diskon Volume B2B</span>
                 </div>
-                <table class="w-full text-xs text-left">
-                    <thead class="text-[11px] text-slate-500 bg-slate-100/60 uppercase">
+                <table class="w-full text-xs text-left border-collapse">
+                    <thead class="text-[10px] text-slate-500 bg-slate-50/50 uppercase font-semibold border-b border-slate-100">
                         <tr>
-                            <th class="px-4 py-2">Jumlah Pesanan</th>
-                            <th class="px-4 py-2">Harga Satuan B2B</th>
-                            <th class="px-4 py-2 text-right">Potongan</th>
+                            <th class="px-4 py-2.5">Jumlah Pesanan</th>
+                            <th class="px-4 py-2.5 text-right font-mono">Harga Satuan (DPP)</th>
+                            <th class="px-4 py-2.5 text-right">Potongan Hemat</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody class="divide-y divide-slate-100 bg-white">
                         <!-- Regular Base Tier -->
-                        <tr class="tier-row" data-min="<?= $product['moq'] ?>" data-max="9" data-price="<?= $product['price_regular'] ?>">
-                            <td class="px-4 py-2.5 font-medium"><?= $product['moq'] ?> - <?= !empty($product['price_tiers']) ? ($product['price_tiers'][0]['min_qty'] - 1) : '10' ?> <?= esc($product['uom']) ?></td>
-                            <td class="px-4 py-2.5 font-bold text-slate-800"><?= format_rupiah($product['price_regular']) ?></td>
-                            <td class="px-4 py-2.5 text-right text-slate-400">Harga Dasar</td>
+                        <tr class="tier-row hover:bg-purple-50/40 transition-colors" data-min="<?= $product['moq'] ?>" data-max="9" data-price="<?= $product['price_regular'] ?>">
+                            <td class="px-4 py-2.5 font-medium text-slate-700"><?= $product['moq'] ?> - <?= !empty($product['price_tiers']) ? ($product['price_tiers'][0]['min_qty'] - 1) : '10' ?> <?= esc($product['uom']) ?></td>
+                            <td class="px-4 py-2.5 text-right font-mono font-bold text-slate-900"><?= format_rupiah($product['price_regular']) ?></td>
+                            <td class="px-4 py-2.5 text-right text-slate-400 font-medium">Harga Dasar</td>
                         </tr>
                         <?php if (!empty($product['price_tiers'])): ?>
                             <?php foreach ($product['price_tiers'] as $tier): ?>
-                                <tr class="tier-row" data-min="<?= $tier['min_qty'] ?>" data-max="<?= $tier['max_qty'] ?? 999999 ?>" data-price="<?= $tier['unit_price'] ?>">
-                                    <td class="px-4 py-2.5 font-medium">
+                                <tr class="tier-row hover:bg-purple-50/40 transition-colors" data-min="<?= $tier['min_qty'] ?>" data-max="<?= $tier['max_qty'] ?? 999999 ?>" data-price="<?= $tier['unit_price'] ?>">
+                                    <td class="px-4 py-2.5 font-medium text-slate-700">
                                         <?= $tier['min_qty'] ?><?= $tier['max_qty'] ? ' - ' . $tier['max_qty'] : '+' ?> <?= esc($product['uom']) ?>
                                     </td>
-                                    <td class="px-4 py-2.5 font-bold text-purple-700">
+                                    <td class="px-4 py-2.5 text-right font-mono font-extrabold text-purple-700">
                                         <?= format_rupiah($tier['unit_price']) ?>
                                     </td>
-                                    <td class="px-4 py-2.5 text-right font-semibold text-emerald-600">
+                                    <td class="px-4 py-2.5 text-right font-bold text-emerald-600">
                                         Hemat <?= round((($product['price_regular'] - $tier['unit_price']) / $product['price_regular']) * 100) ?>%
                                     </td>
                                 </tr>

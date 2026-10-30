@@ -3,62 +3,88 @@
 <?= $this->section('customer_content') ?>
 
 <div class="space-y-6">
-    <div class="flex items-center justify-between">
+    <!-- Header Card -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h1 class="text-xl font-extrabold text-slate-900">Permintaan Penawaran Resmi (RFQ) Saya</h1>
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-800 text-[10px] font-bold uppercase tracking-wider">Tender & Negosiasi</span>
+            </div>
+            <h1 class="text-xl font-extrabold text-slate-900 mt-1">Permintaan Penawaran Resmi (RFQ) Saya</h1>
             <p class="text-xs text-slate-500 mt-0.5">Pantau status tanggapan penawaran harga dari vendor dan setujui penawaran untuk menerbitkan PO.</p>
         </div>
-        <a href="<?= base_url('rfq/create') ?>" class="btn-akuada-primary text-xs px-4 py-2">
+        <a href="<?= base_url('rfq/create') ?>" class="btn-akuada-primary text-xs px-4 py-2.5 shadow-md flex items-center gap-2 self-start sm:self-auto">
             <span class="material-symbols-outlined text-[18px]">add</span>
-            <span>Buat Permintaan RFQ Baru</span>
+            <span>+ Buat Permintaan RFQ Baru</span>
         </a>
     </div>
 
+    <!-- RFQs List Cards -->
     <div class="space-y-4">
+        <?php if (empty($rfqs)): ?>
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-12 text-center">
+                <div class="flex flex-col items-center justify-center text-slate-400">
+                    <span class="material-symbols-outlined text-4xl mb-2 text-slate-300">request_quote</span>
+                    <p class="font-semibold text-slate-600">Belum ada permintaan penawaran RFQ yang diajukan</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Klik tombol "+ Buat Permintaan RFQ Baru" untuk meminta penawaran tender pengadaan.</p>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <?php foreach ($rfqs as $rfq): ?>
             <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4 text-xs">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                    <div>
-                        <div class="flex items-center gap-2">
+                    <div class="space-y-0.5">
+                        <div class="flex flex-wrap items-center gap-2">
                             <span class="font-mono font-bold text-pink-700"><?= esc($rfq['rfq_number']) ?></span>
                             <span class="text-slate-300">•</span>
-                            <strong class="text-slate-900 text-sm"><?= esc($rfq['title']) ?></strong>
+                            <strong class="text-slate-900 text-sm leading-snug break-words"><?= esc($rfq['title']) ?></strong>
                         </div>
-                        <p class="text-slate-500 mt-0.5">Vendor Dituju: <strong><?= esc($rfq['vendor_name'] ?? 'Terbuka Untuk Semua Mitra') ?></strong> | Target Serah Terima: <?= date('d M Y', strtotime($rfq['target_delivery_date'])) ?></p>
+                        <p class="text-slate-500">
+                            Vendor Dituju: <strong><?= esc($rfq['vendor_name'] ?? 'Terbuka Untuk Semua Mitra') ?></strong> | 
+                            Target Serah Terima: <strong><?= date('d M Y', strtotime($rfq['target_delivery_date'])) ?></strong>
+                        </p>
                     </div>
                     <div>
-                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-800">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-200">
                             Status: <?= esc($rfq['status']) ?>
                         </span>
                     </div>
                 </div>
 
-                <!-- Items & Quotes Table -->
-                <div class="overflow-x-auto">
-                    <table class="w-full text-xs text-left">
-                        <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-[10px]">
+                <!-- Items & Quotes Table - Fits 100% width with NO horizontal scroll -->
+                <div class="w-full rounded-xl border border-slate-200 overflow-hidden">
+                    <table class="w-full text-xs text-left border-collapse">
+                        <thead class="bg-slate-50/90 border-b border-slate-200 text-slate-600 font-semibold uppercase text-[11px] tracking-wider">
                             <tr>
-                                <th class="p-3">Nama Barang</th>
-                                <th class="p-3">Kuantitas</th>
-                                <th class="p-3">Target Harga Buyer</th>
-                                <th class="p-3">Penawaran Resmi Vendor</th>
-                                <th class="p-3">Catatan Spek</th>
+                                <th class="px-4 py-3">Nama Barang & Spesifikasi</th>
+                                <th class="px-4 py-3 text-center w-28">Kuantitas</th>
+                                <th class="px-4 py-3 text-right w-44">Target Harga Buyer</th>
+                                <th class="px-4 py-3 text-right w-52">Penawaran Resmi Vendor</th>
+                                <th class="px-4 py-3 w-48">Catatan Spek</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100">
+                        <tbody class="divide-y divide-slate-100 bg-white">
                             <?php 
                                 $itemModel = new \App\Models\RfqItemModel();
                                 $items = $itemModel->where('rfq_id', $rfq['id'])->findAll();
                                 foreach ($items as $it): 
                             ?>
-                                <tr>
-                                    <td class="p-3 font-semibold text-slate-800"><?= esc($it['item_name']) ?></td>
-                                    <td class="p-3 font-bold"><?= $it['qty'] ?> <?= esc($it['uom']) ?></td>
-                                    <td class="p-3 text-slate-500"><?= $it['target_unit_price'] ? format_rupiah($it['target_unit_price']) : '-' ?></td>
-                                    <td class="p-3 font-extrabold text-pink-700">
-                                        <?= $it['vendor_offered_price'] ? format_rupiah($it['vendor_offered_price']) : '<span class="text-amber-600 italic">Sedang Dihitung Vendor</span>' ?>
+                                <tr class="hover:bg-slate-50/80 transition-colors">
+                                    <td class="px-4 py-3 align-middle font-bold text-slate-900 leading-snug break-words">
+                                        <?= esc($it['item_name']) ?>
                                     </td>
-                                    <td class="p-3 text-slate-500"><?= esc($it['notes'] ?? '-') ?></td>
+                                    <td class="px-4 py-3 align-middle text-center font-bold text-slate-800 whitespace-nowrap">
+                                        <?= number_format($it['qty']) ?> <?= esc($it['uom']) ?>
+                                    </td>
+                                    <td class="px-4 py-3 align-middle text-right font-mono text-slate-600 whitespace-nowrap">
+                                        <?= $it['target_unit_price'] ? format_rupiah($it['target_unit_price']) : '-' ?>
+                                    </td>
+                                    <td class="px-4 py-3 align-middle text-right font-mono font-bold text-pink-700 whitespace-nowrap">
+                                        <?= $it['vendor_offered_price'] ? format_rupiah($it['vendor_offered_price']) : '<span class="text-amber-600 italic font-sans font-normal">Sedang Dihitung</span>' ?>
+                                    </td>
+                                    <td class="px-4 py-3 align-middle text-slate-500 break-words">
+                                        <?= esc($it['notes'] ?? '-') ?>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>

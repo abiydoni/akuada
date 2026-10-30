@@ -3,22 +3,23 @@
 <?= $this->section('admin_content') ?>
 
 <div class="space-y-6">
+    <!-- Header Card -->
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
             <div class="flex items-center gap-2">
-                <span class="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold">Otoritas Pendaftaran Superadmin</span>
+                <span class="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold uppercase tracking-wider">Otoritas Superadmin</span>
             </div>
             <h1 class="text-xl font-extrabold text-slate-900 mt-1">Verifikasi & Manajemen Mitra Vendor B2B</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Hanya Superadmin yang berhak mendaftarkan vendor baru dan menetapkan tarif komisi kesepakatan PKS tiap vendor.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Daftarkan vendor mitra resmi, tentukan tarif komisi platform kesepakatan PKS, dan pantau status legalitas.</p>
         </div>
-        <a href="<?= base_url('admin/vendors/create') ?>" class="btn-akuada-primary px-4 py-2.5 text-xs shadow-md flex items-center gap-2">
+        <a href="<?= base_url('admin/vendors/create') ?>" class="btn-akuada-primary px-4 py-2.5 text-xs shadow-md flex items-center gap-2 self-start sm:self-auto">
             <span class="material-symbols-outlined text-[18px]">person_add</span>
             <span>+ Daftarkan Mitra Vendor Baru</span>
         </a>
     </div>
 
     <!-- Info Notice Box -->
-    <div class="p-4 rounded-2xl bg-gradient-to-r from-purple-50 via-blue-50 to-pink-50 border border-purple-200 text-xs flex items-start gap-3">
+    <div class="p-4 rounded-2xl bg-gradient-to-r from-purple-50 via-blue-50 to-pink-50 border border-purple-200/80 text-xs flex items-start gap-3 shadow-sm">
         <span class="material-symbols-outlined text-purple-700 text-[22px] flex-shrink-0 mt-0.5">policy</span>
         <div class="space-y-1">
             <strong class="text-slate-900 font-bold block">Kebijakan Fee & Kemitraan Vendor B2B:</strong>
@@ -28,77 +29,107 @@
         </div>
     </div>
 
+    <!-- Vendors Table Card - Fits 100% width with NO horizontal scroll -->
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-xs text-left">
-                <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-[10px]">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-purple-600"></span>
+                <h3 class="font-bold text-slate-800 text-sm">Daftar Mitra Vendor Terdaftar</h3>
+                <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold text-[11px]"><?= count($vendors) ?> Vendor</span>
+            </div>
+        </div>
+
+        <div class="w-full">
+            <table class="w-full text-xs text-left border-collapse">
+                <thead class="bg-slate-50/90 border-b border-slate-200 text-slate-600 font-semibold uppercase text-[11px] tracking-wider">
                     <tr>
-                        <th class="p-4">Nama Perusahaan Vendor</th>
-                        <th class="p-4">Legalitas (NPWP / NIB)</th>
-                        <th class="p-4 text-purple-900">Fee Kesepakatan PKS</th>
-                        <th class="p-4">Kontak PIC</th>
-                        <th class="p-4">Kota</th>
-                        <th class="p-4">Status Akun</th>
-                        <th class="p-4 text-center">Kelola Fee & Verifikasi</th>
+                        <th class="px-4 py-3.5">Perusahaan Vendor & Legalitas</th>
+                        <th class="px-4 py-3.5">Kontak PIC Vendor</th>
+                        <th class="px-4 py-3.5 text-center w-40 text-purple-900">Fee Komisi PKS</th>
+                        <th class="px-4 py-3.5 text-center w-36">Status Akun</th>
+                        <th class="px-4 py-3.5 text-center w-44">Aksi Manajemen</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody class="divide-y divide-slate-100 bg-white">
+                    <?php if (empty($vendors)): ?>
+                        <tr>
+                            <td colspan="5" class="px-6 py-12 text-center">
+                                <div class="flex flex-col items-center justify-center text-slate-400">
+                                    <span class="material-symbols-outlined text-4xl mb-2 text-slate-300">store</span>
+                                    <p class="font-semibold text-slate-600">Belum ada mitra vendor terdaftar</p>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">Gunakan tombol "+ Daftarkan Mitra Vendor Baru" untuk menambah mitra.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+
                     <?php foreach ($vendors as $vendor): ?>
-                        <tr class="hover:bg-slate-50 transition">
-                            <td class="p-4">
-                                <div class="flex items-center gap-2">
-                                    <span class="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 font-bold flex items-center justify-center text-xs">
-                                        <?= substr($vendor['company_name'], 0, 1) ?>
-                                    </span>
-                                    <div>
-                                        <strong class="text-slate-900 block"><?= esc($vendor['company_name']) ?></strong>
-                                        <span class="text-[10px] text-slate-400 font-mono"><?= esc($vendor['email']) ?></span>
+                        <tr class="hover:bg-slate-50/80 transition-colors">
+                            <!-- Company & Legalities (No cut-off) -->
+                            <td class="px-4 py-3.5 align-top">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 font-black flex items-center justify-center text-sm shadow-sm flex-shrink-0 mt-0.5">
+                                        <?= strtoupper(substr($vendor['company_name'], 0, 1)) ?>
+                                    </div>
+                                    <div class="space-y-0.5">
+                                        <div class="font-bold text-slate-900 leading-snug break-words"><?= esc($vendor['company_name']) ?></div>
+                                        <div class="text-[11px] text-slate-500 font-mono"><?= esc($vendor['email']) ?></div>
+                                        <div class="text-[11px] text-slate-400 font-mono pt-0.5">
+                                            <span class="font-bold text-slate-600 uppercase"><?= esc($vendor['legal_type']) ?></span> • 
+                                            NPWP: <?= esc($vendor['npwp'] ?? '-') ?> • 
+                                            Kota: <?= esc($vendor['city'] ?? 'Jakarta') ?>
+                                        </div>
                                     </div>
                                 </div>
                             </td>
-                            <td class="p-4">
-                                <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold text-[10px] inline-block mb-1"><?= esc($vendor['legal_type']) ?></span>
-                                <span class="text-[10px] text-slate-500 block font-mono">NPWP: <?= esc($vendor['npwp'] ?? '-') ?></span>
-                                <span class="text-[10px] text-slate-400 block font-mono">NIB: <?= esc($vendor['nib'] ?? '-') ?></span>
+
+                            <!-- PIC (No cut-off) -->
+                            <td class="px-4 py-3.5 align-top">
+                                <div class="font-bold text-slate-800 break-words"><?= esc($vendor['pic_name']) ?></div>
+                                <div class="text-[11px] text-slate-500 font-mono mt-0.5"><?= esc($vendor['pic_phone']) ?></div>
                             </td>
-                            <td class="p-4">
-                                <div class="flex items-center gap-1.5">
+
+                            <!-- Fee PKS -->
+                            <td class="px-4 py-3.5 align-top text-center">
+                                <div class="inline-flex items-center gap-1.5">
                                     <span class="px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-900 font-black text-xs border border-purple-200">
                                         <?= number_format((float)($vendor['commission_rate'] ?? 2.5), 1) ?>%
                                     </span>
                                     <button type="button" onclick="openFeeModal(<?= $vendor['id'] ?>, '<?= esc($vendor['company_name']) ?>', <?= (float)($vendor['commission_rate'] ?? 2.5) ?>)" 
-                                            class="p-1 rounded hover:bg-purple-100 text-purple-700 transition" title="Ubah Kesepakatan Fee">
+                                            class="p-1 rounded-md hover:bg-purple-100 text-purple-700 transition" title="Ubah Fee Kesepakatan PKS">
                                         <span class="material-symbols-outlined text-[16px]">edit</span>
                                     </button>
                                 </div>
-                                <span class="text-[10px] text-slate-400 block mt-0.5">Sesuai Perjanjian PKS</span>
+                                <span class="text-[10px] text-slate-400 block mt-0.5">Kontrak PKS</span>
                             </td>
-                            <td class="p-4">
-                                <span class="font-semibold text-slate-800 block"><?= esc($vendor['pic_name']) ?></span>
-                                <span class="text-[10px] text-slate-500 font-mono"><?= esc($vendor['pic_phone']) ?></span>
-                            </td>
-                            <td class="p-4 text-slate-600"><?= esc($vendor['city'] ?? 'Jakarta') ?></td>
-                            <td class="p-4">
+
+                            <!-- Status -->
+                            <td class="px-4 py-3.5 align-top text-center">
                                 <?php if ($vendor['is_verified']): ?>
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                        <span class="material-symbols-outlined text-[13px]">verified</span> Terverifikasi
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Terverifikasi
                                     </span>
                                 <?php else: ?>
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                                        <span class="material-symbols-outlined text-[13px]">pending</span> Menunggu Audit
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Menunggu Audit
                                     </span>
                                 <?php endif; ?>
                             </td>
-                            <td class="p-4 text-center">
-                                <div class="flex items-center justify-center gap-1.5">
+
+                            <!-- Actions -->
+                            <td class="px-4 py-3.5 align-top text-center">
+                                <div class="flex flex-col gap-1.5">
                                     <button type="button" onclick="openFeeModal(<?= $vendor['id'] ?>, '<?= esc($vendor['company_name']) ?>', <?= (float)($vendor['commission_rate'] ?? 2.5) ?>)" 
-                                            class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-purple-50 hover:bg-purple-100 text-purple-700 transition flex items-center gap-1">
-                                        <span class="material-symbols-outlined text-[14px]">tune</span>
+                                            class="w-full px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-50 hover:bg-purple-100 text-purple-700 transition inline-flex items-center justify-center gap-1 border border-purple-200"
+                                            title="Atur persentase fee komisi">
+                                        <span class="material-symbols-outlined text-[15px]">tune</span>
                                         <span>Atur Fee</span>
                                     </button>
                                     <a href="<?= base_url('admin/vendors/toggle/' . $vendor['id']) ?>" 
-                                       class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition <?= $vendor['is_verified'] ? 'bg-rose-50 text-rose-700 hover:bg-rose-100' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' ?>">
-                                        <?= $vendor['is_verified'] ? 'Cabut' : 'Verifikasi' ?>
+                                       onclick="return confirm('Ubah status verifikasi untuk <?= esc($vendor['company_name']) ?>?');"
+                                       class="w-full px-2.5 py-1 rounded-lg text-xs font-semibold transition text-center <?= $vendor['is_verified'] ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200' ?>"
+                                       title="<?= $vendor['is_verified'] ? 'Cabut verifikasi mitra' : 'Setujui verifikasi mitra' ?>">
+                                        <?= $vendor['is_verified'] ? 'Cabut Akses' : 'Verifikasi' ?>
                                     </a>
                                 </div>
                             </td>

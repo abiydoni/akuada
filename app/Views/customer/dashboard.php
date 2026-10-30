@@ -4,114 +4,166 @@
 
 <div class="space-y-6">
     
-    <!-- Welcome Header -->
-    <div class="bg-gradient-to-r from-pink-800 via-purple-900 to-slate-900 rounded-2xl p-6 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-            <span class="px-2.5 py-0.5 rounded-full bg-pink-500/30 text-pink-200 text-[11px] font-bold border border-pink-400/30">Akun Corporate Buyer Terverifikasi</span>
-            <h1 class="text-2xl font-extrabold mt-1"><?= esc($company['company_name'] ?? 'PT Mega Solusi Digital Tbk') ?></h1>
-            <p class="text-xs text-purple-200 mt-0.5">Departemen Procurement & General Affairs (GA) Perusahaan.</p>
+    <!-- Welcome Header Card -->
+    <div class="bg-gradient-to-r from-pink-900 via-purple-900 to-slate-900 rounded-2xl p-6 text-white shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="space-y-1 max-w-3xl">
+            <span class="px-2.5 py-0.5 rounded-full bg-pink-500/30 text-pink-200 text-[11px] font-bold border border-pink-400/30 uppercase tracking-wider">Akun Corporate Buyer Terverifikasi</span>
+            <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight break-words"><?= esc($company['company_name'] ?? 'PT Mega Solusi Digital Tbk') ?></h1>
+            <p class="text-xs text-purple-200 leading-relaxed">
+                Portal Pengadaan Operasional, Pembelian Grosir B2B, dan Fasilitas Plafon Kredit Tempo (Term of Payment / TOP).
+            </p>
         </div>
-        <div class="flex items-center gap-2">
-            <a href="<?= base_url('products') ?>" class="px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[16px]">shopping_cart</span>
+        <div class="flex flex-wrap items-center gap-2 flex-shrink-0 self-start md:self-auto">
+            <a href="<?= base_url('products') ?>" class="px-4 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[18px]">shopping_cart</span>
                 <span>Buat Pengadaan Baru</span>
             </a>
-            <a href="<?= base_url('rfq/create') ?>" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs transition flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[16px]">request_quote</span>
-                <span>Minta RFQ</span>
+            <a href="<?= base_url('rfq/create') ?>" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs transition flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[18px]">request_quote</span>
+                <span>Minta RFQ Tender</span>
             </a>
         </div>
     </div>
 
-    <!-- Plafon & Key Metrics -->
+    <!-- Plafon & Key Metrics - Fully responsive, no text clipping -->
     <?php
         $limit = (float)($company['credit_limit_top'] ?? 250000000);
         $used = (float)($company['credit_used_top'] ?? 31250000);
         $remaining = max(0, $limit - $used);
+        $usedPercent = $limit > 0 ? min(100, round(($used / $limit) * 100)) : 0;
     ?>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white rounded-2xl p-5 border border-purple-200 shadow-sm flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
-                <span class="material-symbols-outlined text-2xl">account_balance</span>
+        <!-- Card 1: Plafon Kredit -->
+        <div class="bg-gradient-to-br from-purple-50/80 via-white to-pink-50/50 rounded-2xl p-5 border-2 border-purple-300 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+            <div class="flex items-center justify-between gap-2 mb-3">
+                <span class="text-xs text-purple-950 font-bold">Sisa Plafon Kredit TOP</span>
+                <div class="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <span class="material-symbols-outlined text-xl">account_balance</span>
+                </div>
             </div>
-            <div>
-                <span class="text-[11px] text-slate-500 font-semibold block">Sisa Plafon Kredit TOP</span>
-                <span class="text-lg font-extrabold text-purple-900"><?= format_rupiah($remaining) ?></span>
-                <span class="text-[10px] text-slate-400 block mt-0.5">Dari Total <?= format_rupiah($limit) ?></span>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center flex-shrink-0">
-                <span class="material-symbols-outlined text-2xl">sync</span>
-            </div>
-            <div>
-                <span class="text-[11px] text-slate-500 font-semibold block">PO Sedang Berjalan</span>
-                <span class="text-lg font-extrabold text-slate-900"><?= $activeOrders ?> Pesanan</span>
-                <span class="text-[10px] text-pink-600 font-bold block mt-0.5">Menunggu Pengiriman/BAST</span>
+            <div class="space-y-1.5">
+                <div class="text-xl font-black text-purple-900 font-mono tracking-tight break-words"><?= format_rupiah($remaining) ?></div>
+                <div class="text-[11px] text-slate-500 font-medium">
+                    Total Plafon: <strong class="text-slate-800"><?= format_rupiah($limit) ?></strong>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                    <div class="bg-gradient-to-r from-purple-500 to-pink-500 h-1.5 rounded-full" style="width: <?= $usedPercent ?>%"></div>
+                </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-                <span class="material-symbols-outlined text-2xl">receipt_long</span>
+        <!-- Card 2: Active Orders -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+            <div class="flex items-center justify-between gap-2 mb-3">
+                <span class="text-xs text-slate-500 font-semibold">PO Sedang Berjalan</span>
+                <div class="w-10 h-10 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-xl">sync</span>
+                </div>
             </div>
-            <div>
-                <span class="text-[11px] text-slate-500 font-semibold block">Total Pengadaan Selesai</span>
-                <span class="text-lg font-extrabold text-slate-900"><?= format_rupiah($totalSpending) ?></span>
-                <span class="text-[10px] text-emerald-600 font-bold block mt-0.5">Lengkap Faktur Pajak</span>
+            <div class="space-y-1">
+                <div class="text-xl font-black text-slate-900 font-mono tracking-tight"><?= $activeOrders ?> Pesanan</div>
+                <div class="text-[11px] text-pink-600 font-medium">
+                    Menunggu Pengiriman / BAST
+                </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                <span class="material-symbols-outlined text-2xl">verified_user</span>
+        <!-- Card 3: Total Spending -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+            <div class="flex items-center justify-between gap-2 mb-3">
+                <span class="text-xs text-slate-500 font-semibold">Total Pengadaan Selesai</span>
+                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-xl">receipt_long</span>
+                </div>
             </div>
-            <div>
-                <span class="text-[11px] text-slate-500 font-semibold block">Status Legalitas PT</span>
-                <span class="text-base font-extrabold text-slate-900">PKP Terverifikasi</span>
-                <span class="text-[10px] text-emerald-600 font-bold block mt-0.5">NPWP & NIB Valid</span>
+            <div class="space-y-1">
+                <div class="text-lg font-black text-slate-900 font-mono tracking-tight break-words"><?= format_rupiah($totalSpending) ?></div>
+                <div class="text-[11px] text-emerald-600 font-medium">
+                    Lengkap Faktur Pajak e-Faktur
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 4: Legalitas PT -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+            <div class="flex items-center justify-between gap-2 mb-3">
+                <span class="text-xs text-slate-500 font-semibold">Status Legalitas Perusahaan</span>
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-xl">verified_user</span>
+                </div>
+            </div>
+            <div class="space-y-1">
+                <div class="text-base font-black text-slate-900">PKP Terverifikasi</div>
+                <div class="text-[11px] text-emerald-600 font-medium">
+                    NPWP & NIB Badan Valid
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Active Purchase Orders Table -->
+    <!-- Active Purchase Orders Table Card - Fits 100% width with NO horizontal scroll -->
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
-            <div>
-                <h3 class="text-sm font-bold text-slate-900">Riwayat Purchase Order (PO) Aktif</h3>
-                <p class="text-xs text-slate-500">Pantau proses pengiriman, konfirmasi serah terima barang (BAST), dan unduh e-Faktur.</p>
+        <div class="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-pink-600"></span>
+                <div>
+                    <h3 class="font-bold text-slate-900 text-sm">Riwayat Purchase Order (PO) Aktif</h3>
+                    <p class="text-[11px] text-slate-500">Pantau proses pengiriman, konfirmasi serah terima barang (BAST), dan unduh e-Faktur.</p>
+                </div>
             </div>
-            <a href="<?= base_url('customer/orders') ?>" class="text-xs font-bold text-pink-700 hover:text-pink-900">
-                Lihat Semua &rarr;
+            <a href="<?= base_url('customer/orders') ?>" class="text-xs font-bold text-pink-700 hover:text-pink-900 transition flex items-center gap-1 self-start sm:self-auto">
+                <span>Lihat Semua Pesanan</span>
+                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
             </a>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-xs text-left">
-                <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-[10px]">
+        <div class="w-full">
+            <table class="w-full text-xs text-left border-collapse">
+                <thead class="bg-slate-50/90 border-b border-slate-200 text-slate-600 font-semibold uppercase text-[11px] tracking-wider">
                     <tr>
-                        <th class="p-4">No. PO Internal</th>
-                        <th class="p-4">Vendor Rekanan</th>
-                        <th class="p-4">Termin Bayar</th>
-                        <th class="p-4">Total Nilai Tagihan</th>
-                        <th class="p-4">No. BAST</th>
-                        <th class="p-4">Status Pengadaan</th>
-                        <th class="p-4 text-center">Aksi</th>
+                        <th class="px-4 py-3.5 w-44">No. PO & Tanggal</th>
+                        <th class="px-4 py-3.5">Vendor Rekanan</th>
+                        <th class="px-4 py-3.5 text-right w-44">Nilai Tagihan PO</th>
+                        <th class="px-4 py-3.5 text-center w-36">Status & Bayar</th>
+                        <th class="px-4 py-3.5 text-center w-36">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody class="divide-y divide-slate-100 bg-white">
+                    <?php if (empty($recentOrders)): ?>
+                        <tr>
+                            <td colspan="5" class="px-6 py-10 text-center text-slate-400">
+                                Belum ada purchase order aktif saat ini.
+                            </td>
+                        </tr>
+                    <?php endif; ?>
                     <?php foreach ($recentOrders as $o): ?>
-                        <tr class="hover:bg-slate-50 transition">
-                            <td class="p-4 font-mono font-bold text-purple-700"><?= esc($o['po_number'] ?? $o['order_number']) ?></td>
-                            <td class="p-4 font-bold text-slate-800"><?= esc($o['vendor_name']) ?></td>
-                            <td class="p-4"><?= badge_payment_method($o['payment_method']) ?></td>
-                            <td class="p-4 font-extrabold text-slate-900"><?= format_rupiah($o['total_amount']) ?></td>
-                            <td class="p-4 font-mono text-slate-600"><?= esc($o['bast_number'] ?? '-') ?></td>
-                            <td class="p-4"><?= badge_order_status($o['order_status']) ?></td>
-                            <td class="p-4 text-center">
-                                <a href="<?= base_url('customer/orders/' . $o['id']) ?>" class="px-3 py-1 rounded bg-pink-50 text-pink-700 hover:bg-pink-100 font-bold transition">
-                                    Lihat & Sahkan BAST
+                        <tr class="hover:bg-slate-50/80 transition-colors">
+                            <td class="px-4 py-3.5 align-top">
+                                <a href="<?= base_url('customer/orders/' . $o['id']) ?>" 
+                                   class="font-mono font-bold text-purple-700 hover:text-purple-900 hover:underline block text-xs">
+                                    <?= esc($o['po_number'] ?? $o['order_number']) ?>
+                                </a>
+                                <span class="text-[11px] text-slate-400 font-mono block mt-0.5"><?= date('d/m/Y', strtotime($o['created_at'])) ?></span>
+                            </td>
+                            <td class="px-4 py-3.5 align-top">
+                                <div class="font-bold text-slate-900 leading-snug break-words"><?= esc($o['vendor_name']) ?></div>
+                                <div class="text-[11px] text-slate-500 font-mono mt-0.5">
+                                    BAST: <?= !empty($o['bast_number']) ? esc($o['bast_number']) : '<span class="text-slate-400 italic">Belum Terbit</span>' ?>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3.5 align-top text-right font-mono">
+                                <div class="font-black text-slate-900 text-sm"><?= format_rupiah($o['total_amount']) ?></div>
+                                <div class="text-[10px] text-slate-400 mt-0.5"><?= badge_payment_method($o['payment_method']) ?></div>
+                            </td>
+                            <td class="px-4 py-3.5 align-top text-center">
+                                <?= badge_order_status($o['order_status']) ?>
+                            </td>
+                            <td class="px-4 py-3.5 align-top text-center">
+                                <a href="<?= base_url('customer/orders/' . $o['id']) ?>" 
+                                   class="px-3 py-1.5 rounded-lg bg-pink-50 text-pink-700 hover:bg-pink-100 font-bold transition inline-flex items-center gap-1 border border-pink-200"
+                                   title="Lihat Rincian PO & Sahkan BAST">
+                                    <span class="material-symbols-outlined text-[14px]">visibility</span>
+                                    <span>Lihat PO</span>
                                 </a>
                             </td>
                         </tr>

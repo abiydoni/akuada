@@ -41,19 +41,50 @@ $routes->group('auth', function ($routes) {
 $routes->group('admin', function ($routes) {
     $routes->get('/', 'AdminController::dashboard');
     $routes->get('dashboard', 'AdminController::dashboard');
-    $routes->get('transactions', 'AdminController::transactions');
-    $routes->post('transactions/update', 'AdminController::updateOrderStatus');
-    $routes->get('orders/invoice-customer/(:num)', 'AdminController::invoiceCustomer/$1');
-    $routes->get('orders/invoice-vendor/(:num)', 'AdminController::invoiceVendor/$1');
+    
+    // 1 & 2. Companies (Vendors & Buyers)
     $routes->get('vendors', 'AdminController::vendors');
     $routes->get('vendors/create', 'AdminController::createVendor');
     $routes->post('vendors/store', 'AdminController::storeVendor');
     $routes->post('vendors/update-fee', 'AdminController::updateVendorFee');
     $routes->get('vendors/toggle/(:num)', 'AdminController::toggleVendorVerification/$1');
     $routes->get('buyers', 'AdminController::buyers');
+    $routes->get('buyers/create', 'AdminController::createBuyer');
+    $routes->post('buyers/store', 'AdminController::storeBuyer');
     $routes->post('buyers/limit', 'AdminController::updateBuyerLimit');
+
+    // 3. Categories Management
+    $routes->get('categories', 'AdminController::categories');
+    $routes->post('categories/store', 'AdminController::storeCategory');
+    $routes->post('categories/update/(:num)', 'AdminController::updateCategory/$1');
+    $routes->get('categories/delete/(:num)', 'AdminController::deleteCategory/$1');
+
+    // 4 & 5. Products & Product Price Tiers
     $routes->get('products', 'AdminController::products');
+    $routes->get('products/toggle/(:num)', 'AdminController::toggleProductStatus/$1');
+    $routes->get('products/delete/(:num)', 'AdminController::deleteProduct/$1');
+
+    // 6, 7 & 8. Orders, Order Items & Order Status Logs
+    $routes->get('transactions', 'AdminController::transactions');
+    $routes->get('orders/(:num)', 'AdminController::orderDetail/$1');
+    $routes->post('transactions/update', 'AdminController::updateOrderStatus');
+    $routes->get('orders/invoice-customer/(:num)', 'AdminController::invoiceCustomer/$1');
+    $routes->get('orders/invoice-vendor/(:num)', 'AdminController::invoiceVendor/$1');
+    $routes->get('status-logs', 'AdminController::statusLogs');
+
+    // 9 & 10. RFQs & RFQ Items
     $routes->get('rfqs', 'AdminController::rfqs');
+    $routes->get('rfqs/(:num)', 'AdminController::rfqDetail/$1');
+    $routes->post('rfqs/update-status', 'AdminController::updateRfqStatus');
+
+    // 11. Users Management (Admin, Vendor, Customer Logins)
+    $routes->get('users', 'AdminController::users');
+    $routes->post('users/store', 'AdminController::storeUser');
+    $routes->post('users/update/(:num)', 'AdminController::updateUser/$1');
+    $routes->get('users/toggle/(:num)', 'AdminController::toggleUserStatus/$1');
+    $routes->post('users/reset-password/(:num)', 'AdminController::resetUserPassword/$1');
+
+    // 12. System Settings
     $routes->get('settings', 'AdminController::settings');
     $routes->post('settings/update', 'AdminController::updateSettings');
 });

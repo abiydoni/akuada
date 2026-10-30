@@ -147,10 +147,18 @@ class CartController extends BaseController
         }
         $grandTotal = $subtotal + $ppnTotal;
 
-        // Auto assign buyer company if session exists, or default to PT Mega Solusi
+        // Identify buyer company from session
         $companyModel = new CompanyModel();
-        $buyerCompanyId = session('company_id') ?? 4;
-        $buyerCompany = $companyModel->find($buyerCompanyId);
+        $buyerCompanyId = session('company_id');
+        $buyerCompany = null;
+        $isRegistered = false;
+
+        if ($buyerCompanyId) {
+            $buyerCompany = $companyModel->find($buyerCompanyId);
+            if ($buyerCompany && $buyerCompany['type'] === 'buyer' && $buyerCompany['is_verified'] == 1 && (float)$buyerCompany['credit_limit_top'] > 0) {
+                $isRegistered = true;
+            }
+        }
 
         return view('marketplace/checkout', [
             'title'        => 'Checkout Pengadaan B2B - AkuAda',
@@ -158,7 +166,8 @@ class CartController extends BaseController
             'subtotal'     => $subtotal,
             'ppnTotal'     => $ppnTotal,
             'grandTotal'   => $grandTotal,
-            'buyerCompany' => $buyerCompany
+            'buyerCompany' => $buyerCompany,
+            'isRegistered' => $isRegistered,
         ]);
     }
 
@@ -175,7 +184,17 @@ class CartController extends BaseController
         $customerNotes = $this->request->getPost('customer_notes');
         $shippingAddress = $this->request->getPost('shipping_address');
 
-        $buyerCompanyId = session('company_id') ?? 4;
+        $buyerCompanyId = session('company_id');
+        $companyModel = new CompanyModel();
+        $buyerCompany = null;
+        $isRegistered = false;
+
+        if ($buyerCompanyId) {
+            $buyerCompany = $companyModel->find($buyerCompanyId);
+            if ($buyerCompany && $buyerCompany['type'] === 'buyer' && $buyerCompany['is_verified'] == 1 && (float)$buyerCompany['credit_limit_top'] > 0) {
+                $isRegistered = true;
+            }
+        }
 
         // Group cart by vendor if multiple, or take vendor of first item
         $firstItem = reset($cart);
@@ -214,6 +233,53 @@ class CartController extends BaseController
             ]);
         }
         $grandTotal = $subtotal + $ppnTotal;
+
+        // Aturan Keras: Jika buyer belum terdaftar di AkuAda, tidak bisa membayar PO dengan kredit (TOP / PO On-Account)
+        if (str_starts_with($paymentMethod, 'top_') || $paymentMethod === 'corporate_po') {
+            if (!$isRegistered) {
+                session()->setFlashdata('error', 'Perusahaan Anda belum terdaftar resmi di AkuAda untuk fasilitas kredit. Pembayaran PO tidak dapat menggunakan kredit tempo (TOP 14-90 Hari / Corporate PO). Silakan pilih metode pembayaran Bank Virtual Account atau hubungi Superadmin AkuAda untuk pendaftaran akun fasilitas kredit.');
+                return redirect()->to('/checkout');
+            }
+
+            $creditLimit = (float)($buyerCompany['credit_limit_top'] ?? 0);
+            $creditUsed = (float)($buyerCompany['credit_used_top'] ?? 0);
+            $availableCredit = max(0, $creditLimit - $creditUsed);
+
+            if ($grandTotal > $availableCredit) {
+                session()->setFlashdata('error', 'Sisa fasilitas kredit TOP perusahaan Anda tidak mencukupi untuk pesanan ini. Tersedia: ' . format_rupiah($availableCredit) . ', Total Tagihan PO: ' . format_rupiah($grandTotal) . '. Silakan ajukan kenaikan fasilitas kredit ke Superadmin AkuAda atau gunakan pembayaran tunai/VA.');
+                return redirect()->to('/checkout');
+            }
+        }
+
+        // Jika buyer belum terdaftar resmi dan membayar dengan Bank VA (Non-Kredit)
+        if (!$buyerCompanyId) {
+            $companyName = trim($this->request->getPost('guest_company_name') ?: '');
+            if (empty($companyName)) {
+                $companyName = 'Perusahaan Pembeli Baru (Non-Kredit)';
+            }
+            $legalType = $this->request->getPost('guest_legal_type') ?: 'PT';
+            $npwp = $this->request->getPost('guest_npwp') ?: null;
+            $email = $this->request->getPost('guest_email') ?: 'purchasing@tamu.co.id';
+            $phone = $this->request->getPost('guest_phone') ?: null;
+            $picName = $this->request->getPost('guest_pic_name') ?: 'PIC Purchasing';
+
+            $buyerCompanyId = $companyModel->insert([
+                'type'             => 'buyer',
+                'company_name'     => $companyName,
+                'legal_type'       => $legalType,
+                'npwp'             => $npwp,
+                'email'            => $email,
+                'phone'            => $phone,
+                'pic_name'         => $picName,
+                'pic_phone'        => $phone,
+                'pic_email'        => $email,
+                'credit_limit_top' => 0.00, // Tidak ada fasilitas kredit
+                'credit_used_top'  => 0.00,
+                'is_verified'      => 0, // Belum terverifikasi
+                'created_at'       => date('Y-m-d H:i:s'),
+                'updated_at'       => date('Y-m-d H:i:s'),
+            ]);
+        }
 
         // Determine due date according to payment method
         $days = 30;
@@ -282,10 +348,8 @@ class CartController extends BaseController
         );
 
         // If paying with TOP credit, update credit used on buyer company
-        $companyModel = new CompanyModel();
-        $company = $companyModel->find($buyerCompanyId);
-        if ($company && str_starts_with($paymentMethod, 'top_')) {
-            $newUsed = (float)$company['credit_used_top'] + $grandTotal;
+        if ($buyerCompany && (str_starts_with($paymentMethod, 'top_') || $paymentMethod === 'corporate_po')) {
+            $newUsed = (float)$buyerCompany['credit_used_top'] + $grandTotal;
             $companyModel->update($buyerCompanyId, ['credit_used_top' => $newUsed]);
             session()->set('credit_used_top', $newUsed);
         }

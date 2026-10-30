@@ -16,6 +16,23 @@ class ProductModel extends Model
     ];
     protected $useTimestamps = true;
 
+    public function getAllProductsForAdmin($limit = 100)
+    {
+        $products = $this->select('products.*, companies.company_name as vendor_name, companies.is_verified as vendor_verified, categories.name as category_name')
+                         ->join('companies', 'companies.id = products.vendor_company_id', 'left')
+                         ->join('categories', 'categories.id = products.category_id', 'left')
+                         ->orderBy('products.id', 'DESC')
+                         ->findAll($limit);
+
+        $tierModel = new ProductPriceTierModel();
+        foreach ($products as &$p) {
+            $p['tiers'] = $tierModel->where('product_id', $p['id'])->orderBy('min_qty', 'ASC')->findAll();
+            $p['tier_count'] = count($p['tiers']);
+        }
+
+        return $products;
+    }
+
     public function getDetailedProducts($limit = 20, $categoryId = null, $keyword = null)
     {
         $builder = $this->select('products.*, companies.company_name as vendor_name, companies.is_verified as vendor_verified, categories.name as category_name')

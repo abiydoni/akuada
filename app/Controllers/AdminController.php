@@ -3,9 +3,14 @@
 namespace App\Controllers;
 
 use App\Models\OrderModel;
+use App\Models\OrderItemModel;
+use App\Models\OrderStatusLogModel;
 use App\Models\CompanyModel;
 use App\Models\ProductModel;
+use App\Models\ProductPriceTierModel;
+use App\Models\CategoryModel;
 use App\Models\RfqModel;
+use App\Models\RfqItemModel;
 use App\Models\SettingModel;
 use App\Models\UserModel;
 
@@ -98,11 +103,14 @@ class AdminController extends BaseController
         $status = $this->request->getPost('order_status');
         $paymentStatus = $this->request->getPost('payment_status');
 
+        $bastNumber       = $this->request->getPost('bast_number');
+        $taxInvoiceNumber = $this->request->getPost('tax_invoice_number');
+
         $orderModel = new OrderModel();
         $data = ['order_status' => $status];
-        if ($paymentStatus) {
-            $data['payment_status'] = $paymentStatus;
-        }
+        if ($paymentStatus)    { $data['payment_status']      = $paymentStatus; }
+        if ($bastNumber)       { $data['bast_number']         = $bastNumber; }
+        if ($taxInvoiceNumber) { $data['tax_invoice_number']  = $taxInvoiceNumber; }
 
         $orderModel->update($orderId, $data);
 
@@ -120,7 +128,7 @@ class AdminController extends BaseController
         ];
         $statusTitle = $statusLabels[$status] ?? ucfirst($status);
 
-        $logModel = new \App\Models\OrderStatusLogModel();
+        $logModel = new OrderStatusLogModel();
         $logModel->logStatus($orderId, $status, $statusTitle, 'Status diperbarui oleh Superadmin Platform AkuAda.', session('user_name') ?? 'Superadmin');
 
         session()->setFlashdata('success', 'Status PO dan Transaksi berhasil diperbarui menjadi: ' . $statusTitle);
@@ -259,6 +267,77 @@ class AdminController extends BaseController
         ]);
     }
 
+    public function createBuyer()
+    {
+        $defaultCredit = (float)get_system_setting('default_credit_limit', 100000000);
+        return view('admin/buyer_create', [
+            'title'         => 'Daftarkan Perusahaan Buyer Baru & Alokasi Kredit - Superadmin AkuAda',
+            'defaultCredit' => $defaultCredit,
+        ]);
+    }
+
+    public function storeBuyer()
+    {
+        $companyName = $this->request->getPost('company_name');
+        $legalType = $this->request->getPost('legal_type') ?? 'PT';
+        $npwp = $this->request->getPost('npwp');
+        $nib = $this->request->getPost('nib');
+        $address = $this->request->getPost('address');
+        $city = $this->request->getPost('city') ?? 'Jakarta Selatan';
+        $province = $this->request->getPost('province') ?? 'DKI Jakarta';
+        $phone = $this->request->getPost('phone');
+        $email = $this->request->getPost('email');
+        $picName = $this->request->getPost('pic_name');
+        $picPhone = $this->request->getPost('pic_phone');
+        $picEmail = $this->request->getPost('pic_email') ?: $email;
+        $creditLimit = (float)$this->request->getPost('credit_limit_top');
+        $password = $this->request->getPost('password') ?: 'admin123';
+        $position = $this->request->getPost('position') ?: 'Procurement Manager';
+
+        $now = date('Y-m-d H:i:s');
+
+        $companyModel = new CompanyModel();
+        $companyId = $companyModel->insert([
+            'type'             => 'buyer',
+            'company_name'     => $companyName,
+            'legal_type'       => $legalType,
+            'npwp'             => $npwp,
+            'nib'              => $nib,
+            'address'          => $address,
+            'city'             => $city,
+            'province'         => $province,
+            'phone'            => $phone,
+            'email'            => $email,
+            'pic_name'         => $picName,
+            'pic_phone'        => $picPhone,
+            'pic_email'        => $picEmail,
+            'credit_limit_top' => $creditLimit,
+            'credit_used_top'  => 0.00,
+            'commission_rate'  => 0.00,
+            'is_verified'      => 1,
+            'created_at'       => $now,
+            'updated_at'       => $now,
+        ]);
+
+        $userModel = new UserModel();
+        $userModel->insert([
+            'name'       => $picName . ' (' . $companyName . ')',
+            'email'      => $email,
+            'password'   => password_hash($password, PASSWORD_BCRYPT),
+            'role'       => 'customer',
+            'phone'      => $picPhone,
+            'company_id' => $companyId,
+            'position'   => $position,
+            'avatar'     => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
+            'status'     => 'active',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        session()->setFlashdata('success', 'Perusahaan Buyer ' . $companyName . ' berhasil didaftarkan dengan fasilitas kredit TOP sebesar ' . format_rupiah($creditLimit) . '! Tim procurement dapat login dengan email: ' . $email);
+        return redirect()->to('/admin/buyers');
+    }
+
     public function updateBuyerLimit()
     {
         $companyId = (int)$this->request->getPost('company_id');
@@ -274,12 +353,270 @@ class AdminController extends BaseController
     public function products()
     {
         $productModel = new ProductModel();
-        $products = $productModel->getDetailedProducts(100);
+        $products = $productModel->getAllProductsForAdmin(100);
 
         return view('admin/products', [
             'title'    => 'Pengawasan Master Barang Pengadaan - Admin AkuAda',
             'products' => $products
         ]);
+    }
+
+    public function toggleProductStatus($id)
+    {
+        $productModel = new ProductModel();
+        $product = $productModel->find($id);
+        if ($product) {
+            $newStatus = ($product['status'] === 'active') ? 'inactive' : 'active';
+            $productModel->update($id, ['status' => $newStatus]);
+            session()->setFlashdata('success', 'Status produk "' . $product['name'] . '" diubah menjadi ' . strtoupper($newStatus));
+        }
+        return redirect()->back();
+    }
+
+    public function deleteProduct($id)
+    {
+        $productModel = new ProductModel();
+        $product = $productModel->find($id);
+        if ($product) {
+            $productModel->update($id, ['status' => 'inactive']);
+            session()->setFlashdata('toast', 'Barang "' . $product['name'] . '" dinonaktifkan dari katalog.');
+        }
+        return redirect()->back();
+    }
+
+    public function orderDetail($id)
+    {
+        $orderModel = new OrderModel();
+        $order = $orderModel->getOrderWithItems($id);
+
+        if (!$order) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Pesanan tidak ditemukan');
+        }
+
+        return view('admin/order_detail', [
+            'title' => 'Detail PO & Audit Log Transaksi #' . ($order['po_number'] ?? $order['order_number']) . ' - Superadmin AkuAda',
+            'order' => $order
+        ]);
+    }
+
+    public function statusLogs()
+    {
+        $logModel = new OrderStatusLogModel();
+        $logs = $logModel->select('order_status_logs.*, orders.po_number, orders.order_number, buyer.company_name as buyer_name, vendor.company_name as vendor_name')
+                         ->join('orders', 'orders.id = order_status_logs.order_id', 'left')
+                         ->join('companies as buyer', 'buyer.id = orders.customer_company_id', 'left')
+                         ->join('companies as vendor', 'vendor.id = orders.vendor_company_id', 'left')
+                         ->orderBy('order_status_logs.id', 'DESC')
+                         ->findAll(100);
+
+        return view('admin/status_logs', [
+            'title' => 'Audit Log Status Transaksi B2B (Timeline History) - Admin AkuAda',
+            'logs'  => $logs
+        ]);
+    }
+
+    public function categories()
+    {
+        $catModel = new CategoryModel();
+        $categories = $catModel->getWithCount();
+
+        return view('admin/categories', [
+            'title'      => 'Manajemen Kategori Pengadaan B2B - Admin AkuAda',
+            'categories' => $categories,
+        ]);
+    }
+
+    public function storeCategory()
+    {
+        $name = $this->request->getPost('name');
+        $slug = $this->request->getPost('slug') ?: url_title($name, '-', true);
+        $icon = $this->request->getPost('icon') ?: 'category';
+        $desc = $this->request->getPost('description');
+        $order = (int)($this->request->getPost('sort_order') ?? 0);
+
+        $catModel = new CategoryModel();
+        $catModel->insert([
+            'name'        => $name,
+            'slug'        => $slug,
+            'icon'        => $icon,
+            'description' => $desc,
+            'sort_order'  => $order,
+        ]);
+
+        session()->setFlashdata('success', 'Kategori baru "' . $name . '" berhasil ditambahkan!');
+        return redirect()->to('/admin/categories');
+    }
+
+    public function updateCategory($id)
+    {
+        $name = $this->request->getPost('name');
+        $slug = $this->request->getPost('slug') ?: url_title($name, '-', true);
+        $icon = $this->request->getPost('icon') ?: 'category';
+        $desc = $this->request->getPost('description');
+        $order = (int)($this->request->getPost('sort_order') ?? 0);
+
+        $catModel = new CategoryModel();
+        $catModel->update($id, [
+            'name'        => $name,
+            'slug'        => $slug,
+            'icon'        => $icon,
+            'description' => $desc,
+            'sort_order'  => $order,
+        ]);
+
+        session()->setFlashdata('success', 'Data kategori "' . $name . '" berhasil diperbarui!');
+        return redirect()->to('/admin/categories');
+    }
+
+    public function deleteCategory($id)
+    {
+        $prodModel = new ProductModel();
+        $count = $prodModel->where('category_id', $id)->countAllResults();
+
+        if ($count > 0) {
+            session()->setFlashdata('error', 'Kategori tidak dapat dihapus karena masih digunakan oleh ' . $count . ' produk pengadaan.');
+            return redirect()->to('/admin/categories');
+        }
+
+        $catModel = new CategoryModel();
+        $cat = $catModel->find($id);
+        $catModel->delete($id);
+
+        session()->setFlashdata('success', 'Kategori "' . ($cat['name'] ?? '') . '" berhasil dihapus.');
+        return redirect()->to('/admin/categories');
+    }
+
+    public function rfqDetail($id)
+    {
+        $rfqModel = new RfqModel();
+        $rfq = $rfqModel->getRfqWithItems($id);
+
+        if (!$rfq) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('RFQ tidak ditemukan');
+        }
+
+        return view('admin/rfq_detail', [
+            'title' => 'Detail RFQ Pengadaan #' . $rfq['rfq_number'] . ' - Superadmin AkuAda',
+            'rfq'   => $rfq
+        ]);
+    }
+
+    public function updateRfqStatus()
+    {
+        $rfqId = (int)$this->request->getPost('rfq_id');
+        $status = $this->request->getPost('status');
+
+        $rfqModel = new RfqModel();
+        $rfqModel->update($rfqId, [
+            'status'     => $status,
+            'updated_at' => date('Y-m-d H:i:s')
+        ]);
+
+        session()->setFlashdata('success', 'Status RFQ #' . $rfqId . ' berhasil diperbarui menjadi ' . strtoupper($status));
+        return redirect()->back();
+    }
+
+    public function users()
+    {
+        $userModel = new UserModel();
+        $companyModel = new CompanyModel();
+
+        $roleFilter = $this->request->getGet('role');
+        $users = $userModel->getAllUsersWithCompany($roleFilter);
+        $companies = $companyModel->orderBy('company_name', 'ASC')->findAll();
+
+        return view('admin/users', [
+            'title'      => 'Manajemen Akun Pengguna (Users) - Superadmin AkuAda',
+            'users'      => $users,
+            'companies'  => $companies,
+            'roleFilter' => $roleFilter,
+        ]);
+    }
+
+    public function storeUser()
+    {
+        $name = $this->request->getPost('name');
+        $email = $this->request->getPost('email');
+        $phone = $this->request->getPost('phone');
+        $role = $this->request->getPost('role') ?? 'customer';
+        $companyId = $this->request->getPost('company_id') ?: null;
+        $position = $this->request->getPost('position') ?: 'Staff';
+        $password = $this->request->getPost('password') ?: 'admin123';
+        $status = $this->request->getPost('status') ?: 'active';
+
+        $now = date('Y-m-d H:i:s');
+        $userModel = new UserModel();
+        $userModel->insert([
+            'name'       => $name,
+            'email'      => $email,
+            'password'   => password_hash($password, PASSWORD_BCRYPT),
+            'role'       => $role,
+            'phone'      => $phone,
+            'company_id' => $companyId,
+            'position'   => $position,
+            'status'     => $status,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        session()->setFlashdata('success', 'Pengguna baru ' . $name . ' (' . strtoupper($role) . ') berhasil dibuat!');
+        return redirect()->to('/admin/users');
+    }
+
+    public function updateUser($id)
+    {
+        $name = $this->request->getPost('name');
+        $email = $this->request->getPost('email');
+        $phone = $this->request->getPost('phone');
+        $role = $this->request->getPost('role');
+        $companyId = $this->request->getPost('company_id') ?: null;
+        $position = $this->request->getPost('position');
+        $status = $this->request->getPost('status');
+
+        $data = [
+            'name'       => $name,
+            'email'      => $email,
+            'phone'      => $phone,
+            'role'       => $role,
+            'company_id' => $companyId,
+            'position'   => $position,
+            'status'     => $status,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $userModel = new UserModel();
+        $userModel->update($id, $data);
+
+        session()->setFlashdata('success', 'Data pengguna ' . $name . ' berhasil diperbarui.');
+        return redirect()->to('/admin/users');
+    }
+
+    public function toggleUserStatus($id)
+    {
+        $userModel = new UserModel();
+        $user = $userModel->find($id);
+        if ($user) {
+            $newStatus = ($user['status'] === 'active') ? 'suspended' : 'active';
+            $userModel->update($id, ['status' => $newStatus]);
+            session()->setFlashdata('toast', 'Status akun ' . $user['name'] . ' diubah menjadi ' . strtoupper($newStatus));
+        }
+        return redirect()->back();
+    }
+
+    public function resetUserPassword($id)
+    {
+        $userModel = new UserModel();
+        $user = $userModel->find($id);
+        $newPassword = $this->request->getPost('new_password') ?: 'admin123';
+
+        if ($user) {
+            $userModel->update($id, [
+               'password'   => password_hash($newPassword, PASSWORD_BCRYPT),
+               'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            session()->setFlashdata('success', 'Kata sandi untuk ' . $user['email'] . ' berhasil direset menjadi: ' . $newPassword);
+        }
+        return redirect()->back();
     }
 
     public function rfqs()

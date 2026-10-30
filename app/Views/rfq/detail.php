@@ -3,7 +3,7 @@
 <?= $this->section('subcontent') ?>
 
 <div class="bg-slate-100 py-6 border-b border-slate-200">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
             <div class="flex items-center gap-2 text-xs text-slate-500 mb-1">
                 <a href="<?= base_url('rfq') ?>" class="hover:text-purple-600">Daftar RFQ</a>
@@ -20,7 +20,7 @@
     </div>
 </div>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         <!-- Left: RFQ Items (8 Cols) -->
@@ -29,27 +29,27 @@
                 <h3 class="text-sm font-bold text-slate-800 pb-3 border-b border-slate-100">Daftar Spesifikasi & Penawaran Harga Barang</h3>
             </div>
 
-            <div class="overflow-x-auto p-6 pt-0">
-                <table class="w-full text-xs text-left">
-                    <thead class="bg-slate-50 text-slate-600 font-bold uppercase text-[10px]">
+            <div class="w-full p-6 pt-0">
+                <table class="w-full text-xs text-left border-collapse">
+                    <thead class="bg-slate-50/90 border-b border-slate-200 text-slate-600 font-semibold uppercase text-[11px] tracking-wider">
                         <tr>
-                            <th class="p-3">Nama Barang</th>
-                            <th class="p-3">Qty</th>
-                            <th class="p-3">Target Buyer</th>
-                            <th class="p-3">Penawaran Vendor</th>
-                            <th class="p-3">Catatan</th>
+                            <th class="px-4 py-3.5">Nama Barang / Spesifikasi</th>
+                            <th class="px-4 py-3.5 text-center w-28">Kuantitas</th>
+                            <th class="px-4 py-3.5 text-right w-36">Target Buyer</th>
+                            <th class="px-4 py-3.5 text-right w-44">Penawaran Vendor</th>
+                            <th class="px-4 py-3.5 w-44">Catatan</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody class="divide-y divide-slate-100 bg-white">
                         <?php foreach ($rfq['items'] as $item): ?>
-                            <tr>
-                                <td class="p-3 font-semibold text-slate-900"><?= esc($item['item_name']) ?></td>
-                                <td class="p-3 font-bold"><?= $item['qty'] ?> <?= esc($item['uom']) ?></td>
-                                <td class="p-3 text-slate-600"><?= $item['target_unit_price'] ? format_rupiah($item['target_unit_price']) : '-' ?></td>
-                                <td class="p-3 font-extrabold text-purple-700">
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="px-4 py-3.5 align-top font-bold text-slate-900 leading-snug break-words"><?= esc($item['item_name']) ?></td>
+                                <td class="px-4 py-3.5 align-top text-center whitespace-nowrap font-bold text-slate-800"><?= number_format($item['qty']) ?> <?= esc($item['uom']) ?></td>
+                                <td class="px-4 py-3.5 align-top text-right whitespace-nowrap font-mono text-slate-600"><?= $item['target_unit_price'] ? format_rupiah($item['target_unit_price']) : '-' ?></td>
+                                <td class="px-4 py-3.5 align-top text-right whitespace-nowrap font-mono font-bold text-purple-700">
                                     <?= $item['vendor_offered_price'] ? format_rupiah($item['vendor_offered_price']) : '<span class="text-amber-600 font-normal italic">Menunggu Quota</span>' ?>
                                 </td>
-                                <td class="p-3 text-slate-500"><?= esc($item['notes'] ?? '-') ?></td>
+                                <td class="px-4 py-3.5 align-top text-slate-500 break-words"><?= esc($item['notes'] ?? '-') ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

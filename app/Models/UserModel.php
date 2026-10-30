@@ -21,4 +21,16 @@ class UserModel extends Model
                     ->where('users.id', $userId)
                     ->first();
     }
+
+    public function getAllUsersWithCompany($role = null)
+    {
+        $builder = $this->select('users.*, companies.company_name, companies.type as company_type, companies.legal_type, companies.is_verified as company_verified')
+                        ->join('companies', 'companies.id = users.company_id', 'left');
+
+        if ($role && in_array($role, ['admin', 'vendor', 'customer'])) {
+            $builder->where('users.role', $role);
+        }
+
+        return $builder->orderBy('users.id', 'DESC')->findAll();
+    }
 }

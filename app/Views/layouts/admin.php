@@ -5,7 +5,7 @@
 
     <!-- Admin Top Navbar -->
     <header class="bg-slate-900 text-white border-b border-purple-900/60 sticky top-0 z-30 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <a href="<?= base_url('admin/dashboard') ?>" class="flex items-center gap-2 group">
                     <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 flex items-center justify-center text-white shadow-md">
@@ -33,7 +33,7 @@
         </div>
     </header>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-grow flex flex-col md:flex-row gap-6">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-grow flex flex-col md:flex-row gap-6">
         
         <!-- Admin Sidebar Navigation -->
         <aside class="w-full md:w-64 flex-shrink-0">
@@ -62,8 +62,23 @@
                         <a href="<?= base_url('admin/products') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'admin/products') ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">inventory_2</span> Katalog & Master Barang
                         </a>
+                        <a href="<?= base_url('admin/categories') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'admin/categories') ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
+                            <span class="material-symbols-outlined text-[18px]">category</span> Master Kategori
+                        </a>
                         <a href="<?= base_url('admin/rfqs') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'admin/rfqs') ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">request_quote</span> Pengawasan RFQ
+                        </a>
+                    </nav>
+                </div>
+
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-600 px-3">Kelola Akun & Audit</span>
+                    <nav class="mt-2 space-y-1">
+                        <a href="<?= base_url('admin/users') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'admin/users') ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
+                            <span class="material-symbols-outlined text-[18px]">manage_accounts</span> Manajemen Pengguna
+                        </a>
+                        <a href="<?= base_url('admin/status-logs') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'admin/status-logs') ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
+                            <span class="material-symbols-outlined text-[18px]">history</span> Log Status Pesanan
                         </a>
                     </nav>
                 </div>
