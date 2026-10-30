@@ -149,7 +149,7 @@ class CartController extends BaseController
 
         // Identify buyer company from session
         $companyModel = new CompanyModel();
-        $buyerCompanyId = session('company_id');
+        $buyerCompanyId = (session('user_role') === 'customer' && session('company_id')) ? session('company_id') : ($companyModel->where('type', 'buyer')->countAllResults() === 1 ? ensure_role_session('customer') : session('company_id'));
         $buyerCompany = null;
         $isRegistered = false;
 
@@ -184,7 +184,7 @@ class CartController extends BaseController
         $customerNotes = $this->request->getPost('customer_notes');
         $shippingAddress = $this->request->getPost('shipping_address');
 
-        $buyerCompanyId = session('company_id');
+        $buyerCompanyId = (session('user_role') === 'customer' && session('company_id')) ? session('company_id') : ($companyModel->where('type', 'buyer')->countAllResults() === 1 ? ensure_role_session('customer') : session('company_id'));
         $companyModel = new CompanyModel();
         $buyerCompany = null;
         $isRegistered = false;
@@ -312,7 +312,10 @@ class CartController extends BaseController
             'bast_number'          => 'BAST/AKUADA/' . date('Ym') . '/' . rand(100, 999),
             'invoice_number'       => 'INV/AKUADA/' . date('Ym') . '/' . rand(100, 999),
             'tax_invoice_number'   => '010.002-26.' . rand(10000000, 99999999),
-            'due_date'             => $dueDate,
+            'due_date'               => $dueDate,
+            'vendor_invoice_number'  => 'VINV/' . date('Ym') . '/' . rand(100, 999),
+            'vendor_payout_status'   => 'unpaid',
+            'vendor_payout_due_date' => date('Y-m-d', strtotime('+7 days')),
             'created_at'           => $now,
             'updated_at'           => $now,
         ]);

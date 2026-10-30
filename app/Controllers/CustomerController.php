@@ -10,7 +10,7 @@ class CustomerController extends BaseController
 {
     private function getBuyerCompanyId()
     {
-        return session('company_id') ?? 4; // Default to PT Mega Solusi Digital Tbk
+        return ensure_role_session('customer');
     }
 
     public function dashboard()
@@ -187,5 +187,90 @@ class CustomerController extends BaseController
             'title'   => 'Profil Legalitas Perusahaan - AkuAda B2B',
             'company' => $company
         ]);
+    }
+
+    public function payables()
+    {
+        $buyerId = $this->getBuyerCompanyId();
+        $orderModel = new OrderModel();
+        $companyModel = new CompanyModel();
+
+        $company = $companyModel->find($buyerId);
+        $orders = $orderModel->getDetailedOrders($buyerId, 'customer');
+
+        $totalUnpaid = 0;
+        $totalOverdue = 0;
+        $totalPaid = 0;
+        $today = date('Y-m-d');
+
+        foreach ($orders as $o) {
+            $amt = (float)$o['total_amount'];
+            $dueDate = $o['due_date'] ?: date('Y-m-d', strtotime($o['created_at'] . ' +30 days'));
+            if ($o['payment_status'] === 'paid') {
+                $totalPaid += $amt;
+            } else {
+                $totalUnpaid += $amt;
+                if ($dueDate < $today || $o['payment_status'] === 'overdue') {
+                    $totalOverdue += $amt;
+                }
+            }
+        }
+
+        return view('customer/payables', [
+            'title'        => 'Daftar Hutang Tagihan TOP & Pembayaran - AkuAda B2B',
+            'company'      => $company,
+            'orders'       => $orders,
+            'totalUnpaid'  => $totalUnpaid,
+            'totalOverdue' => $totalOverdue,
+            'totalPaid'    => $totalPaid,
+        ]);
+    }
+
+    public function payDebt()
+    {
+        $orderId = (int)$this->request->getPost('order_id');
+        $paymentBank = $this->request->getPost('payment_bank') ?: 'Bank Mandiri Escrow AkuAda';
+        $paymentRef = $this->request->getPost('payment_ref') ?: ('TRF-BUYER-' . date('YmdHis'));
+
+        $orderModel = new OrderModel();
+        $order = $orderModel->find($orderId);
+
+        if (!$order) {
+            session()->setFlashdata('error', 'Tagihan PO tidak ditemukan.');
+            return redirect()->back();
+        }
+
+        if ($order['payment_status'] !== 'paid') {
+            $now = date('Y-m-d H:i:s');
+            $orderModel->update($orderId, [
+                'payment_status'     => 'paid',
+                'buyer_paid_at'      => $now,
+                'buyer_payment_bank' => $paymentBank,
+                'buyer_payment_ref'  => $paymentRef,
+                'updated_at'         => $now,
+            ]);
+
+            $companyModel = new CompanyModel();
+            $company = $companyModel->find($order['customer_company_id']);
+            if ($company) {
+                $newUsed = max(0, (float)$company['credit_used_top'] - (float)$order['total_amount']);
+                $companyModel->update($company['id'], ['credit_used_top' => $newUsed]);
+                if (session('company_id') == $company['id']) {
+                    session()->set('credit_used_top', $newUsed);
+                }
+            }
+
+            $logModel = new \App\Models\OrderStatusLogModel();
+            $logModel->logStatus(
+                $orderId,
+                $order['order_status'],
+                'Pelunasan Hutang Tagihan PO oleh Buyer',
+                'Pembayaran tagihan sebesar ' . format_rupiah($order['total_amount']) . ' telah dilunasi ke ' . $paymentBank . ' (No. Ref: ' . $paymentRef . '). Plafon kredit TOP telah dipulihkan.',
+                session('user_name') ?? 'Corporate Buyer'
+            );
+        }
+
+        session()->setFlashdata('success', 'Pembayaran hutang untuk PO #' . ($order['po_number'] ?? $order['order_number']) . ' berhasil diproses & plafon kredit TOP Anda telah dipulihkan!');
+        return redirect()->to('/customer/payables');
     }
 }

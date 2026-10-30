@@ -14,7 +14,7 @@ class VendorController extends BaseController
 {
     private function getVendorCompanyId()
     {
-        return session('company_id') ?? 1; // Default to PT Mitra Office Solusindo
+        return ensure_role_session('vendor');
     }
 
     public function dashboard()
@@ -100,8 +100,8 @@ class VendorController extends BaseController
         }
 
         return view('vendor/invoice', [
-            'title' => 'Faktur Penagihan Vendor ke AkuAda - ' . ($order['vendor_invoice_number'] ?? $order['po_number']),
-            'order' => $order,
+            'title'   => 'Faktur Penagihan Vendor ke AkuAda - ' . ($order['vendor_invoice_number'] ?? $order['po_number']),
+            'order'   => $order,
             'isAdmin' => false
         ]);
     }
@@ -232,7 +232,6 @@ class VendorController extends BaseController
             'updated_at'          => $now,
         ]);
 
-        // Tier pricing
         $tierMin = $this->request->getPost('tier_min') ?? [];
         $tierMax = $this->request->getPost('tier_max') ?? [];
         $tierPrice = $this->request->getPost('tier_price') ?? [];
@@ -350,7 +349,6 @@ class VendorController extends BaseController
             'updated_at'          => $now,
         ]);
 
-        // Update Tier pricing: remove existing and re-insert
         $tierMin = $this->request->getPost('tier_min') ?? [];
         $tierMax = $this->request->getPost('tier_max') ?? [];
         $tierPrice = $this->request->getPost('tier_price') ?? [];
@@ -384,7 +382,6 @@ class VendorController extends BaseController
                                 ->first();
 
         if ($product) {
-            // Set inactive
             $productModel->update($id, ['status' => 'inactive']);
             session()->setFlashdata('toast', 'Barang ' . $product['name'] . ' dinonaktifkan dari katalog.');
         }
@@ -437,5 +434,58 @@ class VendorController extends BaseController
             'title'   => 'Profil Legalitas Vendor - AkuAda B2B',
             'company' => $company
         ]);
+    }
+
+    public function settlements()
+    {
+        $vendorId = $this->getVendorCompanyId();
+        $orderModel = new OrderModel();
+        $companyModel = new CompanyModel();
+
+        $company = $companyModel->find($vendorId);
+        $orders = $orderModel->getDetailedOrders($vendorId, 'vendor');
+
+        $totalUnpaidNet = 0;
+        $totalOverdueNet = 0;
+        $totalPaidNet = 0;
+        $today = date('Y-m-d');
+
+        foreach ($orders as $o) {
+            $fee = (float)($o['total_vendor_fee'] ?? 0);
+            $net = (float)($o['vendor_net_payout'] ?? ($o['subtotal'] - $fee)) + (float)($o['ppn_amount'] ?? 0);
+            $payoutDue = $o['vendor_payout_due_date'] ?: date('Y-m-d', strtotime($o['created_at'] . ' +7 days'));
+            if (($o['vendor_payout_status'] ?? 'unpaid') === 'paid') {
+                $totalPaidNet += $net;
+            } else {
+                $totalUnpaidNet += $net;
+                if ($payoutDue < $today) {
+                    $totalOverdueNet += $net;
+                }
+            }
+        }
+
+        return view('vendor/settlements', [
+            'title'           => 'Piutang Settlement & Pencairan Dana - Vendor AkuAda',
+            'company'         => $company,
+            'orders'          => $orders,
+            'totalUnpaidNet'  => $totalUnpaidNet,
+            'totalOverdueNet' => $totalOverdueNet,
+            'totalPaidNet'    => $totalPaidNet,
+        ]);
+    }
+
+    public function updateBankAccount()
+    {
+        $vendorId = $this->getVendorCompanyId();
+        $companyModel = new CompanyModel();
+        $companyModel->update($vendorId, [
+            'bank_name'           => $this->request->getPost('bank_name'),
+            'bank_account_number' => $this->request->getPost('bank_account_number'),
+            'bank_account_holder' => $this->request->getPost('bank_account_holder'),
+            'updated_at'          => date('Y-m-d H:i:s'),
+        ]);
+
+        session()->setFlashdata('success', 'Rekening bank pencairan dana settlement berhasil diperbarui!');
+        return redirect()->to('/vendor/settlements');
     }
 }

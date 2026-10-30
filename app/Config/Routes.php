@@ -71,6 +71,9 @@ $routes->group('admin', function ($routes) {
     $routes->get('orders/invoice-customer/(:num)', 'AdminController::invoiceCustomer/$1');
     $routes->get('orders/invoice-vendor/(:num)', 'AdminController::invoiceVendor/$1');
     $routes->get('status-logs', 'AdminController::statusLogs');
+    $routes->get('debts', 'AdminController::debts');
+    $routes->post('debts/confirm-buyer', 'AdminController::confirmBuyerPayment');
+    $routes->post('debts/pay-vendor', 'AdminController::payVendorDebt');
 
     // 9 & 10. RFQs & RFQ Items
     $routes->get('rfqs', 'AdminController::rfqs');
@@ -107,6 +110,8 @@ $routes->group('vendor', function ($routes) {
     $routes->get('rfqs', 'VendorController::rfqs');
     $routes->post('rfqs/quote', 'VendorController::submitQuote');
     $routes->get('company-profile', 'VendorController::companyProfile');
+    $routes->get('settlements', 'VendorController::settlements');
+    $routes->post('settlements/update-bank', 'VendorController::updateBankAccount');
 });
 
 // 7. Dashboard Customer (Corporate Buyer / Perusahaan)
@@ -123,4 +128,6 @@ $routes->group('customer', function ($routes) {
     $routes->get('credit-limit', 'CustomerController::creditLimit');
     $routes->post('credit-limit/request', 'CustomerController::requestLimitIncrease');
     $routes->get('company-profile', 'CustomerController::companyProfile');
+    $routes->get('payables', 'CustomerController::payables');
+    $routes->post('payables/pay', 'CustomerController::payDebt');
 });

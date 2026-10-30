@@ -11,7 +11,7 @@
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-6 text-xs">
         <div class="flex items-center gap-4 pb-4 border-b border-slate-100">
             <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-pink-600 via-purple-600 to-indigo-600 text-white flex items-center justify-center font-extrabold text-2xl shadow-md">
-                <?= substr($company['company_name'], 3, 2) ?>
+                <?= esc(strtoupper(substr($company['company_name'] ?? 'PT', 0, 2))) ?>
             </div>
             <div>
                 <div class="flex items-center gap-2">

@@ -47,6 +47,9 @@
                         <a href="<?= base_url('admin/transactions') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'admin/transactions') ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">receipt_long</span> Transaksi & PO Masuk
                         </a>
+                        <a href="<?= base_url('admin/debts') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'admin/debts') ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
+                            <span class="material-symbols-outlined text-[18px]">account_balance_wallet</span> Hutang Piutang & Settlement
+                        </a>
                     </nav>
                 </div>
 

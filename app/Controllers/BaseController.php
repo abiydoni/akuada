@@ -43,6 +43,12 @@ abstract class BaseController extends Controller
         parent::initController($request, $response, $logger);
 
         // Preload any models, libraries, etc, here.
+        if (!session('user_role')) {
+            $buyerCount = (new \App\Models\CompanyModel())->where('type', 'buyer')->countAllResults();
+            if ($buyerCount === 1) {
+                ensure_role_session('customer');
+            }
+        }
         // $this->session = service('session');
     }
 }

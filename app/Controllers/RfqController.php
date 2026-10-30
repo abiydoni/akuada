@@ -52,7 +52,7 @@ class RfqController extends BaseController
         $targetPrices = $this->request->getPost('target_unit_price') ?? [];
         $itemNotes = $this->request->getPost('item_notes') ?? [];
 
-        $buyerCompanyId = session('company_id') ?? 4;
+        $buyerCompanyId = ensure_role_session('customer');
         $rfqNumber = 'RFQ-' . date('Ym') . '-' . sprintf('%04d', rand(100, 9999));
         $now = date('Y-m-d H:i:s');
 

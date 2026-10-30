@@ -671,4 +671,136 @@ class AdminController extends BaseController
         session()->setFlashdata('success', 'Pengaturan sistem, tarif fee vendor, pajak, dan design tokens berhasil disimpan!');
         return redirect()->back();
     }
+
+    public function debts()
+    {
+        $orderModel = new OrderModel();
+        $orders = $orderModel->getDetailedOrders();
+
+        $buyerUnpaidTotal = 0;
+        $buyerOverdueTotal = 0;
+        $buyerPaidTotal = 0;
+
+        $vendorUnpaidTotal = 0;
+        $vendorOverdueTotal = 0;
+        $vendorPaidTotal = 0;
+
+        $today = date('Y-m-d');
+
+        foreach ($orders as $o) {
+            $buyerAmt = (float)$o['total_amount'];
+            $buyerDue = $o['due_date'] ?: date('Y-m-d', strtotime($o['created_at'] . ' +30 days'));
+            if ($o['payment_status'] === 'paid') {
+                $buyerPaidTotal += $buyerAmt;
+            } else {
+                $buyerUnpaidTotal += $buyerAmt;
+                if ($buyerDue < $today || $o['payment_status'] === 'overdue') {
+                    $buyerOverdueTotal += $buyerAmt;
+                }
+            }
+
+            $fee = (float)($o['total_vendor_fee'] ?? 0);
+            $vendorNet = (float)($o['vendor_net_payout'] ?? ($o['subtotal'] - $fee)) + (float)($o['ppn_amount'] ?? 0);
+            $vendorDue = $o['vendor_payout_due_date'] ?: date('Y-m-d', strtotime($o['created_at'] . ' +7 days'));
+            if (($o['vendor_payout_status'] ?? 'unpaid') === 'paid') {
+                $vendorPaidTotal += $vendorNet;
+            } else {
+                $vendorUnpaidTotal += $vendorNet;
+                if ($vendorDue < $today) {
+                    $vendorOverdueTotal += $vendorNet;
+                }
+            }
+        }
+
+        return view('admin/debts', [
+            'title'              => 'Manajemen Hutang Piutang TOP & Settlement Vendor - Admin AkuAda',
+            'orders'             => $orders,
+            'buyerUnpaidTotal'   => $buyerUnpaidTotal,
+            'buyerOverdueTotal'  => $buyerOverdueTotal,
+            'buyerPaidTotal'     => $buyerPaidTotal,
+            'vendorUnpaidTotal'  => $vendorUnpaidTotal,
+            'vendorOverdueTotal' => $vendorOverdueTotal,
+            'vendorPaidTotal'    => $vendorPaidTotal,
+        ]);
+    }
+
+    public function confirmBuyerPayment()
+    {
+        $orderId = (int)$this->request->getPost('order_id');
+        $paymentBank = $this->request->getPost('payment_bank') ?: 'Bank Mandiri Escrow AkuAda';
+        $paymentRef = $this->request->getPost('payment_ref') ?: ('VERIF-AR-' . date('YmdHis'));
+
+        $orderModel = new OrderModel();
+        $order = $orderModel->find($orderId);
+
+        if ($order && $order['payment_status'] !== 'paid') {
+            $now = date('Y-m-d H:i:s');
+            $orderModel->update($orderId, [
+                'payment_status'     => 'paid',
+                'buyer_paid_at'      => $now,
+                'buyer_payment_bank' => $paymentBank,
+                'buyer_payment_ref'  => $paymentRef,
+                'updated_at'         => $now,
+            ]);
+
+            $companyModel = new CompanyModel();
+            $company = $companyModel->find($order['customer_company_id']);
+            if ($company) {
+                $newUsed = max(0, (float)$company['credit_used_top'] - (float)$order['total_amount']);
+                $companyModel->update($company['id'], ['credit_used_top' => $newUsed]);
+            }
+
+            $logModel = new OrderStatusLogModel();
+            $logModel->logStatus(
+                $orderId,
+                $order['order_status'],
+                'Verifikasi Pelunasan Piutang Buyer oleh Admin',
+                'Pelunasan tagihan sebesar ' . format_rupiah($order['total_amount']) . ' via ' . $paymentBank . ' (Ref: ' . $paymentRef . ') telah diverifikasi lunas & plafon TOP buyer dipulihkan.',
+                session('user_name') ?? 'Superadmin AkuAda'
+            );
+        }
+
+        session()->setFlashdata('success', 'Pelunasan hutang dari Buyer berhasil dikonfirmasi & plafon kredit TOP buyer telah dipulihkan!');
+        return redirect()->to('/admin/debts');
+    }
+
+    public function payVendorDebt()
+    {
+        $orderId = (int)$this->request->getPost('order_id');
+        $payoutBank = $this->request->getPost('payout_bank') ?: 'Transfer Bank Corporate';
+        $payoutRef = $this->request->getPost('payout_ref') ?: ('SETTLE-AP-' . date('YmdHis'));
+
+        $orderModel = new OrderModel();
+        $order = $orderModel->find($orderId);
+
+        if ($order && ($order['vendor_payout_status'] ?? 'unpaid') !== 'paid') {
+            $now = date('Y-m-d H:i:s');
+            $fee = (float)($order['total_vendor_fee'] ?? 0);
+            $netTotal = (float)($order['vendor_net_payout'] ?? ($order['subtotal'] - $fee)) + (float)($order['ppn_amount'] ?? 0);
+
+            $orderModel->update($orderId, [
+                'vendor_payout_status' => 'paid',
+                'vendor_paid_at'       => $now,
+                'vendor_payout_bank'   => $payoutBank,
+                'vendor_payout_ref'    => $payoutRef,
+                'updated_at'           => $now,
+            ]);
+
+            $logModel = new OrderStatusLogModel();
+            $logModel->logStatus(
+                $orderId,
+                $order['order_status'],
+                'Pencairan Settlement Hutang AkuAda ke Vendor',
+                'AkuAda telah mencairkan dana hak bersih vendor sebesar ' . format_rupiah($netTotal) . ' ke rekening ' . $payoutBank . ' (No. Ref: ' . $payoutRef . ').',
+                session('user_name') ?? 'Superadmin Finance AkuAda'
+            );
+        }
+
+        session()->setFlashdata('success', 'Pembayaran hutang settlement ke Mitra Vendor berhasil dicairkan!');
+        return redirect()->to('/admin/debts?tab=vendor');
+    }
+
+    private function _unusedSettingsStub() {
+        return redirect()->back();
+    }
 }

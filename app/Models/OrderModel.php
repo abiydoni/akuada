@@ -13,13 +13,50 @@ class OrderModel extends Model
         'subtotal', 'ppn_amount', 'total_vendor_fee', 'vendor_net_payout', 'shipping_amount', 'total_amount',
         'payment_method', 'payment_status', 'order_status',
         'tax_invoice_required', 'customer_notes', 'shipping_address',
-        'bast_number', 'invoice_number', 'vendor_invoice_number', 'tax_invoice_number', 'due_date'
+        'bast_number', 'invoice_number', 'vendor_invoice_number', 'tax_invoice_number', 'due_date',
+        'buyer_paid_at', 'buyer_payment_ref', 'buyer_payment_bank',
+        'vendor_payout_status', 'vendor_payout_due_date', 'vendor_paid_at', 'vendor_payout_ref', 'vendor_payout_bank'
     ];
     protected $useTimestamps = true;
 
+    public function __construct()
+    {
+        parent::__construct();
+        $this->ensureDebtColumns();
+    }
+
+    /**
+     * Automatically add debt & settlement tracking columns to `orders` table if not yet present
+     */
+    public function ensureDebtColumns(): void
+    {
+        static $checked = false;
+        if ($checked) {
+            return;
+        }
+        $checked = true;
+
+        try {
+            if (!$this->db->fieldExists('vendor_payout_status', 'orders')) {
+                $this->db->query("ALTER TABLE `orders`
+                    ADD COLUMN `buyer_paid_at` DATETIME NULL DEFAULT NULL,
+                    ADD COLUMN `buyer_payment_ref` VARCHAR(150) NULL DEFAULT NULL,
+                    ADD COLUMN `buyer_payment_bank` VARCHAR(100) NULL DEFAULT NULL,
+                    ADD COLUMN `vendor_payout_status` VARCHAR(30) NOT NULL DEFAULT 'unpaid',
+                    ADD COLUMN `vendor_payout_due_date` DATE NULL DEFAULT NULL,
+                    ADD COLUMN `vendor_paid_at` DATETIME NULL DEFAULT NULL,
+                    ADD COLUMN `vendor_payout_ref` VARCHAR(150) NULL DEFAULT NULL,
+                    ADD COLUMN `vendor_payout_bank` VARCHAR(100) NULL DEFAULT NULL
+                ");
+            }
+        } catch (\Throwable $e) {
+            // Ignore if columns already exist
+        }
+    }
+
     public function getDetailedOrders($companyId = null, $role = null)
     {
-        $builder = $this->select('orders.*, buyer.company_name as buyer_name, buyer.npwp as buyer_npwp, vendor.company_name as vendor_name, vendor.commission_rate as vendor_commission_rate')
+        $builder = $this->select('orders.*, buyer.company_name as buyer_name, buyer.npwp as buyer_npwp, buyer.credit_limit_top as buyer_credit_limit, buyer.credit_used_top as buyer_credit_used, vendor.company_name as vendor_name, vendor.commission_rate as vendor_commission_rate, vendor.bank_name as vendor_bank_name, vendor.bank_account_number as vendor_bank_account_number, vendor.bank_account_holder as vendor_bank_account_holder')
                         ->join('companies as buyer', 'buyer.id = orders.customer_company_id', 'left')
                         ->join('companies as vendor', 'vendor.id = orders.vendor_company_id', 'left');
 

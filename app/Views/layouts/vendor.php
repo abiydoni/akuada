@@ -47,6 +47,9 @@
                         <a href="<?= base_url('vendor/orders') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'vendor/orders') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">local_shipping</span> Pesanan PO & BAST
                         </a>
+                        <a href="<?= base_url('vendor/settlements') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'vendor/settlements') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
+                            <span class="material-symbols-outlined text-[18px]">payments</span> Piutang & Pencairan Dana
+                        </a>
                         <a href="<?= base_url('vendor/rfqs') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'vendor/rfqs') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">price_change</span> Minta Nego & RFQ
                         </a>

@@ -95,23 +95,17 @@ if (!function_exists('render_order_progress_stepper')) {
             $isCurrent = $s['rank'] === $currentRank;
 
             if ($isPast) {
-                // Completed step
                 $circleBg = 'bg-emerald-600 text-white shadow-sm ring-4 ring-emerald-50';
-                $borderLine = 'border-emerald-500';
                 $textColor = 'text-slate-800 font-bold';
                 $subColor = 'text-emerald-700 font-medium';
                 $icon = 'check_circle';
             } elseif ($isCurrent) {
-                // Active step with vibrant gradient Ungu/Biru/Pink pulse
                 $circleBg = 'bg-gradient-to-tr from-purple-700 via-blue-600 to-pink-500 text-white shadow-lg shadow-purple-500/30 ring-4 ring-purple-100 animate-pulse';
-                $borderLine = 'border-purple-600';
                 $textColor = 'text-purple-950 font-black';
                 $subColor = 'text-purple-700 font-bold';
                 $icon = $s['icon'];
             } else {
-                // Upcoming step
                 $circleBg = 'bg-slate-100 text-slate-400 border border-slate-200';
-                $borderLine = 'border-slate-200';
                 $textColor = 'text-slate-400 font-semibold';
                 $subColor = 'text-slate-400';
                 $icon = $s['icon'];
@@ -176,17 +170,12 @@ if (!function_exists('get_default_vendor_fee_rate')) {
 if (!function_exists('calculate_vendor_fee')) {
     /**
      * Calculate marketplace platform fee from vendor for a product item
-     * 
-     * @param float $subtotal Item subtotal (DPP sebelum PPN)
-     * @param float|null $customPercent Specific fee percent for product, or null to use system default
-     * @return array [percent, fee_amount, net_amount]
      */
     function calculate_vendor_fee(float $subtotal, ?float $customPercent = null): array
     {
         $percent = ($customPercent !== null && $customPercent >= 0) ? $customPercent : get_default_vendor_fee_rate();
         $feeAmount = round($subtotal * ($percent / 100), 2);
         
-        // Check minimum fee per transaction if configured
         $minFee = (float)get_system_setting('vendor_fee_min_amount', 0);
         if ($minFee > 0 && $feeAmount < $minFee) {
             $feeAmount = $minFee;
@@ -247,3 +236,75 @@ if (!function_exists('terbilang_rupiah')) {
     }
 }
 
+if (!function_exists('ensure_role_session')) {
+    /**
+     * Auto-bypass session into the active buyer/vendor account from database
+     */
+    function ensure_role_session(string $role): int
+    {
+        $companyType = ($role === 'vendor') ? 'vendor' : 'buyer';
+        $companyModel = new \App\Models\CompanyModel();
+        $userModel = new \App\Models\UserModel();
+
+        // Jika sudah aktif di role yang sama dan company_id valid dengan tipe tersebut, langsung kembalikan
+        if (session('user_role') === $role && session('company_id')) {
+            $existing = $companyModel->find(session('company_id'));
+            if ($existing && $existing['type'] === $companyType) {
+                return (int)$existing['id'];
+            }
+        }
+
+        // Ambil data company untuk tipe ini (jika masih 1 data / data pertama untuk bypass)
+        $companies = $companyModel->where('type', $companyType)->orderBy('id', 'ASC')->findAll();
+        $company = $companies[0] ?? null;
+
+        $foundUser = null;
+        if ($company) {
+            $foundUser = $userModel->where('company_id', $company['id'])->where('role', $role)->first();
+        }
+        if (!$foundUser) {
+            $foundUser = $userModel->where('role', $role)->orderBy('id', 'ASC')->first();
+        }
+
+        $user = $foundUser ? $userModel->getUserWithCompany($foundUser['id']) : null;
+
+        if (!$user && $company) {
+            $user = [
+                'id'               => 0,
+                'name'             => ($company['pic_name'] ?: $company['company_name']),
+                'email'            => $company['email'],
+                'role'             => $role,
+                'avatar'           => null,
+                'company_id'       => $company['id'],
+                'company_name'     => $company['company_name'],
+                'legal_type'       => $company['legal_type'],
+                'npwp'             => $company['npwp'],
+                'nib'              => $company['nib'],
+                'commission_rate'  => $company['commission_rate'],
+                'credit_limit_top' => $company['credit_limit_top'],
+                'credit_used_top'  => $company['credit_used_top'],
+            ];
+        }
+
+        if ($user && !empty($user['company_id'])) {
+            session()->set([
+                'user_id'          => $user['id'],
+                'user_name'        => $user['name'],
+                'user_email'       => $user['email'],
+                'user_role'        => $user['role'],
+                'user_avatar'      => $user['avatar'] ?? null,
+                'company_id'       => $user['company_id'],
+                'company_name'     => $user['company_name'],
+                'company_legal'    => $user['legal_type'] ?? 'PT',
+                'company_npwp'     => $user['npwp'] ?? null,
+                'company_nib'      => $user['nib'] ?? null,
+                'commission_rate'  => (float)($user['commission_rate'] ?? 2.50),
+                'credit_limit_top' => (float)($user['credit_limit_top'] ?? 0),
+                'credit_used_top'  => (float)($user['credit_used_top'] ?? 0),
+            ]);
+            return (int)$user['company_id'];
+        }
+
+        return (int)(session('company_id') ?? 1);
+    }
+}

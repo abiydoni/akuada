@@ -8,19 +8,42 @@ use App\Models\CompanyModel;
 class AuthController extends BaseController
 {
     /**
-     * Instant Role Switcher for seamless demonstration
+     * Instant Role Switcher / Bypass for seamless demonstration
      */
     public function switchRole(string $role)
     {
         $userModel = new UserModel();
+        $companyModel = new CompanyModel();
         $user = null;
 
-        if ($role === 'admin') {
-            $user = $userModel->getUserWithCompany(1); // Superadmin
-        } elseif ($role === 'vendor') {
-            $user = $userModel->getUserWithCompany(2); // Hendro Prasetyo - PT Mitra Office Solusindo
-        } elseif ($role === 'customer') {
-            $user = $userModel->getUserWithCompany(4); // Rina Kartika - PT Mega Solusi Digital Tbk
+        if (in_array($role, ['admin', 'vendor', 'customer'], true)) {
+            $foundUser = $userModel->where('role', $role)->orderBy('id', 'ASC')->first();
+            if ($foundUser) {
+                $user = $userModel->getUserWithCompany($foundUser['id']);
+            }
+        }
+
+        // Fallback jika tabel users belum memiliki akun untuk role tersebut namun data company ada
+        if (!$user && in_array($role, ['vendor', 'customer'], true)) {
+            $companyType = ($role === 'vendor') ? 'vendor' : 'buyer';
+            $company = $companyModel->where('type', $companyType)->orderBy('id', 'ASC')->first();
+            if ($company) {
+                $user = [
+                    'id'               => 0,
+                    'name'             => ($company['pic_name'] ?: $company['company_name']),
+                    'email'            => $company['email'],
+                    'role'             => $role,
+                    'avatar'           => null,
+                    'company_id'       => $company['id'],
+                    'company_name'     => $company['company_name'],
+                    'legal_type'       => $company['legal_type'],
+                    'npwp'             => $company['npwp'],
+                    'nib'              => $company['nib'],
+                    'commission_rate'  => $company['commission_rate'],
+                    'credit_limit_top' => $company['credit_limit_top'],
+                    'credit_used_top'  => $company['credit_used_top'],
+                ];
+            }
         }
 
         if ($user) {
@@ -29,18 +52,18 @@ class AuthController extends BaseController
                 'user_name'        => $user['name'],
                 'user_email'       => $user['email'],
                 'user_role'        => $user['role'],
-                'user_avatar'      => $user['avatar'],
+                'user_avatar'      => $user['avatar'] ?? null,
                 'company_id'       => $user['company_id'],
                 'company_name'     => $user['company_name'],
-                'company_legal'    => $user['legal_type'],
-                'company_npwp'     => $user['npwp'],
-                'company_nib'      => $user['nib'],
+                'company_legal'    => $user['legal_type'] ?? 'PT',
+                'company_npwp'     => $user['npwp'] ?? null,
+                'company_nib'      => $user['nib'] ?? null,
                 'commission_rate'  => (float)($user['commission_rate'] ?? 2.50),
                 'credit_limit_top' => (float)($user['credit_limit_top'] ?? 0),
                 'credit_used_top'  => (float)($user['credit_used_top'] ?? 0),
             ]);
 
-            session()->setFlashdata('toast', 'Beralih peran aktif sebagai: ' . $user['name'] . ' (' . strtoupper($user['role']) . ')');
+            session()->setFlashdata('toast', 'Bypass aktif sebagai: ' . $user['name'] . ' (' . ($user['company_name'] ?? strtoupper($user['role'])) . ')');
 
             if ($role === 'admin') {
                 return redirect()->to('/admin/dashboard');
