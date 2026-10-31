@@ -104,7 +104,7 @@
                             <td class="px-4 py-3.5 align-top text-center">
                                 <div class="space-y-1.5">
                                     <div class="flex items-center justify-center gap-1">
-                                        <span class="badge-ppn text-[10px]">PPN 11%</span>
+                                        <span class="badge-ppn text-[10px]">PPN <?= esc(format_tax_rate()) ?></span>
                                         <?php if ($p['tkdn_percent'] > 0): ?>
                                             <span class="badge-tkdn text-[10px]"><?= $p['tkdn_percent'] ?>%</span>
                                         <?php endif; ?>

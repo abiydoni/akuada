@@ -49,6 +49,9 @@ class OrderModel extends Model
                     ADD COLUMN `vendor_payout_bank` VARCHAR(100) NULL DEFAULT NULL
                 ");
             }
+            if (function_exists('sync_orders_with_system_settings')) {
+                sync_orders_with_system_settings();
+            }
         } catch (\Throwable $e) {
             // Ignore if columns already exist
         }
@@ -66,7 +69,12 @@ class OrderModel extends Model
             $builder->where('orders.customer_company_id', $companyId);
         }
 
-        return $builder->orderBy('orders.id', 'DESC')->findAll();
+        $orders = $builder->orderBy('orders.id', 'DESC')->findAll();
+        foreach ($orders as &$ord) {
+            $ord = recalculate_order_from_settings($ord);
+        }
+        unset($ord);
+        return $orders;
     }
 
     public function getOrderWithItems($orderId)
@@ -85,6 +93,8 @@ class OrderModel extends Model
 
             $logModel = new OrderStatusLogModel();
             $order['status_logs'] = $logModel->getLogsByOrder($order['id']);
+
+            $order = recalculate_order_from_settings($order);
         }
 
         return $order;

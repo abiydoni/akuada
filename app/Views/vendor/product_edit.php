@@ -111,7 +111,7 @@
             <div class="flex flex-wrap gap-6 pt-2">
                 <label class="inline-flex items-center gap-2 font-semibold text-slate-700 cursor-pointer">
                     <input type="checkbox" name="is_taxable" value="1" <?= !empty($product['is_taxable']) ? 'checked' : '' ?> class="rounded text-blue-600">
-                    <span>Barang Kena Pajak (PPN 11%)</span>
+                    <span>Barang Kena Pajak (PPN <?= esc(format_tax_rate()) ?>)</span>
                 </label>
                 <label class="inline-flex items-center gap-2 font-semibold text-slate-700 cursor-pointer">
                     <input type="checkbox" name="is_sample_available" value="1" <?= !empty($product['is_sample_available']) ? 'checked' : '' ?> class="rounded text-blue-600">

@@ -15,10 +15,10 @@ if (!function_exists('get_system_setting')) {
     /**
      * Get system setting value from database or config fallback
      */
-    function get_system_setting(string $key, $default = null)
+    function get_system_setting(string $key, $default = null, bool $forceReload = false)
     {
         static $cachedSettings = null;
-        if ($cachedSettings === null) {
+        if ($cachedSettings === null || $forceReload) {
             $db = \Config\Database::connect();
             $rows = $db->table('system_settings')->get()->getResultArray();
             $cachedSettings = [];
@@ -28,6 +28,48 @@ if (!function_exists('get_system_setting')) {
         }
 
         return $cachedSettings[$key] ?? $default;
+    }
+}
+
+if (!function_exists('get_ppn_rate')) {
+    /**
+     * Get active PPN tax rate (%) from system settings
+     */
+    function get_ppn_rate(): float
+    {
+        $setting = get_system_setting('ppn_rate');
+        if ($setting !== null && is_numeric($setting)) {
+            return (float)$setting;
+        }
+        $config = config('AkuAda');
+        return (float)($config->ppnRate ?? 11.0);
+    }
+}
+
+if (!function_exists('get_pph_22_rate')) {
+    /**
+     * Get active PPh 22 tax rate (%) from system settings
+     */
+    function get_pph_22_rate(): float
+    {
+        $setting = get_system_setting('pph_22_rate');
+        if ($setting !== null && is_numeric($setting)) {
+            return (float)$setting;
+        }
+        $config = config('AkuAda');
+        return (float)($config->pph22Rate ?? 1.5);
+    }
+}
+
+if (!function_exists('format_tax_rate')) {
+    /**
+     * Format tax percentage cleanly (e.g. 11 -> "11%", 11.5 -> "11.5%")
+     */
+    function format_tax_rate($rate = null): string
+    {
+        $val = ($rate !== null && is_numeric($rate)) ? (float)$rate : get_ppn_rate();
+        $formatted = rtrim(rtrim(number_format($val, 2, '.', ''), '0'), '.');
+        return ($formatted === '' ? '0' : $formatted) . '%';
     }
 }
 
@@ -130,6 +172,97 @@ if (!function_exists('render_order_progress_stepper')) {
     }
 }
 
+if (!function_exists('get_allowed_top_terms')) {
+    /**
+     * Return array of allowed TOP day integers from system settings (e.g. [14, 30, 60, 90])
+     */
+    function get_allowed_top_terms(): array
+    {
+        $raw = (string)get_system_setting('allowed_top_terms', '14,30,60,90');
+        $parts = array_filter(array_map('intval', explode(',', $raw)), fn($v) => $v > 0);
+        if (empty($parts)) {
+            return [14, 30, 60, 90];
+        }
+        sort($parts);
+        return array_values(array_unique($parts));
+    }
+}
+
+if (!function_exists('get_max_top_days')) {
+    function get_max_top_days(): int
+    {
+        $terms = get_allowed_top_terms();
+        return !empty($terms) ? max($terms) : 90;
+    }
+}
+
+if (!function_exists('get_min_top_days')) {
+    function get_min_top_days(): int
+    {
+        $terms = get_allowed_top_terms();
+        return !empty($terms) ? min($terms) : 14;
+    }
+}
+
+if (!function_exists('get_navbar_categories')) {
+    /**
+     * Get categories dynamically from database for navbar popover & footer links
+     */
+    function get_navbar_categories(): array
+    {
+        static $cats = null;
+        if ($cats === null) {
+            try {
+                $db = \Config\Database::connect();
+                $cats = $db->table('categories')->orderBy('sort_order', 'ASC')->get()->getResultArray();
+            } catch (\Throwable $e) {
+                $cats = [];
+            }
+        }
+        return $cats;
+    }
+}
+
+if (!function_exists('get_active_buyer_credit_info')) {
+    /**
+     * Get live credit limit, used credit, and company name from DB for customer layout sidebar
+     */
+    function get_active_buyer_credit_info(): array
+    {
+        $defaultLimit = (float)get_system_setting('default_credit_limit', 100000000);
+        try {
+            $companyId = session('company_id');
+            $companyModel = new \App\Models\CompanyModel();
+            if ($companyId) {
+                $comp = $companyModel->find($companyId);
+                if ($comp && ($comp['type'] ?? '') === 'buyer') {
+                    return [
+                        'company_name'     => $comp['company_name'],
+                        'credit_limit_top' => (float)$comp['credit_limit_top'],
+                        'credit_used_top'  => (float)$comp['credit_used_top'],
+                    ];
+                }
+            }
+            $firstBuyer = $companyModel->where('type', 'buyer')->orderBy('id', 'ASC')->first();
+            if ($firstBuyer) {
+                return [
+                    'company_name'     => $firstBuyer['company_name'],
+                    'credit_limit_top' => (float)$firstBuyer['credit_limit_top'],
+                    'credit_used_top'  => (float)$firstBuyer['credit_used_top'],
+                ];
+            }
+        } catch (\Throwable $e) {
+            // Fallback below
+        }
+
+        return [
+            'company_name'     => session('company_name') ?? 'Perusahaan Pembeli',
+            'credit_limit_top' => (float)(session('credit_limit_top') ?? $defaultLimit),
+            'credit_used_top'  => (float)(session('credit_used_top') ?? 0),
+        ];
+    }
+}
+
 if (!function_exists('badge_payment_method')) {
     /**
      * Render payment method badge
@@ -171,10 +304,12 @@ if (!function_exists('calculate_vendor_fee')) {
     /**
      * Calculate marketplace platform fee from vendor for a product item
      */
-    function calculate_vendor_fee(float $subtotal, ?float $customPercent = null): array
+    function calculate_vendor_fee(float $subtotal, ?float $customPercent = null, float $ppnAmount = 0.0): array
     {
         $percent = ($customPercent !== null && $customPercent >= 0) ? $customPercent : get_default_vendor_fee_rate();
-        $feeAmount = round($subtotal * ($percent / 100), 2);
+        $basisSetting = get_system_setting('vendor_fee_calc_basis', 'dpp');
+        $basisAmount = ($basisSetting === 'gross') ? ($subtotal + $ppnAmount) : $subtotal;
+        $feeAmount = round($basisAmount * ($percent / 100), 2);
         
         $minFee = (float)get_system_setting('vendor_fee_min_amount', 0);
         if ($minFee > 0 && $feeAmount < $minFee) {
@@ -188,6 +323,140 @@ if (!function_exists('calculate_vendor_fee')) {
             'fee_amount' => $feeAmount,
             'net_amount' => $netAmount,
         ];
+    }
+}
+
+if (!function_exists('recalculate_order_from_settings')) {
+    /**
+     * Dynamically recalculate an order (and its items if present) using active system settings (ppn_rate, vendor_fee, etc.)
+     */
+    function recalculate_order_from_settings(array $order): array
+    {
+        $ppnRate = get_ppn_rate();
+        $defaultVendorFee = get_default_vendor_fee_rate();
+        $order['ppn_rate'] = $ppnRate;
+
+        if (!empty($order['items']) && is_array($order['items'])) {
+            $calcSubtotal = 0.0;
+            $calcPpnTotal = 0.0;
+            $calcFeeTotal = 0.0;
+            $calcNetTotal = 0.0;
+
+            foreach ($order['items'] as &$it) {
+                $itSubtotal = (float)($it['subtotal'] ?? ((float)$it['unit_price'] * (int)$it['qty']));
+                $itPpn = round($itSubtotal * ($ppnRate / 100), 2);
+                $itFeePercent = (isset($it['vendor_fee_percent']) && (float)$it['vendor_fee_percent'] > 0)
+                    ? (float)$it['vendor_fee_percent']
+                    : $defaultVendorFee;
+                $feeCalc = calculate_vendor_fee($itSubtotal, $itFeePercent, $itPpn);
+
+                $it['subtotal']           = $itSubtotal;
+                $it['ppn_percent']        = $ppnRate;
+                $it['ppn_amount']         = $itPpn;
+                $it['vendor_fee_percent'] = $feeCalc['percent'];
+                $it['vendor_fee_amount']  = $feeCalc['fee_amount'];
+                $it['vendor_net_amount']  = $feeCalc['net_amount'];
+
+                $calcSubtotal += $itSubtotal;
+                $calcPpnTotal += $itPpn;
+                $calcFeeTotal += $feeCalc['fee_amount'];
+                $calcNetTotal += $feeCalc['net_amount'];
+            }
+            unset($it);
+
+            $defaultShip = (float)get_system_setting('default_shipping_amount', 0);
+            $shipAmt = ((float)($order['shipping_amount'] ?? 0) > 0) ? (float)$order['shipping_amount'] : $defaultShip;
+            $order['shipping_amount']   = $shipAmt;
+            $order['subtotal']          = $calcSubtotal;
+            $order['ppn_amount']        = $calcPpnTotal;
+            $order['total_vendor_fee']  = $calcFeeTotal;
+            $order['vendor_net_payout'] = $calcNetTotal;
+            $order['total_amount']      = $calcSubtotal + $calcPpnTotal + $shipAmt;
+        } else {
+            $subtotal = (float)($order['subtotal'] ?? 0);
+            $ppnAmount = round($subtotal * ($ppnRate / 100), 2);
+            $feeRate = (isset($order['vendor_commission_rate']) && (float)$order['vendor_commission_rate'] > 0)
+                ? (float)$order['vendor_commission_rate']
+                : $defaultVendorFee;
+            $feeCalc = calculate_vendor_fee($subtotal, $feeRate, $ppnAmount);
+            $defaultShip = (float)get_system_setting('default_shipping_amount', 0);
+            $shipAmt = ((float)($order['shipping_amount'] ?? 0) > 0) ? (float)$order['shipping_amount'] : $defaultShip;
+
+            $order['shipping_amount']   = $shipAmt;
+            $order['ppn_amount']        = $ppnAmount;
+            $order['total_vendor_fee']  = $feeCalc['fee_amount'];
+            $order['vendor_net_payout'] = $feeCalc['net_amount'];
+            $order['total_amount']      = $subtotal + $ppnAmount + $shipAmt;
+        }
+
+        return $order;
+    }
+}
+
+if (!function_exists('sync_orders_with_system_settings')) {
+    /**
+     * Synchronize products, order_items, and orders tables in database whenever system settings (PPN, vendor fee) change
+     */
+    function sync_orders_with_system_settings(): void
+    {
+        // Force reload settings cache
+        get_system_setting('ppn_rate', 11, true);
+        $ppnRate = get_ppn_rate();
+        $defaultFee = get_default_vendor_fee_rate();
+
+        $db = \Config\Database::connect();
+
+        // 1. Update all taxable products' ppn_percent to active ppn_rate
+        $db->table('products')->where('is_taxable', 1)->update(['ppn_percent' => $ppnRate]);
+
+        // 2. Recalculate all order_items and orders
+        $orders = $db->table('orders')->get()->getResultArray();
+        foreach ($orders as $ord) {
+            $items = $db->table('order_items')->where('order_id', $ord['id'])->get()->getResultArray();
+            $ordSubtotal = 0.0;
+            $ordPpn = 0.0;
+            $ordFee = 0.0;
+            $ordNet = 0.0;
+
+            foreach ($items as $it) {
+                $itSubtotal = (float)$it['subtotal'];
+                $itPpn = round($itSubtotal * ($ppnRate / 100), 2);
+                $itFeePct = ((float)$it['vendor_fee_percent'] > 0) ? (float)$it['vendor_fee_percent'] : $defaultFee;
+                $feeCalc = calculate_vendor_fee($itSubtotal, $itFeePct, $itPpn);
+
+                $db->table('order_items')->where('id', $it['id'])->update([
+                    'ppn_amount'         => $itPpn,
+                    'vendor_fee_percent' => $feeCalc['percent'],
+                    'vendor_fee_amount'  => $feeCalc['fee_amount'],
+                    'vendor_net_amount'  => $feeCalc['net_amount'],
+                ]);
+
+                $ordSubtotal += $itSubtotal;
+                $ordPpn += $itPpn;
+                $ordFee += $feeCalc['fee_amount'];
+                $ordNet += $feeCalc['net_amount'];
+            }
+
+            if (empty($items)) {
+                $ordSubtotal = (float)$ord['subtotal'];
+                $ordPpn = round($ordSubtotal * ($ppnRate / 100), 2);
+                $feeCalc = calculate_vendor_fee($ordSubtotal, $defaultFee, $ordPpn);
+                $ordFee = $feeCalc['fee_amount'];
+                $ordNet = $feeCalc['net_amount'];
+            }
+
+            $defaultShip = (float)get_system_setting('default_shipping_amount', 0);
+            $shipAmt = ((float)($ord['shipping_amount'] ?? 0) > 0) ? (float)$ord['shipping_amount'] : $defaultShip;
+            $ordTotal = $ordSubtotal + $ordPpn + $shipAmt;
+            $db->table('orders')->where('id', $ord['id'])->update([
+                'subtotal'          => $ordSubtotal,
+                'ppn_amount'        => $ordPpn,
+                'total_vendor_fee'  => $ordFee,
+                'vendor_net_payout' => $ordNet,
+                'shipping_amount'   => $shipAmt,
+                'total_amount'      => $ordTotal,
+            ]);
+        }
     }
 }
 
@@ -306,5 +575,286 @@ if (!function_exists('ensure_role_session')) {
         }
 
         return (int)(session('company_id') ?? 1);
+    }
+}
+
+if (!function_exists('classify_aging_bucket')) {
+    /**
+     * Classify an unpaid invoice/payable into Current, 30, 60, 90, or 120+ day aging buckets
+     */
+    function classify_aging_bucket(?string $dueDate, ?string $referenceDate = null): array
+    {
+        $ref = $referenceDate ?: date('Y-m-d');
+        $due = $dueDate ?: $ref;
+        $daysOverdue = (int)floor((strtotime($ref) - strtotime($due)) / 86400);
+
+        if ($daysOverdue <= 0) {
+            return [
+                'key'          => 'current',
+                'label'        => 'Current',
+                'sublabel'     => 'Belum Jatuh Tempo',
+                'days_overdue' => $daysOverdue,
+                'badge_class'  => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+            ];
+        } elseif ($daysOverdue <= 30) {
+            return [
+                'key'          => 'days_30',
+                'label'        => '30 Hari',
+                'sublabel'     => '1 – 30 Hari',
+                'days_overdue' => $daysOverdue,
+                'badge_class'  => 'bg-amber-50 text-amber-800 border-amber-300',
+            ];
+        } elseif ($daysOverdue <= 60) {
+            return [
+                'key'          => 'days_60',
+                'label'        => '60 Hari',
+                'sublabel'     => '31 – 60 Hari',
+                'days_overdue' => $daysOverdue,
+                'badge_class'  => 'bg-orange-50 text-orange-800 border-orange-300',
+            ];
+        } elseif ($daysOverdue <= 90) {
+            return [
+                'key'          => 'days_90',
+                'label'        => '90 Hari',
+                'sublabel'     => '61 – 90 Hari',
+                'days_overdue' => $daysOverdue,
+                'badge_class'  => 'bg-rose-50 text-rose-800 border-rose-300',
+            ];
+        }
+
+        return [
+            'key'          => 'days_120',
+            'label'        => '120 Hari',
+            'sublabel'     => '91 – 120+ Hari',
+            'days_overdue' => $daysOverdue,
+            'badge_class'  => 'bg-red-100 text-red-900 border-red-400',
+        ];
+    }
+}
+
+if (!function_exists('calculate_aging_summary')) {
+    /**
+     * Build complete AR/AP Aging Schedule (Current, 30, 60, 90, 120 days) and per-company breakdown
+     *
+     * @param array       $orders       List of orders
+     * @param string      $mode         'buyer' (Piutang Buyer -> AkuAda) or 'vendor' (Hutang AkuAda -> Vendor)
+     * @param array       $companies    Optional master list of companies to include even if Rp 0
+     * @param string|null $groupByField Optional override field ('buyer_name' or 'vendor_name')
+     */
+    function calculate_aging_summary(array $orders, string $mode = 'buyer', array $companies = [], ?string $groupByField = null): array
+    {
+        $today = date('Y-m-d');
+        $buckets = [
+            'current'  => [
+                'key'      => 'current',
+                'title'    => 'Current',
+                'range'    => 'Belum Jatuh Tempo',
+                'amount'   => 0.0,
+                'count'    => 0,
+            ],
+            'days_30'  => [
+                'key'      => 'days_30',
+                'title'    => '30 Hari',
+                'range'    => '1 – 30 Hari',
+                'amount'   => 0.0,
+                'count'    => 0,
+            ],
+            'days_60'  => [
+                'key'      => 'days_60',
+                'title'    => '60 Hari',
+                'range'    => '31 – 60 Hari',
+                'amount'   => 0.0,
+                'count'    => 0,
+            ],
+            'days_90'  => [
+                'key'      => 'days_90',
+                'title'    => '90 Hari',
+                'range'    => '61 – 90 Hari',
+                'amount'   => 0.0,
+                'count'    => 0,
+            ],
+            'days_120' => [
+                'key'      => 'days_120',
+                'title'    => '120 Hari',
+                'range'    => '> 90 / 120 Hari',
+                'amount'   => 0.0,
+                'count'    => 0,
+            ],
+        ];
+
+        $byEntity = [];
+        foreach ($companies as $c) {
+            $cName = $c['company_name'] ?? '';
+            if ($cName !== '' && !isset($byEntity[$cName])) {
+                $byEntity[$cName] = [
+                    'name'     => $cName,
+                    'current'  => 0.0,
+                    'days_30'  => 0.0,
+                    'days_60'  => 0.0,
+                    'days_90'  => 0.0,
+                    'days_120' => 0.0,
+                    'total'    => 0.0,
+                    'count'    => 0,
+                ];
+            }
+        }
+
+        $totalOutstanding = 0.0;
+        $totalCount = 0;
+
+        foreach ($orders as $o) {
+            if ($mode === 'vendor') {
+                $isPaid = (($o['vendor_payout_status'] ?? 'unpaid') === 'paid');
+                $fee = (float)($o['total_vendor_fee'] ?? 0);
+                $amount = (float)($o['vendor_net_payout'] ?? ($o['subtotal'] - $fee)) + (float)($o['ppn_amount'] ?? 0);
+                $dueDate = $o['vendor_payout_due_date'] ?: date('Y-m-d', strtotime($o['created_at'] . ' +7 days'));
+                $defaultField = 'vendor_name';
+            } else {
+                $isPaid = (($o['payment_status'] ?? 'unpaid') === 'paid');
+                $amount = (float)($o['total_amount'] ?? 0);
+                $dueDate = $o['due_date'] ?: date('Y-m-d', strtotime($o['created_at'] . ' +30 days'));
+                $defaultField = 'buyer_name';
+            }
+
+            if ($isPaid) {
+                continue;
+            }
+
+            $field = $groupByField ?: $defaultField;
+            $entityName = $o[$field] ?? ($mode === 'vendor' ? 'Mitra Vendor' : 'Corporate Buyer');
+
+            $bucketInfo = classify_aging_bucket($dueDate, $today);
+            $bKey = $bucketInfo['key'];
+
+            $buckets[$bKey]['amount'] += $amount;
+            $buckets[$bKey]['count']++;
+            $totalOutstanding += $amount;
+            $totalCount++;
+
+            if (!isset($byEntity[$entityName])) {
+                $byEntity[$entityName] = [
+                    'name'     => $entityName,
+                    'current'  => 0.0,
+                    'days_30'  => 0.0,
+                    'days_60'  => 0.0,
+                    'days_90'  => 0.0,
+                    'days_120' => 0.0,
+                    'total'    => 0.0,
+                    'count'    => 0,
+                ];
+            }
+
+            $byEntity[$entityName][$bKey] += $amount;
+            $byEntity[$entityName]['total'] += $amount;
+            $byEntity[$entityName]['count']++;
+        }
+
+        foreach ($buckets as &$b) {
+            $b['percent'] = $totalOutstanding > 0 ? round(($b['amount'] / $totalOutstanding) * 100, 1) : 0;
+        }
+        unset($b);
+
+        return [
+            'buckets'           => $buckets,
+            'by_entity'         => array_values($byEntity),
+            'total_outstanding' => $totalOutstanding,
+            'total_count'       => $totalCount,
+        ];
+    }
+}
+
+if (!function_exists('render_aging_table')) {
+    /**
+     * Render standardized Aging Schedule table with columns:
+     * Nama Perusahaan | Current | 30 | 60 | 90 | 120 | Total
+     */
+    function render_aging_table(
+        array $aging,
+        string $title,
+        string $subtitle,
+        string $companyColLabel = 'Nama Perusahaan',
+        string $accentColor = 'purple'
+    ): string {
+        $rows = $aging['by_entity'] ?? [];
+        $buckets = $aging['buckets'] ?? [];
+        $grandTotal = (float)($aging['total_outstanding'] ?? 0);
+
+        $dotClass = match ($accentColor) {
+            'blue'  => 'bg-blue-600',
+            'pink'  => 'bg-pink-600',
+            default => 'bg-purple-600',
+        };
+
+        $html = '<div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">';
+        $html .= '  <div class="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">';
+        $html .= '    <div class="flex items-center gap-2.5">';
+        $html .= '      <span class="w-2.5 h-2.5 rounded-full ' . $dotClass . '"></span>';
+        $html .= '      <div>';
+        $html .= '        <h3 class="font-bold text-slate-900 text-sm">' . esc($title) . '</h3>';
+        $html .= '        <p class="text-[11px] text-slate-500">' . esc($subtitle) . '</p>';
+        $html .= '      </div>';
+        $html .= '    </div>';
+        $html .= '    <div class="flex items-center gap-2 text-[11px]">';
+        $html .= '      <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold">Total Outstanding: <strong class="font-mono text-slate-900">' . format_rupiah($grandTotal) . '</strong></span>';
+        $html .= '    </div>';
+        $html .= '  </div>';
+
+        $html .= '  <div class="overflow-x-auto">';
+        $html .= '    <table class="w-full text-xs text-left border-collapse">';
+        $html .= '      <thead class="bg-slate-900 text-white uppercase text-[11px] tracking-wider font-bold">';
+        $html .= '        <tr>';
+        $html .= '          <th class="px-4 py-3.5">' . esc($companyColLabel) . '</th>';
+        $html .= '          <th class="px-4 py-3.5 text-right bg-emerald-950/60">Current<span class="block text-[9px] font-normal text-emerald-300 normal-case">Belum Jatuh Tempo</span></th>';
+        $html .= '          <th class="px-4 py-3.5 text-right bg-amber-950/60">30 Hari<span class="block text-[9px] font-normal text-amber-300 normal-case">1 – 30 Hari</span></th>';
+        $html .= '          <th class="px-4 py-3.5 text-right bg-orange-950/60">60 Hari<span class="block text-[9px] font-normal text-orange-300 normal-case">31 – 60 Hari</span></th>';
+        $html .= '          <th class="px-4 py-3.5 text-right bg-rose-950/60">90 Hari<span class="block text-[9px] font-normal text-rose-300 normal-case">61 – 90 Hari</span></th>';
+        $html .= '          <th class="px-4 py-3.5 text-right bg-red-950/80">120 Hari<span class="block text-[9px] font-normal text-red-300 normal-case">&gt; 90 / 120 Hari</span></th>';
+        $html .= '          <th class="px-4 py-3.5 text-right bg-slate-800">Total</th>';
+        $html .= '        </tr>';
+        $html .= '      </thead>';
+        $html .= '      <tbody class="divide-y divide-slate-100 bg-white">';
+
+        if (empty($rows)) {
+            $html .= '        <tr><td colspan="7" class="px-6 py-8 text-center text-slate-400">Tidak ada saldo aktif pada periode ini.</td></tr>';
+        } else {
+            foreach ($rows as $r) {
+                $html .= '        <tr class="hover:bg-slate-50/80 transition-colors">';
+                $html .= '          <td class="px-4 py-3.5 font-bold text-slate-900">';
+                $html .= '            <div>' . esc($r['name']) . '</div>';
+                $html .= '            <span class="text-[10px] font-normal text-slate-400">' . (int)$r['count'] . ' tagihan belum lunas</span>';
+                $html .= '          </td>';
+                $html .= '          <td class="px-4 py-3.5 text-right font-mono ' . ($r['current'] > 0 ? 'font-bold text-emerald-700 bg-emerald-50/30' : 'text-slate-400') . '">' . format_rupiah($r['current']) . '</td>';
+                $html .= '          <td class="px-4 py-3.5 text-right font-mono ' . ($r['days_30'] > 0 ? 'font-bold text-amber-700 bg-amber-50/30' : 'text-slate-400') . '">' . format_rupiah($r['days_30']) . '</td>';
+                $html .= '          <td class="px-4 py-3.5 text-right font-mono ' . ($r['days_60'] > 0 ? 'font-bold text-orange-700 bg-orange-50/30' : 'text-slate-400') . '">' . format_rupiah($r['days_60']) . '</td>';
+                $html .= '          <td class="px-4 py-3.5 text-right font-mono ' . ($r['days_90'] > 0 ? 'font-bold text-rose-700 bg-rose-50/30' : 'text-slate-400') . '">' . format_rupiah($r['days_90']) . '</td>';
+                $html .= '          <td class="px-4 py-3.5 text-right font-mono ' . ($r['days_120'] > 0 ? 'font-extrabold text-red-700 bg-red-50/40' : 'text-slate-400') . '">' . format_rupiah($r['days_120']) . '</td>';
+                $html .= '          <td class="px-4 py-3.5 text-right font-mono font-black text-slate-900 bg-slate-50/60">' . format_rupiah($r['total']) . '</td>';
+                $html .= '        </tr>';
+            }
+        }
+
+        $cAmt   = (float)($buckets['current']['amount'] ?? 0);
+        $d30Amt = (float)($buckets['days_30']['amount'] ?? 0);
+        $d60Amt = (float)($buckets['days_60']['amount'] ?? 0);
+        $d90Amt = (float)($buckets['days_90']['amount'] ?? 0);
+        $d120Amt= (float)($buckets['days_120']['amount'] ?? 0);
+
+        $html .= '      </tbody>';
+        $html .= '      <tfoot class="border-t-2 border-slate-900 bg-slate-100/90 font-bold text-xs">';
+        $html .= '        <tr>';
+        $html .= '          <td class="px-4 py-3.5 font-extrabold text-slate-900 uppercase">Total Aging</td>';
+        $html .= '          <td class="px-4 py-3.5 text-right font-mono text-emerald-800">' . format_rupiah($cAmt) . '<span class="block text-[10px] font-normal text-slate-500">' . ($buckets['current']['percent'] ?? 0) . '%</span></td>';
+        $html .= '          <td class="px-4 py-3.5 text-right font-mono text-amber-800">' . format_rupiah($d30Amt) . '<span class="block text-[10px] font-normal text-slate-500">' . ($buckets['days_30']['percent'] ?? 0) . '%</span></td>';
+        $html .= '          <td class="px-4 py-3.5 text-right font-mono text-orange-800">' . format_rupiah($d60Amt) . '<span class="block text-[10px] font-normal text-slate-500">' . ($buckets['days_60']['percent'] ?? 0) . '%</span></td>';
+        $html .= '          <td class="px-4 py-3.5 text-right font-mono text-rose-800">' . format_rupiah($d90Amt) . '<span class="block text-[10px] font-normal text-slate-500">' . ($buckets['days_90']['percent'] ?? 0) . '%</span></td>';
+        $html .= '          <td class="px-4 py-3.5 text-right font-mono text-red-900">' . format_rupiah($d120Amt) . '<span class="block text-[10px] font-normal text-slate-500">' . ($buckets['days_120']['percent'] ?? 0) . '%</span></td>';
+        $html .= '          <td class="px-4 py-3.5 text-right font-mono font-black text-sm text-purple-950 bg-purple-100/60">' . format_rupiah($grandTotal) . '<span class="block text-[10px] font-normal text-purple-700">100%</span></td>';
+        $html .= '        </tr>';
+        $html .= '      </tfoot>';
+        $html .= '    </table>';
+        $html .= '  </div>';
+        $html .= '</div>';
+
+        return $html;
     }
 }

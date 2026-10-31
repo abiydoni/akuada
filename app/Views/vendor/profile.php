@@ -20,7 +20,7 @@
                         <span class="material-symbols-outlined text-[12px]">verified</span> Verified Supplier
                     </span>
                 </div>
-                <p class="text-slate-500">Badan Usaha: <strong><?= esc($company['legal_type'] ?? 'PT') ?></strong> | Komisi PKS Platform: <strong><?= esc($company['commission_rate'] ?? 2.5) ?>%</strong></p>
+                <p class="text-slate-500">Badan Usaha: <strong><?= esc($company['legal_type'] ?? 'PT') ?></strong> | Komisi PKS Platform: <strong><?= esc($company['commission_rate'] ?? get_default_vendor_fee_rate()) ?>%</strong></p>
             </div>
         </div>
 
@@ -38,7 +38,7 @@
                     </div>
                     <div class="flex justify-between">
                         <span class="text-slate-500">Status PKP:</span>
-                        <strong class="text-emerald-600 font-bold">PKP Aktif (Wajib e-Faktur PPN 11%)</strong>
+                        <strong class="text-emerald-600 font-bold">PKP Aktif (Wajib e-Faktur PPN <?= esc(format_tax_rate()) ?>)</strong>
                     </div>
                 </div>
             </div>

@@ -9,7 +9,7 @@
             <div class="flex items-center gap-2">
                 <span class="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold uppercase tracking-wider">Kepatuhan Perpajakan DJP</span>
             </div>
-            <h1 class="text-xl font-extrabold text-slate-900 mt-1">Arsip e-Faktur Pajak PPN 11% Resmi (DJP)</h1>
+            <h1 class="text-xl font-extrabold text-slate-900 mt-1">Arsip e-Faktur Pajak PPN <?= esc(format_tax_rate()) ?> Resmi (DJP)</h1>
             <p class="text-xs text-slate-500 mt-0.5">Faktur pajak elektronik yang terhubung resmi dengan NPWP Perusahaan untuk rekonsiliasi SPT Masa PPN.</p>
         </div>
         <div class="flex items-center gap-2">
@@ -34,7 +34,7 @@
                     <tr>
                         <th class="px-4 py-3.5 w-60">Nomor Seri Faktur Pajak (NSFP)</th>
                         <th class="px-4 py-3.5">Referensi PO & Tanggal</th>
-                        <th class="px-4 py-3.5 text-right w-52">DPP & PPN 11%</th>
+                        <th class="px-4 py-3.5 text-right w-52">DPP & PPN <?= esc(format_tax_rate()) ?></th>
                         <th class="px-4 py-3.5 text-right w-44">Total Nilai Faktur</th>
                         <th class="px-4 py-3.5 text-center w-36">Lampiran</th>
                     </tr>

@@ -23,6 +23,7 @@ class AdminController extends BaseController
         $productModel = new ProductModel();
         $rfqModel = new RfqModel();
 
+        sync_orders_with_system_settings();
         $totalGmv = $orderModel->selectSum('total_amount')->first()['total_amount'] ?? 0;
         $totalPlatformFee = $orderModel->selectSum('total_vendor_fee')->first()['total_vendor_fee'] ?? 0;
         $totalVendorPayout = $orderModel->selectSum('vendor_net_payout')->first()['vendor_net_payout'] ?? 0;
@@ -111,8 +112,13 @@ class AdminController extends BaseController
         if ($paymentStatus)    { $data['payment_status']      = $paymentStatus; }
         if ($bastNumber)       { $data['bast_number']         = $bastNumber; }
         if ($taxInvoiceNumber) { $data['tax_invoice_number']  = $taxInvoiceNumber; }
+        $shippingAmount = $this->request->getPost('shipping_amount');
+        if ($shippingAmount !== null && $shippingAmount !== '') {
+            $data['shipping_amount'] = max(0, (float)$shippingAmount);
+        }
 
         $orderModel->update($orderId, $data);
+        sync_orders_with_system_settings();
 
         $statusLabels = [
             'po_issued'       => 'Penerbitan PO',
@@ -169,7 +175,7 @@ class AdminController extends BaseController
         $picPhone = $this->request->getPost('pic_phone');
         $picEmail = $this->request->getPost('pic_email') ?: $email;
         $commissionRate = (float)$this->request->getPost('commission_rate');
-        $password = $this->request->getPost('password') ?: 'admin123';
+        $password = $this->request->getPost('password') ?: get_system_setting('default_account_password', 'admin123');
         $isVerified = $this->request->getPost('is_verified') ? 1 : 1;
 
         $now = date('Y-m-d H:i:s');
@@ -291,7 +297,7 @@ class AdminController extends BaseController
         $picPhone = $this->request->getPost('pic_phone');
         $picEmail = $this->request->getPost('pic_email') ?: $email;
         $creditLimit = (float)$this->request->getPost('credit_limit_top');
-        $password = $this->request->getPost('password') ?: 'admin123';
+        $password = $this->request->getPost('password') ?: get_system_setting('default_account_password', 'admin123');
         $position = $this->request->getPost('position') ?: 'Procurement Manager';
 
         $now = date('Y-m-d H:i:s');
@@ -541,7 +547,7 @@ class AdminController extends BaseController
         $role = $this->request->getPost('role') ?? 'customer';
         $companyId = $this->request->getPost('company_id') ?: null;
         $position = $this->request->getPost('position') ?: 'Staff';
-        $password = $this->request->getPost('password') ?: 'admin123';
+        $password = $this->request->getPost('password') ?: get_system_setting('default_account_password', 'admin123');
         $status = $this->request->getPost('status') ?: 'active';
 
         $now = date('Y-m-d H:i:s');
@@ -607,7 +613,7 @@ class AdminController extends BaseController
     {
         $userModel = new UserModel();
         $user = $userModel->find($id);
-        $newPassword = $this->request->getPost('new_password') ?: 'admin123';
+        $newPassword = $this->request->getPost('new_password') ?: get_system_setting('default_account_password', 'admin123');
 
         if ($user) {
             $userModel->update($id, [
@@ -646,36 +652,53 @@ class AdminController extends BaseController
         $settingModel = new SettingModel();
         $posts = $this->request->getPost();
 
+        $orderId = (int)($posts['order_id'] ?? 0);
+        $orderShipAmt = $posts['order_shipping_amount'] ?? null;
+        $activeTab = $posts['active_tab'] ?? '';
+        unset($posts['order_id'], $posts['order_shipping_amount'], $posts['active_tab']);
         foreach ($posts as $key => $value) {
             if ($key !== 'csrf_test_name') {
                 $group = 'general';
                 $type = 'string';
 
-                if (str_starts_with($key, 'vendor_fee_')) {
+                if (str_starts_with($key, 'vendor_fee_') || $key === 'vendor_payout_days') {
                     $group = 'fee';
                     if (is_numeric($value)) $type = 'number';
-                } elseif (in_array($key, ['ppn_rate', 'pph_22_rate'])) {
+                } elseif (in_array($key, ['ppn_rate', 'pph_22_rate', 'tax_nsfp_prefix'])) {
                     $group = 'tax';
                     $type = 'number';
-                } elseif (in_array($key, ['allowed_top_terms', 'default_credit_limit'])) {
+                } elseif (in_array($key, ['allowed_top_terms', 'default_credit_limit', 'max_credit_limit', 'credit_step_amount', 'default_shipping_amount', 'free_shipping_region'])) {
                     $group = 'payment';
-                    if ($key === 'default_credit_limit') $type = 'number';
+                    if (in_array($key, ['default_credit_limit', 'max_credit_limit', 'credit_step_amount', 'default_shipping_amount'])) $type = 'number';
                 } elseif (in_array($key, ['primary_color', 'secondary_color', 'accent_color'])) {
                     $group = 'design';
+                } elseif (str_starts_with($key, 'inv_')) {
+                    $group = 'invoice';
                 }
 
                 $settingModel->updateValue($key, $value, $group, $type);
             }
         }
 
-        session()->setFlashdata('success', 'Pengaturan sistem, tarif fee vendor, pajak, dan design tokens berhasil disimpan!');
+        if ($orderId > 0 && $orderShipAmt !== null && $orderShipAmt !== '') {
+            $orderModel = new OrderModel();
+            $orderModel->update($orderId, ['shipping_amount' => max(0, (float)$orderShipAmt)]);
+        }
+        sync_orders_with_system_settings();
+        if ($activeTab) {
+            session()->setFlashdata('active_tab', $activeTab);
+        }
+        session()->setFlashdata('success', 'Pengaturan sistem, invoice (pembayaran & penandatangan), tarif fee, dan pajak berhasil disimpan!');
         return redirect()->back();
     }
 
     public function debts()
     {
         $orderModel = new OrderModel();
+        $companyModel = new CompanyModel();
         $orders = $orderModel->getDetailedOrders();
+        $buyers = $companyModel->getBuyers();
+        $vendors = $companyModel->getVendors();
 
         $buyerUnpaidTotal = 0;
         $buyerOverdueTotal = 0;
@@ -712,8 +735,11 @@ class AdminController extends BaseController
             }
         }
 
+        $buyerAging = calculate_aging_summary($orders, 'buyer', $buyers, 'buyer_name');
+        $vendorAging = calculate_aging_summary($orders, 'vendor', $vendors, 'vendor_name');
+
         return view('admin/debts', [
-            'title'              => 'Manajemen Hutang Piutang TOP & Settlement Vendor - Admin AkuAda',
+            'title'              => 'Manajemen Hutang Piutang TOP & Aging Schedule - Admin AkuAda',
             'orders'             => $orders,
             'buyerUnpaidTotal'   => $buyerUnpaidTotal,
             'buyerOverdueTotal'  => $buyerOverdueTotal,
@@ -721,6 +747,8 @@ class AdminController extends BaseController
             'vendorUnpaidTotal'  => $vendorUnpaidTotal,
             'vendorOverdueTotal' => $vendorOverdueTotal,
             'vendorPaidTotal'    => $vendorPaidTotal,
+            'buyerAging'         => $buyerAging,
+            'vendorAging'        => $vendorAging,
         ]);
     }
 

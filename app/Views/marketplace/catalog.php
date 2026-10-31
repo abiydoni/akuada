@@ -17,7 +17,7 @@
             <?= $activeCategory ? esc($activeCategory['name']) : 'Semua Kebutuhan Operasional Perusahaan' ?>
         </h1>
         <p class="text-xs text-slate-500 mt-1">
-            Menampilkan <?= count($products) ?> produk pengadaan resmi dengan harga grosir bertingkat dan PPN 11%.
+            Menampilkan <?= count($products) ?> produk pengadaan resmi dengan harga grosir bertingkat dan PPN <?= esc(format_tax_rate()) ?>.
         </p>
     </div>
 </div>
@@ -57,7 +57,7 @@
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" checked class="rounded text-purple-600 focus:ring-purple-500">
-                            <span>Ber-Faktur Pajak PPN 11%</span>
+                            <span>Ber-Faktur Pajak PPN <?= esc(format_tax_rate()) ?></span>
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" class="rounded text-purple-600 focus:ring-purple-500">
@@ -110,7 +110,7 @@
 
                                     <div class="absolute bottom-2.5 right-2.5">
                                         <span class="badge-ppn shadow-sm">
-                                            PPN 11%
+                                            PPN <?= esc(format_tax_rate()) ?>
                                         </span>
                                     </div>
                                 </div>

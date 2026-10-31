@@ -13,7 +13,7 @@
             </div>
             <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight">Dashboard Pengawasan Ekosistem B2B AkuAda</h1>
             <p class="text-xs text-purple-200 leading-relaxed">
-                Pemantauan real-time transaksi purchase order (PO) korporat, penerbitan faktur pajak e-Faktur PPN 11%, dan fasilitas plafon kredit TOP.
+                Pemantauan real-time transaksi purchase order (PO) korporat, penerbitan faktur pajak e-Faktur PPN <?= esc(format_tax_rate()) ?>, dan fasilitas plafon kredit TOP.
             </p>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0 self-start md:self-auto">

@@ -18,16 +18,18 @@ class CartController extends BaseController
 
         foreach ($cart as $item) {
             $subtotal += $item['subtotal'];
-            $ppnTotal += $item['ppn_amount'];
+            $ppnTotal += round($item['subtotal'] * (get_ppn_rate() / 100), 2);
         }
 
-        $grandTotal = $subtotal + $ppnTotal;
+        $shippingAmount = (float)get_system_setting('default_shipping_amount', 0);
+        $grandTotal = $subtotal + $ppnTotal + $shippingAmount;
 
         return view('marketplace/cart', [
             'title'      => 'Keranjang Pengadaan PO - AkuAda B2B',
             'cart'       => $cart,
             'subtotal'   => $subtotal,
-            'ppnTotal'   => $ppnTotal,
+            'ppnTotal'       => $ppnTotal,
+            'shippingAmount' => $shippingAmount,
             'grandTotal' => $grandTotal
         ]);
     }
@@ -55,7 +57,8 @@ class CartController extends BaseController
         $tierModel = new ProductPriceTierModel();
         $unitPrice = $tierModel->getPriceForQuantity($productId, $qty, $product['price_regular']);
 
-        $ppnAmount = $product['is_taxable'] ? ($unitPrice * $qty * ($product['ppn_percent'] / 100)) : 0;
+        $ppnRate = get_ppn_rate();
+        $ppnAmount = $product['is_taxable'] ? round($unitPrice * $qty * ($ppnRate / 100), 2) : 0;
         $subtotal = $unitPrice * $qty;
 
         // Get vendor company agreed commission rate
@@ -77,7 +80,7 @@ class CartController extends BaseController
             'image_url'          => $product['image_url'],
             'qty'                => $qty,
             'unit_price'         => $unitPrice,
-            'ppn_percent'        => $product['ppn_percent'],
+            'ppn_percent'        => $ppnRate,
             'ppn_amount'         => $ppnAmount,
             'subtotal'           => $subtotal,
             'vendor_fee_percent' => $effectiveFee,
@@ -109,7 +112,8 @@ class CartController extends BaseController
         $tierModel = new ProductPriceTierModel();
         $unitPrice = $tierModel->getPriceForQuantity($productId, $qty, $product['price_regular']);
 
-        $ppnAmount = $product['is_taxable'] ? ($unitPrice * $qty * ($product['ppn_percent'] / 100)) : 0;
+        $ppnRate = get_ppn_rate();
+        $ppnAmount = $product['is_taxable'] ? round($unitPrice * $qty * ($ppnRate / 100), 2) : 0;
         $subtotal = $unitPrice * $qty;
 
         $cart[$productId]['qty'] = $qty;
@@ -143,9 +147,10 @@ class CartController extends BaseController
         $ppnTotal = 0;
         foreach ($cart as $item) {
             $subtotal += $item['subtotal'];
-            $ppnTotal += $item['ppn_amount'];
+            $ppnTotal += round($item['subtotal'] * (get_ppn_rate() / 100), 2);
         }
-        $grandTotal = $subtotal + $ppnTotal;
+        $shippingAmount = (float)get_system_setting('default_shipping_amount', 0);
+        $grandTotal = $subtotal + $ppnTotal + $shippingAmount;
 
         // Identify buyer company from session
         $companyModel = new CompanyModel();
@@ -164,7 +169,8 @@ class CartController extends BaseController
             'title'        => 'Checkout Pengadaan B2B - AkuAda',
             'cart'         => $cart,
             'subtotal'     => $subtotal,
-            'ppnTotal'     => $ppnTotal,
+            'ppnTotal'       => $ppnTotal,
+            'shippingAmount' => $shippingAmount,
             'grandTotal'   => $grandTotal,
             'buyerCompany' => $buyerCompany,
             'isRegistered' => $isRegistered,
@@ -209,7 +215,8 @@ class CartController extends BaseController
         $processedItems = [];
         foreach ($cart as $item) {
             $itemSubtotal = (float)$item['subtotal'];
-            $itemPpn = (float)$item['ppn_amount'];
+            $itemPpn = round($itemSubtotal * (get_ppn_rate() / 100), 2);
+            $item['ppn_amount'] = $itemPpn;
             $subtotal += $itemSubtotal;
             $ppnTotal += $itemPpn;
 
@@ -221,7 +228,7 @@ class CartController extends BaseController
             } else {
                 $customFeeRate = (float)$item['vendor_fee_percent'];
             }
-            $feeCalc = calculate_vendor_fee($itemSubtotal, $customFeeRate);
+            $feeCalc = calculate_vendor_fee($itemSubtotal, $customFeeRate, $itemPpn);
 
             $totalVendorFee += $feeCalc['fee_amount'];
             $vendorNetPayout += $feeCalc['net_amount'];
@@ -232,7 +239,8 @@ class CartController extends BaseController
                 'net_amount'  => $feeCalc['net_amount'],
             ]);
         }
-        $grandTotal = $subtotal + $ppnTotal;
+        $shippingAmount = (float)get_system_setting('default_shipping_amount', 0);
+        $grandTotal = $subtotal + $ppnTotal + $shippingAmount;
 
         // Aturan Keras: Jika buyer belum terdaftar di AkuAda, tidak bisa membayar PO dengan kredit (TOP / PO On-Account)
         if (str_starts_with($paymentMethod, 'top_') || $paymentMethod === 'corporate_po') {
@@ -282,7 +290,7 @@ class CartController extends BaseController
         }
 
         // Determine due date according to payment method
-        $days = 30;
+        $days = str_starts_with($paymentMethod, 'top_') ? max(1, (int)substr($paymentMethod, 4)) : 30;
         if ($paymentMethod === 'top_14') $days = 14;
         if ($paymentMethod === 'top_60') $days = 60;
         if ($paymentMethod === 'top_90') $days = 90;
@@ -301,7 +309,7 @@ class CartController extends BaseController
             'ppn_amount'           => $ppnTotal,
             'total_vendor_fee'     => $totalVendorFee,
             'vendor_net_payout'    => $vendorNetPayout,
-            'shipping_amount'      => 0.00,
+            'shipping_amount'      => $shippingAmount,
             'total_amount'         => $grandTotal,
             'payment_method'       => $paymentMethod,
             'payment_status'       => 'pending_approval',
@@ -311,11 +319,11 @@ class CartController extends BaseController
             'shipping_address'     => $shippingAddress,
             'bast_number'          => 'BAST/AKUADA/' . date('Ym') . '/' . rand(100, 999),
             'invoice_number'       => 'INV/AKUADA/' . date('Ym') . '/' . rand(100, 999),
-            'tax_invoice_number'   => '010.002-26.' . rand(10000000, 99999999),
+            'tax_invoice_number'   => get_system_setting('tax_nsfp_prefix', '010.002-26.') . rand(10000000, 99999999),
             'due_date'               => $dueDate,
             'vendor_invoice_number'  => 'VINV/' . date('Ym') . '/' . rand(100, 999),
             'vendor_payout_status'   => 'unpaid',
-            'vendor_payout_due_date' => date('Y-m-d', strtotime('+7 days')),
+            'vendor_payout_due_date' => date('Y-m-d', strtotime('+' . max(1, (int)get_system_setting('vendor_payout_days', 7)) . ' days')),
             'created_at'           => $now,
             'updated_at'           => $now,
         ]);

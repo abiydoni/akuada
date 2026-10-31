@@ -9,7 +9,7 @@
             Keranjang Pengadaan Purchase Order (PO)
         </h1>
         <p class="text-xs text-slate-500 mt-1">
-            Periksa kuantitas kebutuhan operasional, diskon tiering volume, dan kalkulasi PPN 11% sebelum menerbitkan PO.
+            Periksa kuantitas kebutuhan operasional, diskon tiering volume, dan kalkulasi PPN <?= esc(format_tax_rate()) ?> sebelum menerbitkan PO.
         </p>
     </div>
 </div>
@@ -98,12 +98,12 @@
                         <span class="font-bold text-slate-800"><?= format_rupiah($subtotal) ?></span>
                     </div>
                     <div class="flex justify-between text-slate-600">
-                        <span>PPN 11% Resmi (e-Faktur):</span>
+                        <span>PPN <?= esc(format_tax_rate()) ?> Resmi (e-Faktur):</span>
                         <span class="font-bold text-blue-700"><?= format_rupiah($ppnTotal) ?></span>
                     </div>
                     <div class="flex justify-between text-slate-600">
                         <span>Biaya Pengiriman Logistik:</span>
-                        <span class="font-bold text-emerald-600">GRATIS (Corporate)</span>
+                        <span class="font-bold text-emerald-600"><?= ($shippingAmount ?? 0) > 0 ? format_rupiah($shippingAmount) : 'GRATIS (' . esc(get_system_setting('free_shipping_region', 'Corporate Jabodetabek')) . ')' ?></span>
                     </div>
                     <div class="border-t border-slate-200 pt-3 flex justify-between items-baseline font-bold">
                         <span class="text-sm text-slate-900">Total Pembayaran PO:</span>
@@ -116,7 +116,7 @@
                         <span class="material-symbols-outlined text-[16px] text-purple-600">event_repeat</span>
                         Fasilitas Term of Payment (TOP)
                     </p>
-                    <p class="text-purple-700">Dapat dibayar tempo 14-90 hari kalender setelah Berita Acara Serah Terima (BAST) diterbitkan.</p>
+                    <p class="text-purple-700">Dapat dibayar tempo <?= get_min_top_days() ?>-<?= get_max_top_days() ?> hari kalender setelah Berita Acara Serah Terima (BAST) diterbitkan.</p>
                 </div>
 
                 <a href="<?= base_url('checkout') ?>" class="w-full btn-akuada-primary py-3 text-sm flex items-center justify-center gap-2">

@@ -144,9 +144,9 @@
 
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Kata Sandi Akun Default: <span class="text-rose-500">*</span></label>
-                    <input type="text" name="password" value="admin123" required 
+                    <input type="text" name="password" value="<?= esc(get_system_setting('default_account_password', 'admin123')) ?>" required 
                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-600 font-mono font-bold text-slate-900">
-                    <span class="text-[10px] text-slate-400">Default: admin123 (Vendor dapat mengganti password setelah login).</span>
+                    <span class="text-[10px] text-slate-400">Default: <?= esc(get_system_setting('default_account_password', 'admin123')) ?> (Vendor dapat mengganti password setelah login).</span>
                 </div>
             </div>
 

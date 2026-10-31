@@ -11,7 +11,7 @@
             <span class="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold uppercase tracking-wider">Accounts Receivable (AR) Vendor</span>
         </div>
         <h1 class="text-xl font-extrabold text-slate-900 mt-1">Daftar Piutang Settlement & Pencairan Dana dari AkuAda</h1>
-        <p class="text-xs text-slate-500 mt-0.5">Pantau jadwal jatuh tempo pembayaran hak bersih penjualan Anda dari PT Aku Ada Indonesia beserta bukti transfer pencairannya.</p>
+        <p class="text-xs text-slate-500 mt-0.5">Pantau jadwal jatuh tempo pembayaran hak bersih penjualan Anda dari AkuAda beserta bukti transfer pencairannya.</p>
     </div>
 
     <!-- 3 Summary Cards -->
@@ -43,6 +43,18 @@
             <div class="text-[11px] text-emerald-600 mt-0.5">Lunas ditransfer oleh AkuAda</div>
         </div>
     </div>
+
+    <!-- Tabel Aging Piutang Vendor (Nama Perusahaan, Current, 30, 60, 90, 120, Total) -->
+    <?php
+        $vendorAging = calculate_aging_summary($orders, 'vendor', [], 'buyer_name');
+    ?>
+    <?= render_aging_table(
+        $vendorAging,
+        'Tabel Aging Piutang Settlement per Perusahaan Buyer',
+        'Ringkasan kondisi umur piutang penjualan PO berdasarkan kategori Current, 30 Hari, 60 Hari, 90 Hari, dan 120 Hari.',
+        'Nama Perusahaan',
+        'blue'
+    ) ?>
 
     <!-- Vendor Bank Account Card -->
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 text-xs">

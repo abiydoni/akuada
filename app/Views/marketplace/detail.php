@@ -91,7 +91,7 @@
                     </div>
                     <div class="flex items-center gap-2 pt-1 text-xs text-slate-600">
                         <span class="material-symbols-outlined text-[16px] text-emerald-600">check_circle</span>
-                        <span>Faktur Pajak PPN 11% Otomatis Diterbitkan DJP</span>
+                        <span>Faktur Pajak PPN <?= esc(format_tax_rate()) ?> Otomatis Diterbitkan DJP</span>
                     </div>
                 </div>
             </div>
@@ -202,7 +202,7 @@
                             <span class="font-bold text-slate-800" id="calcSubtotal">Rp 0</span>
                         </div>
                         <div class="flex justify-between text-slate-500">
-                            <span>PPN 11% (e-Faktur):</span>
+                            <span>PPN <?= esc(format_tax_rate()) ?> (e-Faktur):</span>
                             <span class="font-bold text-blue-700" id="calcPpn">Rp 0</span>
                         </div>
                         <div class="border-t border-slate-200 pt-2 flex justify-between items-baseline font-bold">
@@ -215,11 +215,11 @@
                     <div class="text-[11px] text-slate-500 space-y-1">
                         <p class="flex items-center gap-1">
                             <span class="material-symbols-outlined text-[14px] text-purple-600">verified</span>
-                            <span>Bisa bayar tempo <strong>TOP 14/30/60/90 hari</strong></span>
+                            <span>Bisa bayar tempo <strong>TOP <?= implode('/', get_allowed_top_terms()) ?> hari</strong></span>
                         </p>
                         <p class="flex items-center gap-1">
                             <span class="material-symbols-outlined text-[14px] text-blue-600">local_shipping</span>
-                            <span>Gratis pengiriman korporat Jabodetabek</span>
+                            <span><?= (float)get_system_setting('default_shipping_amount', 0) > 0 ? 'Biaya logistik ' . format_rupiah((float)get_system_setting('default_shipping_amount', 0)) : 'Gratis pengiriman ' . esc(get_system_setting('free_shipping_region', 'korporat Jabodetabek')) ?></span>
                         </p>
                     </div>
 
@@ -244,7 +244,7 @@
     const basePrice = <?= (float)$product['price_regular'] ?>;
     const moq = <?= (int)$product['moq'] ?>;
     const isTaxable = <?= $product['is_taxable'] ? 'true' : 'false' ?>;
-    const ppnRate = <?= (float)$product['ppn_percent'] ?> / 100;
+    const ppnRate = <?= (float)get_ppn_rate() ?> / 100;
 
     const tiers = <?= json_encode($product['price_tiers'] ?? []) ?>;
 

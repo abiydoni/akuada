@@ -89,9 +89,9 @@
                 <span class="material-symbols-outlined text-[20px]">receipt_long</span>
             </div>
             <div>
-                <strong class="text-slate-900 font-bold text-xs block">Penerbitan Faktur Penjualan Resmi: PT Aku Ada Indonesia</strong>
+                <strong class="text-slate-900 font-bold text-xs block">Penerbitan Faktur Penjualan Resmi: AkuAda</strong>
                 <p class="text-slate-600 text-[11px] mt-0.5">
-                    Sebagai hotel / perusahaan pembeli, Anda menerima invoice resmi langsung dari <strong>PT Aku Ada Indonesia</strong> (No. <span class="font-mono font-bold text-purple-700"><?= esc($order['invoice_number'] ?? ('INV/AKUADA/' . date('Ym') . '/' . str_pad($order['id'], 4, '0', STR_PAD_LEFT))) ?></span>) untuk keperluan pembukuan AP & pelunasan TOP.
+                    Sebagai hotel / perusahaan pembeli, Anda menerima invoice resmi langsung dari <strong>AkuAda</strong> (No. <span class="font-mono font-bold text-purple-700"><?= esc($order['invoice_number'] ?? ('INV/AKUADA/' . date('Ym') . '/' . str_pad($order['id'], 4, '0', STR_PAD_LEFT))) ?></span>) untuk keperluan pembukuan AP & pelunasan TOP.
                 </p>
             </div>
         </div>
@@ -191,8 +191,12 @@
                         <td class="px-4 py-3 text-right font-mono text-slate-900"><?= format_rupiah($order['subtotal']) ?></td>
                     </tr>
                     <tr>
-                        <td colspan="4" class="px-4 py-3 text-right text-blue-700">Pajak Pertambahan Nilai (PPN 11%):</td>
+                        <td colspan="4" class="px-4 py-3 text-right text-blue-700">Pajak Pertambahan Nilai (PPN <?= esc(format_tax_rate()) ?>):</td>
                         <td class="px-4 py-3 text-right font-mono text-blue-700"><?= format_rupiah($order['ppn_amount']) ?></td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="px-4 py-3 text-right text-slate-600">Biaya Logistik & Pengiriman:</td>
+                        <td class="px-4 py-3 text-right font-mono text-slate-900"><?= format_rupiah($order['shipping_amount'] ?? 0) ?></td>
                     </tr>
                     <tr class="text-sm bg-purple-50/50">
                         <td colspan="4" class="px-4 py-3.5 text-right text-purple-950 font-black">TOTAL NILAI PURCHASE ORDER:</td>
@@ -222,7 +226,7 @@
                     <div class="h-10"></div>
                     <div>
                         <strong class="block text-slate-900 underline"><?= esc($order['vendor_name']) ?></strong>
-                        <span class="text-[10px] text-slate-400">Head of Corporate Sales</span>
+                        <span class="text-[10px] text-slate-400"><?= esc(get_system_setting('inv_vendor_default_title', 'Head of Corporate Sales')) ?></span>
                     </div>
                 </div>
 
@@ -237,7 +241,7 @@
                     </div>
                     <div>
                         <strong class="block text-slate-900 underline"><?= esc($order['buyer_pic'] ?? 'Rina Kartika') ?></strong>
-                        <span class="text-[10px] text-slate-400">Senior Procurement Manager</span>
+                        <span class="text-[10px] text-slate-400"><?= esc(get_system_setting('inv_buyer_default_title', 'Senior Procurement Manager')) ?></span>
                     </div>
                 </div>
             </div>

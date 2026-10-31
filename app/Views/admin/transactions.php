@@ -10,7 +10,7 @@
                 <span class="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold tracking-wide uppercase">Audit Pengadaan B2B</span>
             </div>
             <h1 class="text-xl font-extrabold text-slate-900 mt-1">Manajemen Transaksi & Purchase Order</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Pantau status siklus PO, dokumen serah terima BAST, dan e-Faktur Pajak PPN 11%.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Pantau status siklus PO, dokumen serah terima BAST, dan e-Faktur Pajak PPN <?= esc(format_tax_rate()) ?>.</p>
         </div>
         <div class="flex items-center gap-2">
             <span class="px-3 py-1.5 rounded-xl bg-purple-50 text-purple-700 text-xs font-bold border border-purple-200">
@@ -92,7 +92,7 @@
                             <td class="px-4 py-3.5 align-top text-right font-mono">
                                 <div class="font-black text-slate-900 text-sm"><?= format_rupiah($ord['total_amount']) ?></div>
                                 <div class="text-[11px] text-slate-600 mt-0.5">DPP: <?= format_rupiah($ord['subtotal']) ?></div>
-                                <div class="text-[10px] text-blue-600 font-semibold">+ PPN 11%: <?= format_rupiah($ord['ppn_amount']) ?></div>
+                                <div class="text-[10px] text-blue-600 font-semibold">+ PPN <?= esc(format_tax_rate()) ?>: <?= format_rupiah($ord['ppn_amount']) ?></div>
                                 <div class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-200 mt-1">
                                     Fee AkuAda: <?= format_rupiah($ord['total_vendor_fee'] ?? 0) ?>
                                 </div>

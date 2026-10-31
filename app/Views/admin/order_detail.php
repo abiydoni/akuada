@@ -72,7 +72,7 @@
                     <strong class="text-slate-900"><?= format_rupiah($order['subtotal']) ?></strong>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-slate-600">PPN 11%:</span>
+                    <span class="text-slate-600">PPN <?= esc(format_tax_rate()) ?>:</span>
                     <strong class="text-blue-700">+ <?= format_rupiah($order['ppn_amount']) ?></strong>
                 </div>
                 <div class="flex justify-between pt-1 border-t border-purple-200">
@@ -110,7 +110,7 @@
                         <th class="px-4 py-3.5 text-center w-28">Kuantitas</th>
                         <th class="px-4 py-3.5 text-right w-36">Harga Satuan (Web)</th>
                         <th class="px-4 py-3.5 text-right w-48">Fee Platform & Hak Vendor</th>
-                        <th class="px-4 py-3.5 text-right w-44">PPN 11% & Subtotal</th>
+                        <th class="px-4 py-3.5 text-right w-44">PPN <?= esc(format_tax_rate()) ?> & Subtotal</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
@@ -234,6 +234,12 @@
                     <label class="block font-bold text-slate-700 mb-1">No. e-Faktur Pajak:</label>
                     <input type="text" name="tax_invoice_number" value="<?= esc($order['tax_invoice_number'] ?? '') ?>" placeholder="010.002-26..." 
                            class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-purple-600 font-mono">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-emerald-800 mb-1">Biaya Logistik & Pengiriman (Rp):</label>
+                    <input type="number" name="shipping_amount" value="<?= (float)($order['shipping_amount'] ?? 0) ?>" min="0" step="1000"
+                           class="w-full px-3 py-2 rounded-xl border border-emerald-300 bg-emerald-50/40 focus:border-emerald-600 font-mono font-bold text-emerald-900">
                 </div>
 
                 <button type="submit" class="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold transition flex items-center justify-center gap-1.5 shadow-sm">

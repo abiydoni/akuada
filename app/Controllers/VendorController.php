@@ -112,14 +112,17 @@ class VendorController extends BaseController
         $status = $this->request->getPost('order_status');
         $bastNumber = $this->request->getPost('bast_number');
         $taxInvoiceNumber = $this->request->getPost('tax_invoice_number');
+        $shippingAmount = $this->request->getPost('shipping_amount');
 
         $orderModel = new OrderModel();
         $orderModel->update($orderId, [
             'order_status'       => $status,
             'bast_number'        => $bastNumber,
             'tax_invoice_number' => $taxInvoiceNumber,
+            'shipping_amount'    => ($shippingAmount !== null && $shippingAmount !== '') ? max(0, (float)$shippingAmount) : 0,
             'updated_at'         => date('Y-m-d H:i:s')
         ]);
+        sync_orders_with_system_settings();
 
         $statusLabels = [
             'po_issued'       => 'Penerbitan PO',
@@ -222,7 +225,7 @@ class VendorController extends BaseController
             'stock'               => $stock,
             'lead_time_days'      => $leadTime,
             'is_taxable'          => $isTaxable,
-            'ppn_percent'         => 11.00,
+            'ppn_percent'         => get_ppn_rate(),
             'vendor_fee_percent'  => $feePercent,
             'tkdn_percent'        => $tkdn,
             'is_sample_available' => $isSample,

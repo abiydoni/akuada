@@ -27,7 +27,7 @@
                 </h1>
 
                 <p class="text-slate-300 text-sm sm:text-base max-w-xl leading-relaxed">
-                    Pengadaan barang kantor, IT hardware, perlengkapan K3 APD, hygiene, hingga pantry korporat. Lengkap dengan <strong>Faktur Pajak PPN 11%</strong>, harga grosir bertingkat, dan opsi pembayaran tempo <strong>TOP hingga 90 hari</strong>.
+                    Pengadaan barang kantor, IT hardware, perlengkapan K3 APD, hygiene, hingga pantry korporat. Lengkap dengan <strong>Faktur Pajak PPN <?= esc(format_tax_rate()) ?></strong>, harga grosir bertingkat, dan opsi pembayaran tempo <strong>TOP hingga <?= get_max_top_days() ?> hari</strong>.
                 </p>
 
                 <!-- Quick Action Buttons -->
@@ -49,11 +49,11 @@
                         <div class="text-slate-400 text-[11px]">Resmi Ber-Faktur Pajak</div>
                     </div>
                     <div>
-                        <div class="font-extrabold text-lg text-blue-300">90 Hari</div>
+                        <div class="font-extrabold text-lg text-blue-300"><?= get_max_top_days() ?> Hari</div>
                         <div class="text-slate-400 text-[11px]">Kredit Tempo (TOP)</div>
                     </div>
                     <div>
-                        <div class="font-extrabold text-lg text-pink-300">Rp 500 Juta</div>
+                        <div class="font-extrabold text-lg text-pink-300"><?= format_rupiah((float)get_system_setting('max_credit_limit', 500000000)) ?></div>
                         <div class="text-slate-400 text-[11px]">Plafon Kredit Pengadaan</div>
                     </div>
                 </div>
@@ -83,11 +83,11 @@
                         <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5 flex items-center justify-between">
                             <div>
                                 <span class="block text-slate-400 text-[11px]">Estimasi Hemat Volume:</span>
-                                <span class="text-base font-extrabold text-emerald-400">Hingga 18% Diskon</span>
+                                <span class="text-base font-extrabold text-emerald-400">Hingga <?= esc(get_system_setting('max_volume_discount', '18%')) ?> Diskon</span>
                             </div>
                             <div class="text-right">
                                 <span class="block text-slate-400 text-[11px]">Fasilitas Pembayaran:</span>
-                                <span class="text-xs font-bold text-white">TOP 30-90 Hari</span>
+                                <span class="text-xs font-bold text-white">TOP <?= get_min_top_days() ?>-<?= get_max_top_days() ?> Hari</span>
                             </div>
                         </div>
                     </div>
@@ -180,7 +180,7 @@
     <div class="flex items-center justify-between mb-6">
         <div>
             <h2 class="text-xl font-bold text-slate-900">Kebutuhan Pengadaan Operasional Unggulan</h2>
-            <p class="text-xs text-slate-500 mt-1">Daftar barang dengan harga bertingkat grosir, MOQ jelas, dan faktur pajak PPN 11%.</p>
+            <p class="text-xs text-slate-500 mt-1">Daftar barang dengan harga bertingkat grosir, MOQ jelas, dan faktur pajak PPN <?= esc(format_tax_rate()) ?>.</p>
         </div>
         <a href="<?= base_url('products') ?>" class="btn-akuada-outline text-xs px-3.5 py-1.5">
             Lihat Semua Produk
@@ -209,7 +209,7 @@
 
                         <div class="absolute bottom-2.5 right-2.5">
                             <span class="badge-ppn shadow-sm">
-                                PPN 11% Resmi
+                                PPN <?= esc(format_tax_rate()) ?> Resmi
                             </span>
                         </div>
                     </div>

@@ -11,11 +11,11 @@ class AkuAda extends BaseConfig
      */
     public string $appName = 'AkuAda';
     public string $tagline = 'B2B Marketplace & E-Procurement Operasional Perusahaan';
-    public string $companyLegal = 'PT Aku Ada Nusantara Bersama';
-    public string $contactEmail = 'b2b@akuada.co.id';
-    public string $contactPhone = '(021) 5088-9900';
-    public string $whatsapp = '+62 811-9988-2200';
-    public string $address = 'AkuAda Procurement Tower Lt. 18, Jl. TB Simatupang No. 22, Jakarta Selatan';
+    public string $companyLegal = 'AkuAda';
+    public string $contactEmail = 'akuada@gmail.com';
+    public string $contactPhone = '+62 895 1010 1008';
+    public string $whatsapp = '+62 895-1010-1008';
+    public string $address = 'AkuAda Indonesia Randuares, Kel. Kumpulrejo, Kec. Argomulyo, Kota Salatiga 50734';
 
     /**
      * Theme & Color Palettes (Ungu, Biru, Pink)

@@ -90,6 +90,23 @@ $routes->group('admin', function ($routes) {
     // 12. System Settings
     $routes->get('settings', 'AdminController::settings');
     $routes->post('settings/update', 'AdminController::updateSettings');
+
+    // 13. General Ledger & Financial Reporting (Akuntansi & Laporan Keuangan)
+    $routes->get('accounting', 'AccountingController::coa');
+    $routes->get('accounting/coa', 'AccountingController::coa');
+    $routes->post('accounting/coa/store', 'AccountingController::storeCoa');
+    $routes->post('accounting/coa/update', 'AccountingController::updateCoa');
+    $routes->get('accounting/journals', 'AccountingController::journals');
+    $routes->post('accounting/journals/store', 'AccountingController::storeJournal');
+    $routes->get('accounting/journals/delete/(:num)', 'AccountingController::deleteJournal/$1');
+    $routes->get('accounting/journals/sync', 'AccountingController::syncJournals');
+    $routes->get('accounting/ledger', 'AccountingController::ledger');
+    $routes->get('accounting/cash-bank', 'AccountingController::cashBank');
+    $routes->post('accounting/cash-bank/store', 'AccountingController::storeCashBankTransaction');
+    $routes->get('accounting/trial-balance', 'AccountingController::trialBalance');
+    $routes->get('accounting/income-statement', 'AccountingController::incomeStatement');
+    $routes->get('accounting/balance-sheet', 'AccountingController::balanceSheet');
+    $routes->get('accounting/cash-flow', 'AccountingController::cashFlow');
 });
 
 // 6. Dashboard Vendor (Mitra Supplier B2B)

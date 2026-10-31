@@ -87,7 +87,7 @@ class CustomerController extends BaseController
         }
 
         return view('customer/invoice', [
-            'title' => 'Invoice ' . ($order['invoice_number'] ?? $order['po_number']) . ' - PT Aku Ada Indonesia',
+            'title' => 'Invoice ' . ($order['invoice_number'] ?? $order['po_number']) . ' - AkuAda',
             'order' => $order,
             'isAdmin' => false
         ]);
@@ -151,8 +151,8 @@ class CustomerController extends BaseController
                              ->findAll();
 
         return view('customer/tax_invoices', [
-            'title'  => 'e-Faktur Pajak PPN 11% Resmi - AkuAda B2B',
-            'orders' => $orders
+            'title'  => 'e-Faktur Pajak PPN ' . format_tax_rate() . ' Resmi - AkuAda B2B',
+            'orders' => array_map('recalculate_order_from_settings', $orders)
         ]);
     }
 

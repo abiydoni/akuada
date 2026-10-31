@@ -64,6 +64,15 @@
             </div>
         </div>
 
+        <!-- Tabel Aging Piutang (Nama Perusahaan, Current, 30, 60, 90, 120, Total) -->
+        <?= render_aging_table(
+            $buyerAging ?? calculate_aging_summary($orders, 'buyer'),
+            'Tabel Aging Piutang Buyer ke AkuAda (Accounts Receivable Aging)',
+            'Kondisi umur piutang tagihan TOP per perusahaan buyer berdasarkan Current, 30 Hari, 60 Hari, 90 Hari, dan 120 Hari.',
+            'Nama Perusahaan (Buyer)',
+            'purple'
+        ) ?>
+
         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -181,6 +190,15 @@
                 <div class="text-[11px] text-emerald-600 mt-0.5">Telah ditransfer ke mitra supplier</div>
             </div>
         </div>
+
+        <!-- Tabel Aging Hutang (Nama Perusahaan, Current, 30, 60, 90, 120, Total) -->
+        <?= render_aging_table(
+            $vendorAging ?? calculate_aging_summary($orders, 'vendor'),
+            'Tabel Aging Hutang AkuAda ke Vendor (Accounts Payable Aging)',
+            'Kondisi umur hutang settlement per perusahaan vendor berdasarkan Current, 30 Hari, 60 Hari, 90 Hari, dan 120 Hari.',
+            'Nama Perusahaan (Vendor)',
+            'blue'
+        ) ?>
 
         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">

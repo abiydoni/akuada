@@ -36,6 +36,8 @@
     </div>
 
     <?php
+        $order = recalculate_order_from_settings($order);
+        $ppnRateLabel = format_tax_rate();
         $feeTotal = (float)($order['total_vendor_fee'] ?? 0);
         $netPayout = (float)($order['vendor_net_payout'] ?? ($order['subtotal'] - $feeTotal));
         $totalSettlementWithPpn = $netPayout + (float)$order['ppn_amount'];
@@ -69,13 +71,13 @@
             </div>
         </div>
 
-        <!-- Billed To PT Aku Ada Indonesia -->
+        <!-- Billed To AkuAda -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
             <div class="space-y-1">
                 <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">DITAGIHKAN KEPADA PLATFORM:</span>
-                <strong class="text-sm font-black text-slate-900 block">PT AKU ADA INDONESIA (E-Procurement Aggregator)</strong>
-                <p class="text-slate-600">Sahid Sudirman Center Lt. 28, Jl. Jend. Sudirman Kav. 86, Jakarta Pusat</p>
-                <p class="text-slate-600 font-mono">NPWP: 01.999.888.7-011.000</p>
+                <strong class="text-sm font-black text-slate-900 block"><?= esc(get_system_setting('inv_issuer_name', 'AKUADA')) ?> (E-Procurement Aggregator)</strong>
+                <p class="text-slate-600"><?= esc(get_system_setting('inv_issuer_address_1', 'Sahid Sudirman Center Lt. 28, Jl. Jend. Sudirman Kav. 86')) ?>, <?= esc(get_system_setting('inv_issuer_address_2', 'Jakarta Pusat')) ?></p>
+                <p class="text-slate-600 font-mono">NPWP: <?= esc(get_system_setting('inv_issuer_npwp', '01.999.888.7-011.000')) ?> | NIB: <?= esc(get_system_setting('inv_issuer_nib', '9120008899112')) ?></p>
                 <p class="text-slate-500 pt-1">Untuk Pengadaan Buyer: <strong><?= esc($order['buyer_name']) ?></strong></p>
             </div>
             <div class="space-y-1 md:border-l md:border-slate-200 md:pl-6">
@@ -83,6 +85,7 @@
                 <p class="text-slate-700">Bank Tujuan: <strong><?= esc($order['vendor_bank_name'] ?? 'BCA Corporate') ?></strong></p>
                 <p class="text-slate-700 font-mono">No. Rekening: <strong><?= esc($order['vendor_bank_account_number'] ?? '8800-1122-3344') ?></strong></p>
                 <p class="text-slate-700">Atas Nama: <strong><?= esc($order['vendor_bank_account_holder'] ?? $order['vendor_name']) ?></strong></p>
+                <p class="text-emerald-700 font-bold pt-0.5">Jadwal Settlement: <?= esc(get_system_setting('vendor_fee_settlement_term', 'H+3 BAST')) ?></p>
             </div>
         </div>
 
@@ -92,11 +95,11 @@
                 <thead class="bg-slate-900 text-white font-bold uppercase text-[10px] tracking-wider">
                     <tr>
                         <th class="px-3 py-3 text-center w-10">No</th>
-                        <th class="px-4 py-3">Nama Barang & SKU</th>
-                        <th class="px-4 py-3 text-center">Qty</th>
-                        <th class="px-4 py-3 text-right">Subtotal DPP</th>
-                        <th class="px-4 py-3 text-right">Potongan Fee Platform</th>
-                        <th class="px-4 py-3 text-right">Hak Bersih Vendor (Net)</th>
+                        <th class="px-4 py-3">Nama Barang</th>
+                        <th class="px-4 py-3 text-center whitespace-nowrap">Qty</th>
+                        <th class="px-4 py-3 text-right whitespace-nowrap">Subtotal DPP</th>
+                        <th class="px-4 py-3 text-right whitespace-nowrap">Potongan Fee Platform</th>
+                        <th class="px-4 py-3 text-right whitespace-nowrap">Hak Bersih Vendor (Net)</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200">
@@ -105,35 +108,34 @@
                             <td class="px-3 py-3 text-center font-mono text-slate-400"><?= $idx + 1 ?></td>
                             <td class="px-4 py-3">
                                 <strong class="text-slate-900 block"><?= esc($it['product_name']) ?></strong>
-                                <span class="font-mono text-[10px] text-slate-500">SKU: <?= esc($it['sku']) ?></span>
                             </td>
-                            <td class="px-4 py-3 text-center font-bold"><?= number_format($it['qty']) ?> <?= esc($it['uom']) ?></td>
-                            <td class="px-4 py-3 text-right font-mono"><?= format_rupiah($it['subtotal']) ?></td>
-                            <td class="px-4 py-3 text-right font-mono text-rose-700">-<?= format_rupiah($it['vendor_fee_amount']) ?> (<?= (float)$it['vendor_fee_percent'] ?>%)</td>
-                            <td class="px-4 py-3 text-right font-mono font-bold text-emerald-700"><?= format_rupiah($it['vendor_net_amount']) ?></td>
+                            <td class="px-4 py-3 text-center font-bold whitespace-nowrap"><?= number_format($it['qty']) ?> <?= esc($it['uom']) ?></td>
+                            <td class="px-4 py-3 text-right font-mono whitespace-nowrap"><?= format_rupiah($it['subtotal']) ?></td>
+                            <td class="px-4 py-3 text-right font-mono text-rose-700 whitespace-nowrap">-<?= format_rupiah($it['vendor_fee_amount']) ?> (<?= (float)$it['vendor_fee_percent'] ?>%)</td>
+                            <td class="px-4 py-3 text-right font-mono font-bold text-emerald-700 whitespace-nowrap"><?= format_rupiah($it['vendor_net_amount']) ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
                 <tfoot class="border-t-2 border-slate-900 font-bold bg-slate-50 divide-y divide-slate-200">
                     <tr>
                         <td colspan="5" class="px-4 py-2.5 text-right text-slate-600">Total Penjualan Barang (DPP):</td>
-                        <td class="px-4 py-2.5 text-right font-mono"><?= format_rupiah($order['subtotal']) ?></td>
+                        <td class="px-4 py-2.5 text-right font-mono whitespace-nowrap"><?= format_rupiah($order['subtotal']) ?></td>
                     </tr>
                     <tr>
                         <td colspan="5" class="px-4 py-2.5 text-right text-rose-700">Dikurangi Komisi Layanan Platform AkuAda:</td>
-                        <td class="px-4 py-2.5 text-right font-mono text-rose-700">-<?= format_rupiah($feeTotal) ?></td>
+                        <td class="px-4 py-2.5 text-right font-mono text-rose-700 whitespace-nowrap">-<?= format_rupiah($feeTotal) ?></td>
                     </tr>
                     <tr>
                         <td colspan="5" class="px-4 py-2.5 text-right text-emerald-900">Hak Bersih Pokok Barang (Net Payout DPP):</td>
-                        <td class="px-4 py-2.5 text-right font-mono text-emerald-800"><?= format_rupiah($netPayout) ?></td>
+                        <td class="px-4 py-2.5 text-right font-mono text-emerald-800 whitespace-nowrap"><?= format_rupiah($netPayout) ?></td>
                     </tr>
                     <tr>
-                        <td colspan="5" class="px-4 py-2.5 text-right text-blue-700">PPN 11% Sesuai e-Faktur Vendor:</td>
-                        <td class="px-4 py-2.5 text-right font-mono text-blue-700">+<?= format_rupiah($order['ppn_amount']) ?></td>
+                        <td colspan="5" class="px-4 py-2.5 text-right text-blue-700">PPN <?= esc($ppnRateLabel) ?> Sesuai e-Faktur Vendor:</td>
+                        <td class="px-4 py-2.5 text-right font-mono text-blue-700 whitespace-nowrap">+<?= format_rupiah($order['ppn_amount']) ?></td>
                     </tr>
                     <tr class="bg-emerald-50 text-sm">
                         <td colspan="5" class="px-4 py-3.5 text-right text-emerald-950 font-black">TOTAL PENCAIRAN KE REKENING VENDOR:</td>
-                        <td class="px-4 py-3.5 text-right font-mono text-emerald-900 font-black text-base"><?= format_rupiah($totalSettlementWithPpn) ?></td>
+                        <td class="px-4 py-3.5 text-right font-mono text-emerald-900 font-black text-base whitespace-nowrap"><?= format_rupiah($totalSettlementWithPpn) ?></td>
                     </tr>
                 </tfoot>
             </table>
@@ -142,6 +144,36 @@
         <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 text-xs">
             <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-widest block mb-0.5">Terbilang:</span>
             <p class="font-extrabold text-emerald-950 italic text-sm"># <?= esc(terbilang_rupiah($totalSettlementWithPpn)) ?> #</p>
+        </div>
+
+        <!-- Signatory & Verification Block -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-slate-200 text-xs text-center">
+            <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-6">
+                <div>
+                    <span class="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider block">Diajukan Oleh Mitra Vendor,</span>
+                    <strong class="text-xs text-slate-900 font-extrabold block"><?= esc($order['vendor_name']) ?></strong>
+                </div>
+                <div class="pt-4">
+                    <strong class="block text-slate-900 font-bold underline text-xs"><?= esc($order['vendor_pic'] ?? 'Finance Dept') ?></strong>
+                    <span class="text-[10px] text-slate-500 block">Authorized Vendor Signatory</span>
+                </div>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
+                <div>
+                    <span class="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider block">Diverifikasi & Disetujui Oleh,</span>
+                    <strong class="text-xs text-slate-900 font-extrabold block"><?= esc(get_system_setting('inv_issuer_name', 'AKUADA')) ?></strong>
+                    <span class="text-[10px] text-slate-500 block"><?= esc(get_system_setting('inv_sign_division', 'Finance & Corporate Accounting Division')) ?></span>
+                </div>
+                <div>
+                    <strong class="block text-slate-900 font-bold underline text-xs"><?= esc(get_system_setting('inv_sign_name', 'Dra. Maya Anggraini, Ak., CA.')) ?></strong>
+                    <span class="text-[10px] text-slate-500 block"><?= esc(get_system_setting('inv_sign_title', 'Finance & Treasury Director')) ?></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-200 text-center text-[10px] text-slate-400">
+            <?= esc(get_system_setting('inv_footer_note', 'Dokumen ini merupakan Faktur Penjualan Sah yang diterbitkan oleh sistem elektronik AkuAda sesuai ketentuan perpajakan dan transaksi elektronik Republik Indonesia.')) ?>
         </div>
     </div>
 </body>

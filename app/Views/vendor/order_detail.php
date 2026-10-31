@@ -61,7 +61,7 @@
                     <strong class="text-base font-black font-mono text-emerald-800"><?= format_rupiah($order['vendor_net_payout'] ?? ($order['subtotal'] - ($order['total_vendor_fee'] ?? 0))) ?></strong>
                 </div>
                 <div class="text-[11px] text-slate-500 pt-1">
-                    PPN 11% (<?= format_rupiah($order['ppn_amount']) ?>) dikelola sesuai e-Faktur Pajak B2B.
+                    PPN <?= esc(format_tax_rate()) ?> (<?= format_rupiah($order['ppn_amount']) ?>) dikelola sesuai e-Faktur Pajak B2B.
                 </div>
             </div>
         </div>
@@ -171,8 +171,13 @@
                 </div>
 
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Nomor Seri e-Faktur Pajak PPN 11%:</label>
+                    <label class="block font-bold text-slate-700 mb-1">Nomor Seri e-Faktur Pajak PPN <?= esc(format_tax_rate()) ?>:</label>
                     <input type="text" name="tax_invoice_number" value="<?= esc($order['tax_invoice_number'] ?? '') ?>" placeholder="010.002-26.xxxxxxxx" class="w-full px-3 py-2 rounded-xl border border-slate-300 font-mono">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-emerald-800 mb-1">Biaya Logistik / Pengiriman (Rp):</label>
+                    <input type="number" name="shipping_amount" value="<?= (float)($order['shipping_amount'] ?? 0) ?>" min="0" step="1000" class="w-full px-3 py-2 rounded-xl border border-emerald-300 bg-emerald-50/40 font-mono font-bold text-emerald-900">
                 </div>
 
                 <div>

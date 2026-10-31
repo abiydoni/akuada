@@ -225,7 +225,7 @@
 
             <div>
                 <label class="block font-bold text-slate-700 mb-1">Kata Sandi Awal: <span class="text-rose-500">*</span></label>
-                <input type="text" name="password" value="admin123" required 
+                <input type="text" name="password" value="<?= esc(get_system_setting('default_account_password', 'admin123')) ?>" required 
                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600 font-mono text-purple-700 font-bold">
             </div>
 
@@ -339,7 +339,7 @@
         <form id="form-reset-password" action="" method="POST" class="space-y-4">
             <div>
                 <label class="block font-bold text-slate-700 mb-1">Kata Sandi Baru: <span class="text-rose-500">*</span></label>
-                <input type="text" name="new_password" value="admin123" required 
+                <input type="text" name="new_password" value="<?= esc(get_system_setting('default_account_password', 'admin123')) ?>" required 
                        class="w-full px-3.5 py-2.5 rounded-xl border border-purple-300 focus:border-purple-600 font-mono text-purple-700 font-bold">
             </div>
 

@@ -1,25 +1,28 @@
 <?= $this->extend('layouts/customer') ?>
 
 <?= $this->section('customer_content') ?>
+<?php
+$maxTopDays     = get_max_top_days();
+$allowedTerms   = get_allowed_top_terms();
+$maxCreditLimit = (float)get_system_setting('max_credit_limit', 500000000);
+$creditStep     = (float)get_system_setting('credit_step_amount', 25000000);
+$limit          = (float)($company['credit_limit_top'] ?? get_system_setting('default_credit_limit', 100000000));
+$used           = (float)($company['credit_used_top'] ?? 0);
+$remaining      = max(0, $limit - $used);
+$percentage     = $limit > 0 ? round(($used / $limit) * 100) : 0;
+?>
 
 <div class="space-y-6">
     <div>
         <h1 class="text-xl font-extrabold text-slate-900">Plafon Kredit Term of Payment (TOP)</h1>
-        <p class="text-xs text-slate-500 mt-0.5">Kelola batas kredit pengadaan tempo tanpa bunga hingga 90 hari untuk perusahaan Anda.</p>
+        <p class="text-xs text-slate-500 mt-0.5">Kelola batas kredit pengadaan tempo tanpa bunga hingga <?= $maxTopDays ?> hari untuk perusahaan Anda.</p>
     </div>
-
-    <?php
-        $limit = (float)($company['credit_limit_top'] ?? 250000000);
-        $used = (float)($company['credit_used_top'] ?? 31250000);
-        $remaining = max(0, $limit - $used);
-        $percentage = $limit > 0 ? round(($used / $limit) * 100) : 0;
-    ?>
 
     <!-- Status Card -->
     <div class="bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
         <div class="max-w-xl space-y-4 relative z-10">
             <span class="px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-bold uppercase tracking-wider backdrop-blur">
-                Fasilitas Pembiayaan B2B AkuAda
+                Fasilitas Pembiayaan B2B <?= esc(get_system_setting('app_name', 'AkuAda')) ?>
             </span>
             <div>
                 <span class="text-xs text-purple-200 block">Sisa Plafon Kredit Pengadaan Tersedia:</span>
@@ -32,7 +35,7 @@
                     <span>Total Limit: <strong><?= format_rupiah($limit) ?></strong></span>
                 </div>
                 <div class="w-full bg-white/20 rounded-full h-3 overflow-hidden p-0.5">
-                    <div class="bg-gradient-to-r from-pink-500 to-purple-400 h-2 rounded-full" style="width: <?= $percentage ?>%"></div>
+                    <div class="bg-gradient-to-r from-pink-500 to-purple-400 h-2 rounded-full" style="width: <?= min(100, $percentage) ?>%"></div>
                 </div>
             </div>
         </div>
@@ -49,17 +52,17 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Nominal Plafon Baru yang Diinginkan (Rp): <span class="text-rose-500">*</span></label>
-                    <input type="number" name="requested_limit" required value="<?= $limit + 100000000 ?>" step="25000000"
+                    <input type="number" name="requested_limit" required value="<?= min($maxCreditLimit, $limit + ($creditStep * 4)) ?>" step="<?= (int)$creditStep ?>" max="<?= (int)$maxCreditLimit ?>"
                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600 font-extrabold text-base text-purple-900">
-                    <p class="text-[10px] text-slate-400 mt-1">Kelipatan Rp 25.000.000 (Maksimal Rp 1 Miliar per PT).</p>
+                    <p class="text-[10px] text-slate-400 mt-1">Kelipatan <?= format_rupiah($creditStep) ?> (Maksimal <?= format_rupiah($maxCreditLimit) ?> per PT).</p>
                 </div>
 
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Pilihan Termin yang Diperlukan:</label>
                     <select name="preferred_top" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600 bg-white font-semibold">
-                        <option value="30">Net 30 Hari Kalender</option>
-                        <option value="60" selected>Net 60 Hari Kalender</option>
-                        <option value="90">Net 90 Hari Kalender</option>
+                        <?php foreach ($allowedTerms as $termDay): ?>
+                            <option value="<?= $termDay ?>" <?= $termDay === 60 ? 'selected' : '' ?>>Net <?= $termDay ?> Hari Kalender</option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
 

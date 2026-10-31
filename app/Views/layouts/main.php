@@ -1,6 +1,19 @@
 <?= $this->extend('layouts/base') ?>
 
 <?= $this->section('content') ?>
+<?php
+$navCategories = get_navbar_categories(8);
+$appName       = get_system_setting('app_name', 'AkuAda');
+$appSubtitle   = get_system_setting('app_subtitle', 'B2B E-Procurement');
+$appDesc       = get_system_setting('app_description', 'AkuAda hadir memastikan setiap kebutuhan operasional perusahaan Anda terpenuhi dengan tepat, cepat, dan transparan. E-Procurement B2B terpercaya di Indonesia dengan fleksibilitas TOP, harga bertingkat grosir korporat, dan kelengkapan faktur pajak resmi.');
+$contactPhone  = get_system_setting('contact_phone', '(021) 5088-9900');
+$contactEmail  = get_system_setting('contact_email', 'b2b@akuada.co.id');
+$officeAddress = get_system_setting('inv_issuer_address', 'Gedung AkuAda Procurement Tower Lt. 18, Jakarta Selatan');
+$maxCreditLim  = (float)get_system_setting('max_credit_limit', 500000000);
+$minTopDays    = get_min_top_days();
+$maxTopDays    = get_max_top_days();
+$ppnLabel      = format_tax_rate();
+?>
 
 <!-- Subheader / Utility Bar (Tokopedia B2B style) -->
 <header class="bg-white border-b border-slate-200 text-xs text-slate-600">
@@ -8,12 +21,12 @@
         <div class="flex items-center gap-4">
             <span class="flex items-center gap-1 font-medium text-slate-700">
                 <span class="material-symbols-outlined text-[15px] text-purple-600">shield</span>
-                E-Procurement Resmi Terdaftar & Terintegrasi e-Faktur Pajak PPN 11%
+                E-Procurement Resmi Terdaftar & Terintegrasi e-Faktur Pajak PPN <?= $ppnLabel ?>
             </span>
             <span class="hidden md:inline text-slate-300">|</span>
             <span class="hidden md:flex items-center gap-1">
                 <span class="material-symbols-outlined text-[15px] text-blue-600">verified</span>
-                Fasilitas TOP (Term of Payment) Hingga 90 Hari
+                Fasilitas TOP (Term of Payment) Hingga <?= $maxTopDays ?> Hari
             </span>
         </div>
         <div class="flex items-center gap-4 font-medium">
@@ -22,7 +35,7 @@
             </a>
             <span class="text-slate-300">|</span>
             <a href="<?= base_url('page/kontak-b2b') ?>" class="hover:text-purple-600 transition flex items-center gap-1">
-                <span class="material-symbols-outlined text-[15px]">call</span> Call Center: (021) 5088-9900
+                <span class="material-symbols-outlined text-[15px]">call</span> Call Center: <?= esc($contactPhone) ?>
             </a>
         </div>
     </div>
@@ -39,15 +52,19 @@
             </div>
             <div>
                 <span class="text-2xl font-extrabold tracking-tight font-sans">
-                    <span class="text-purple-700">Aku</span><span class="text-blue-600">Ada</span><span class="text-pink-500 font-black">.</span>
+                    <?php if (strtolower($appName) === 'akuada'): ?>
+                        <span class="text-purple-700">Aku</span><span class="text-blue-600">Ada</span><span class="text-pink-500 font-black">.</span>
+                    <?php else: ?>
+                        <span class="text-purple-700"><?= esc($appName) ?></span><span class="text-pink-500 font-black">.</span>
+                    <?php endif; ?>
                 </span>
                 <span class="block text-[10px] uppercase font-bold tracking-wider text-slate-600 -mt-1">
-                    B2B E-Procurement
+                    <?= esc($appSubtitle) ?>
                 </span>
             </div>
         </a>
 
-        <!-- Category Dropdown Button -->
+        <!-- Category Dropdown Button (Dynamic from Database) -->
         <div class="relative group hidden lg:block flex-shrink-0">
             <button class="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-slate-700 hover:text-purple-700 rounded-lg hover:bg-purple-50 transition border border-transparent hover:border-purple-200">
                 <span class="material-symbols-outlined text-[20px] text-purple-600">grid_view</span>
@@ -58,48 +75,23 @@
             <!-- Category Popover Menu -->
             <div class="absolute left-0 top-full pt-2 w-72 hidden group-hover:block z-50">
                 <div class="bg-white rounded-xl shadow-xl border border-slate-100 p-2.5 space-y-1">
-                    <a href="<?= base_url('products?cat=1') ?>" class="flex items-center gap-3 p-2 rounded-lg hover:bg-purple-50 text-slate-700 hover:text-purple-700 transition">
-                        <span class="material-symbols-outlined text-purple-600">description</span>
+                    <?php
+                    $colorClasses = [
+                        ['bg' => 'hover:bg-purple-50', 'text' => 'hover:text-purple-700', 'icon' => 'text-purple-600'],
+                        ['bg' => 'hover:bg-blue-50',   'text' => 'hover:text-blue-700',   'icon' => 'text-blue-600'],
+                        ['bg' => 'hover:bg-pink-50',   'text' => 'hover:text-pink-700',   'icon' => 'text-pink-600'],
+                    ];
+                    foreach ($navCategories as $idx => $catItem):
+                        $col = $colorClasses[$idx % count($colorClasses)];
+                    ?>
+                    <a href="<?= base_url('products?cat=' . $catItem['id']) ?>" class="flex items-center gap-3 p-2 rounded-lg <?= $col['bg'] ?> text-slate-700 <?= $col['text'] ?> transition">
+                        <span class="material-symbols-outlined <?= $col['icon'] ?>"><?= esc($catItem['icon'] ?? 'category') ?></span>
                         <div class="text-xs">
-                            <strong class="block font-semibold">Alat Tulis & Kertas</strong>
-                            <span class="text-slate-400 text-[11px]">PaperOne, Binder, Ordner</span>
+                            <strong class="block font-semibold"><?= esc($catItem['name']) ?></strong>
+                            <span class="text-slate-400 text-[11px] line-clamp-1"><?= esc($catItem['description'] ?? 'Katalog Pengadaan B2B') ?></span>
                         </div>
                     </a>
-                    <a href="<?= base_url('products?cat=2') ?>" class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50 text-slate-700 hover:text-blue-700 transition">
-                        <span class="material-symbols-outlined text-blue-600">devices</span>
-                        <div class="text-xs">
-                            <strong class="block font-semibold">Komputer & Server IT</strong>
-                            <span class="text-slate-400 text-[11px]">ThinkPad, Cisco, PC Kantor</span>
-                        </div>
-                    </a>
-                    <a href="<?= base_url('products?cat=3') ?>" class="flex items-center gap-3 p-2 rounded-lg hover:bg-pink-50 text-slate-700 hover:text-pink-700 transition">
-                        <span class="material-symbols-outlined text-pink-600">health_and_safety</span>
-                        <div class="text-xs">
-                            <strong class="block font-semibold">K3 & Safety APD Proyek</strong>
-                            <span class="text-slate-400 text-[11px]">Helm Krisbow, Rompi, Sepatu</span>
-                        </div>
-                    </a>
-                    <a href="<?= base_url('products?cat=4') ?>" class="flex items-center gap-3 p-2 rounded-lg hover:bg-purple-50 text-slate-700 hover:text-purple-700 transition">
-                        <span class="material-symbols-outlined text-purple-600">cleaning_services</span>
-                        <div class="text-xs">
-                            <strong class="block font-semibold">Hygiene & Fasilitas</strong>
-                            <span class="text-slate-400 text-[11px]">Dettol Pro, Hand Sanitizer 5L</span>
-                        </div>
-                    </a>
-                    <a href="<?= base_url('products?cat=5') ?>" class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50 text-slate-700 hover:text-blue-700 transition">
-                        <span class="material-symbols-outlined text-blue-600">precision_manufacturing</span>
-                        <div class="text-xs">
-                            <strong class="block font-semibold">Mesin Kantor & MRO</strong>
-                            <span class="text-slate-400 text-[11px]">Printer HP, Shredder, Tools</span>
-                        </div>
-                    </a>
-                    <a href="<?= base_url('products?cat=6') ?>" class="flex items-center gap-3 p-2 rounded-lg hover:bg-pink-50 text-slate-700 hover:text-pink-700 transition">
-                        <span class="material-symbols-outlined text-pink-600">coffee</span>
-                        <div class="text-xs">
-                            <strong class="block font-semibold">Pantry & Konsumsi Korporat</strong>
-                            <span class="text-slate-400 text-[11px]">Kopi Biji Arabica, Sachet</span>
-                        </div>
-                    </a>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
@@ -212,7 +204,7 @@
                     <span class="material-symbols-outlined text-2xl">verified_user</span>
                 </div>
                 <div>
-                    <h4 class="font-bold text-white text-sm">Faktur Pajak PPN 11%</h4>
+                    <h4 class="font-bold text-white text-sm">Faktur Pajak PPN <?= $ppnLabel ?></h4>
                     <p class="text-[11px] text-slate-400">Integrasi e-Faktur resmi DJP untuk pelaporan SPT Badan.</p>
                 </div>
             </div>
@@ -222,7 +214,7 @@
                 </div>
                 <div>
                     <h4 class="font-bold text-white text-sm">Kredit Tempo (TOP)</h4>
-                    <p class="text-[11px] text-slate-400">Plafon kredit hingga Rp 500 Juta tempo 14-90 hari.</p>
+                    <p class="text-[11px] text-slate-400">Plafon kredit hingga <?= format_rupiah($maxCreditLim) ?> tempo <?= $minTopDays ?>-<?= $maxTopDays ?> hari.</p>
                 </div>
             </div>
             <div class="flex items-center gap-3">
@@ -253,26 +245,23 @@
                 <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 via-blue-600 to-pink-500 flex items-center justify-center text-white">
                     <span class="material-symbols-outlined text-lg">domain</span>
                 </div>
-                <span class="text-xl font-extrabold text-white">AkuAda<span class="text-pink-500">.</span></span>
+                <span class="text-xl font-extrabold text-white"><?= esc($appName) ?><span class="text-pink-500">.</span></span>
             </div>
             <p class="text-slate-400 leading-relaxed text-xs">
-                <strong>AkuAda</strong> hadir memastikan setiap kebutuhan operasional perusahaan Anda terpenuhi dengan tepat, cepat, dan transparan. E-Procurement B2B terpercaya di Indonesia dengan fleksibilitas TOP, harga bertingkat grosir korporat, dan kelengkapan faktur pajak resmi.
+                <?= esc($appDesc) ?>
             </p>
             <div class="text-xs space-y-1 text-slate-400">
-                <p>📍 Gedung AkuAda Procurement Tower Lt. 18, Jakarta Selatan</p>
-                <p>📞 Phone: (021) 5088-9900 | ✉️ Email: b2b@akuada.co.id</p>
+                <p>📍 <?= esc($officeAddress) ?></p>
+                <p>📞 Phone: <?= esc($contactPhone) ?> | ✉️ Email: <?= esc($contactEmail) ?></p>
             </div>
         </div>
 
         <div>
             <h5 class="text-white font-bold mb-3 uppercase tracking-wider text-[11px]">Kategori Utama</h5>
             <ul class="space-y-2">
-                <li><a href="<?= base_url('products?cat=1') ?>" class="hover:text-purple-400 transition">Alat Tulis & Kertas</a></li>
-                <li><a href="<?= base_url('products?cat=2') ?>" class="hover:text-purple-400 transition">Komputer & Hardware IT</a></li>
-                <li><a href="<?= base_url('products?cat=3') ?>" class="hover:text-purple-400 transition">K3 & Safety APD Proyek</a></li>
-                <li><a href="<?= base_url('products?cat=4') ?>" class="hover:text-purple-400 transition">Hygiene & Fasilitas Kantor</a></li>
-                <li><a href="<?= base_url('products?cat=5') ?>" class="hover:text-purple-400 transition">Mesin Kantor & MRO</a></li>
-                <li><a href="<?= base_url('products?cat=7') ?>" class="hover:text-purple-400 transition">Furnitur Ergonomis</a></li>
+                <?php foreach (array_slice($navCategories, 0, 6) as $catItem): ?>
+                <li><a href="<?= base_url('products?cat=' . $catItem['id']) ?>" class="hover:text-purple-400 transition"><?= esc($catItem['name']) ?></a></li>
+                <?php endforeach; ?>
             </ul>
         </div>
 
@@ -299,7 +288,7 @@
     </div>
 
     <div class="border-t border-slate-800 py-6 text-center text-[11px] text-slate-500">
-        &copy; <?= date('Y') ?> PT Aku Ada Nusantara Bersama. All Rights Reserved. Marketplace Pengadaan Kebutuhan Operasional Perusahaan.
+        &copy; <?= date('Y') ?> <?= esc($appName) ?>. All Rights Reserved. Marketplace Pengadaan Kebutuhan Operasional Perusahaan.
     </div>
 </footer>
 

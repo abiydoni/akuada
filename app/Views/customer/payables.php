@@ -76,6 +76,18 @@
         </div>
     </div>
 
+    <!-- Tabel Aging Hutang Buyer (Nama Perusahaan, Current, 30, 60, 90, 120, Total) -->
+    <?php
+        $buyerAging = calculate_aging_summary($orders, 'buyer', !empty($company) ? [$company] : [], 'buyer_name');
+    ?>
+    <?= render_aging_table(
+        $buyerAging,
+        'Tabel Aging Hutang Tagihan TOP Perusahaan',
+        'Ringkasan kondisi umur hutang berdasarkan kategori Current, 30 Hari, 60 Hari, 90 Hari, dan 120 Hari.',
+        'Nama Perusahaan',
+        'pink'
+    ) ?>
+
     <!-- Payables Table -->
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -83,7 +95,7 @@
                 <span class="w-2.5 h-2.5 rounded-full bg-pink-600"></span>
                 <div>
                     <h3 class="font-bold text-slate-900 text-sm">Daftar Tagihan Hutang PO & Jadwal Jatuh Tempo</h3>
-                    <p class="text-[11px] text-slate-500">Klik tombol "Bayar Hutang" pada baris tagihan untuk melakukan pelunasan ke rekening Escrow PT Aku Ada Indonesia.</p>
+                    <p class="text-[11px] text-slate-500">Klik tombol "Bayar Hutang" pada baris tagihan untuk melakukan pelunasan ke rekening Escrow AkuAda.</p>
                 </div>
             </div>
         </div>
@@ -206,7 +218,7 @@
                 </div>
                 <div>
                     <h3 class="text-sm font-extrabold text-slate-900">Pelunasan Hutang Tagihan PO</h3>
-                    <p class="text-[11px] text-slate-500">Pembayaran ke Rekening Resmi PT Aku Ada Indonesia</p>
+                    <p class="text-[11px] text-slate-500">Pembayaran ke Rekening Resmi AkuAda</p>
                 </div>
             </div>
             <button type="button" onclick="closePayModal()" class="text-slate-400 hover:text-slate-600">
@@ -233,11 +245,16 @@
             </div>
 
             <div>
-                <label class="block font-bold text-slate-700 mb-1">Pilih Rekening Tujuan PT Aku Ada Indonesia *</label>
+                <label class="block font-bold text-slate-700 mb-1">Pilih Rekening Tujuan AkuAda *</label>
                 <select name="payment_bank" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-semibold">
-                    <option value="Bank Mandiri Escrow - 122-00-1122334-5 (PT Aku Ada Indonesia)">Bank Mandiri Escrow - 122-00-1122334-5</option>
-                    <option value="Bank BCA Escrow - 535-088-9900 (PT Aku Ada Indonesia)">Bank BCA Escrow - 535-088-9900</option>
-                    <option value="Bank BNI Corporate VA - 8809-1122-3344">Bank BNI Corporate Virtual Account</option>
+                    <?php
+                        $b1 = get_system_setting('inv_bank1_name', 'Bank Mandiri (Escrow)') . ' - ' . get_system_setting('inv_bank1_number', '122-00-1122334-5') . ' (' . get_system_setting('inv_bank1_holder', 'AkuAda') . ')';
+                        $b2 = get_system_setting('inv_bank2_name', 'Bank BCA (Escrow)') . ' - ' . get_system_setting('inv_bank2_number', '535-088-9900') . ' (' . get_system_setting('inv_bank2_holder', 'AkuAda') . ')';
+                        $b3 = get_system_setting('inv_bank3_name', 'Bank BNI Corporate VA') . ' - ' . get_system_setting('inv_bank3_number', '8809-1122-3344') . ' (' . get_system_setting('inv_bank3_holder', 'AkuAda') . ')';
+                    ?>
+                    <option value="<?= esc($b1) ?>"><?= esc($b1) ?></option>
+                    <option value="<?= esc($b2) ?>"><?= esc($b2) ?></option>
+                    <option value="<?= esc($b3) ?>"><?= esc($b3) ?></option>
                 </select>
             </div>
 

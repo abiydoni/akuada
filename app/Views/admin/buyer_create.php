@@ -104,9 +104,9 @@
                         Hak Akses Fasilitas Pembayaran Tempo:
                     </strong>
                     <ul class="space-y-1 text-[11px] text-slate-700 list-disc list-inside">
-                        <li>Term of Payment 14 Hari, 30 Hari, 60 Hari, atau 90 Hari.</li>
+                        <li>Term of Payment <?= implode(' Hari, ', get_allowed_top_terms()) ?> Hari.</li>
                         <li>Jatuh tempo dihitung resmi setelah Berita Acara Serah Terima (BAST) disahkan.</li>
-                        <li>Faktur Pajak PPN 11% resmi diterbitkan otomatis atas nama buyer.</li>
+                        <li>Faktur Pajak PPN <?= esc(format_tax_rate()) ?> resmi diterbitkan otomatis atas nama buyer.</li>
                     </ul>
                 </div>
             </div>
@@ -146,9 +146,9 @@
 
                 <div class="md:col-span-2">
                     <label class="block font-bold text-slate-700 mb-1">Password Akun Sementara: <span class="text-rose-500">*</span></label>
-                    <input type="text" name="password" value="admin123" required 
+                    <input type="text" name="password" value="<?= esc(get_system_setting('default_account_password', 'admin123')) ?>" required 
                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600 font-mono text-purple-700 font-bold">
-                    <p class="text-[10px] text-slate-400 mt-1">Default: <strong class="font-mono text-slate-600">admin123</strong>. Buyer dapat mengganti password setelah login pertama kali.</p>
+                    <p class="text-[10px] text-slate-400 mt-1">Default: <strong class="font-mono text-slate-600"><?= esc(get_system_setting('default_account_password', 'admin123')) ?></strong>. Buyer dapat mengganti password setelah login pertama kali.</p>
                 </div>
             </div>
         </div>
