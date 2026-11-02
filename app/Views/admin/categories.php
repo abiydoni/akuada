@@ -184,6 +184,7 @@
         </div>
 
         <form id="form-edit-category" action="" method="POST" class="space-y-4">
+        <?= csrf_field() ?>
             <div>
                 <label class="block font-bold text-slate-700 mb-1">Nama Kategori: <span class="text-rose-500">*</span></label>
                 <input type="text" name="name" id="edit_name" required 

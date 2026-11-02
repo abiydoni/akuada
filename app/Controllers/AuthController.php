@@ -101,7 +101,7 @@ class AuthController extends BaseController
                           ->where('users.email', $email)
                           ->first();
 
-        if ($user && (password_verify($password, $user['password']) || $password === 'admin123')) {
+        if ($user && password_verify($password, $user['password'])) {
             session()->set([
                 'user_id'          => $user['id'],
                 'user_name'        => $user['name'],
@@ -124,7 +124,7 @@ class AuthController extends BaseController
             return redirect()->to('/customer/dashboard');
         }
 
-        session()->setFlashdata('error', 'Email atau kata sandi tidak cocok. Gunakan password default: admin123');
+        session()->setFlashdata('error', 'Email atau kata sandi tidak cocok.');
         return redirect()->back();
     }
 
@@ -164,9 +164,9 @@ class AuthController extends BaseController
             'pic_name'         => $picName,
             'pic_phone'        => $phone,
             'pic_email'        => $email,
-            'credit_limit_top' => 100000000.00, // Plafon awal Rp 100 Juta
+            'credit_limit_top' => 0.00,        // Kredit 0 - menunggu verifikasi dan persetujuan admin
             'credit_used_top'  => 0.00,
-            'is_verified'      => 1,
+            'is_verified'      => 0,            // Belum terverifikasi - admin harus approve
             'created_at'       => date('Y-m-d H:i:s'),
             'updated_at'       => date('Y-m-d H:i:s'),
         ]);
@@ -198,3 +198,4 @@ class AuthController extends BaseController
         return redirect()->to('/');
     }
 }
+

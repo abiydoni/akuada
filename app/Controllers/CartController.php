@@ -184,7 +184,7 @@ class CartController extends BaseController
             return redirect()->to('/');
         }
 
-        $poNumber = $this->request->getPost('po_number') ?: 'PO/' . date('Ym') . '/' . rand(100, 999);
+        $poNumber = $this->request->getPost('po_number') ?: generate_unique_number('PO');
         $paymentMethod = $this->request->getPost('payment_method') ?: 'top_30';
         $taxInvoiceRequired = $this->request->getPost('tax_invoice_required') ? 1 : 0;
         $customerNotes = $this->request->getPost('customer_notes');
@@ -309,7 +309,7 @@ class CartController extends BaseController
         if ($paymentMethod === 'top_90') $days = 90;
         $dueDate = date('Y-m-d', strtotime("+$days days"));
 
-        $orderNumber = 'ORD-' . date('Ym') . '-' . sprintf('%04d', rand(100, 9999));
+        $orderNumber = generate_unique_number('ORD');
         $now = date('Y-m-d H:i:s');
 
         $orderModel = new OrderModel();
@@ -330,11 +330,11 @@ class CartController extends BaseController
             'tax_invoice_required' => $taxInvoiceRequired,
             'customer_notes'       => $customerNotes,
             'shipping_address'     => $shippingAddress,
-            'bast_number'          => 'BAST/AKUADA/' . date('Ym') . '/' . rand(100, 999),
-            'invoice_number'       => 'INV/AKUADA/' . date('Ym') . '/' . rand(100, 999),
-            'tax_invoice_number'   => get_system_setting('tax_nsfp_prefix', '010.002-26.') . rand(10000000, 99999999),
+            'bast_number'          => generate_unique_number('BAST'),
+            'invoice_number'       => generate_unique_number('INV'),
+            'tax_invoice_number'   => get_system_setting('tax_nsfp_prefix', '010.002-26.') . sprintf('%08d', abs(crc32(uniqid('', true)))),
             'due_date'               => $dueDate,
-            'vendor_invoice_number'  => 'VINV/' . date('Ym') . '/' . rand(100, 999),
+            'vendor_invoice_number'  => generate_unique_number('VINV'),
             'vendor_payout_status'   => 'unpaid',
             'vendor_payout_due_date' => date('Y-m-d', strtotime('+' . max(1, (int)get_system_setting('vendor_payout_days', 7)) . ' days')),
             'created_at'           => $now,
@@ -387,3 +387,4 @@ class CartController extends BaseController
         return redirect()->to('/customer/orders/' . $orderId);
     }
 }
+

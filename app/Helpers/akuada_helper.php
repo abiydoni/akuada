@@ -1,5 +1,27 @@
 <?php
 
+if (!function_exists('generate_unique_number')) {
+    /**
+     * Generate nomor dokumen unik berbasis database sequence + microsecond.
+     * Menghindari duplikat nomor order/invoice dibanding rand().
+     *
+     * @param string $prefix Prefix dokumen: ORD, INV, VINV, BAST
+     * @param string $table  Tabel database untuk hitung sequence bulan ini
+     * @return string Contoh: ORD-202611-00001842
+     */
+    function generate_unique_number(string $prefix, string $table = 'orders'): string
+    {
+        $db = \Config\Database::connect();
+        $yearMonth = date('Ym');
+        $count = (int)$db->table($table)
+            ->where("DATE_FORMAT(created_at, '%Y%m')", $yearMonth)
+            ->countAllResults() + 1;
+        // 3 digit microsecond suffix untuk anti-collision di concurrent request
+        $micro = str_pad((string)((int)(microtime(true) * 1000) % 1000), 3, '0', STR_PAD_LEFT);
+        return $prefix . '-' . $yearMonth . '-' . sprintf('%04d', $count) . $micro;
+    }
+}
+
 if (!function_exists('format_rupiah')) {
     /**
      * Format number to Indonesian Rupiah currency
@@ -600,7 +622,7 @@ if (!function_exists('classify_aging_bucket')) {
             return [
                 'key'          => 'days_30',
                 'label'        => '30 Hari',
-                'sublabel'     => '1 – 30 Hari',
+                'sublabel'     => '1 â€“ 30 Hari',
                 'days_overdue' => $daysOverdue,
                 'badge_class'  => 'bg-amber-50 text-amber-800 border-amber-300',
             ];
@@ -608,7 +630,7 @@ if (!function_exists('classify_aging_bucket')) {
             return [
                 'key'          => 'days_60',
                 'label'        => '60 Hari',
-                'sublabel'     => '31 – 60 Hari',
+                'sublabel'     => '31 â€“ 60 Hari',
                 'days_overdue' => $daysOverdue,
                 'badge_class'  => 'bg-orange-50 text-orange-800 border-orange-300',
             ];
@@ -616,7 +638,7 @@ if (!function_exists('classify_aging_bucket')) {
             return [
                 'key'          => 'days_90',
                 'label'        => '90 Hari',
-                'sublabel'     => '61 – 90 Hari',
+                'sublabel'     => '61 â€“ 90 Hari',
                 'days_overdue' => $daysOverdue,
                 'badge_class'  => 'bg-rose-50 text-rose-800 border-rose-300',
             ];
@@ -625,7 +647,7 @@ if (!function_exists('classify_aging_bucket')) {
         return [
             'key'          => 'days_120',
             'label'        => '120 Hari',
-            'sublabel'     => '91 – 120+ Hari',
+            'sublabel'     => '91 â€“ 120+ Hari',
             'days_overdue' => $daysOverdue,
             'badge_class'  => 'bg-red-100 text-red-900 border-red-400',
         ];
@@ -655,21 +677,21 @@ if (!function_exists('calculate_aging_summary')) {
             'days_30'  => [
                 'key'      => 'days_30',
                 'title'    => '30 Hari',
-                'range'    => '1 – 30 Hari',
+                'range'    => '1 â€“ 30 Hari',
                 'amount'   => 0.0,
                 'count'    => 0,
             ],
             'days_60'  => [
                 'key'      => 'days_60',
                 'title'    => '60 Hari',
-                'range'    => '31 – 60 Hari',
+                'range'    => '31 â€“ 60 Hari',
                 'amount'   => 0.0,
                 'count'    => 0,
             ],
             'days_90'  => [
                 'key'      => 'days_90',
                 'title'    => '90 Hari',
-                'range'    => '61 – 90 Hari',
+                'range'    => '61 â€“ 90 Hari',
                 'amount'   => 0.0,
                 'count'    => 0,
             ],
@@ -805,9 +827,9 @@ if (!function_exists('render_aging_table')) {
         $html .= '        <tr>';
         $html .= '          <th class="px-4 py-3.5">' . esc($companyColLabel) . '</th>';
         $html .= '          <th class="px-4 py-3.5 text-right bg-emerald-950/60">Current<span class="block text-[9px] font-normal text-emerald-300 normal-case">Belum Jatuh Tempo</span></th>';
-        $html .= '          <th class="px-4 py-3.5 text-right bg-amber-950/60">30 Hari<span class="block text-[9px] font-normal text-amber-300 normal-case">1 – 30 Hari</span></th>';
-        $html .= '          <th class="px-4 py-3.5 text-right bg-orange-950/60">60 Hari<span class="block text-[9px] font-normal text-orange-300 normal-case">31 – 60 Hari</span></th>';
-        $html .= '          <th class="px-4 py-3.5 text-right bg-rose-950/60">90 Hari<span class="block text-[9px] font-normal text-rose-300 normal-case">61 – 90 Hari</span></th>';
+        $html .= '          <th class="px-4 py-3.5 text-right bg-amber-950/60">30 Hari<span class="block text-[9px] font-normal text-amber-300 normal-case">1 â€“ 30 Hari</span></th>';
+        $html .= '          <th class="px-4 py-3.5 text-right bg-orange-950/60">60 Hari<span class="block text-[9px] font-normal text-orange-300 normal-case">31 â€“ 60 Hari</span></th>';
+        $html .= '          <th class="px-4 py-3.5 text-right bg-rose-950/60">90 Hari<span class="block text-[9px] font-normal text-rose-300 normal-case">61 â€“ 90 Hari</span></th>';
         $html .= '          <th class="px-4 py-3.5 text-right bg-red-950/80">120 Hari<span class="block text-[9px] font-normal text-red-300 normal-case">&gt; 90 / 120 Hari</span></th>';
         $html .= '          <th class="px-4 py-3.5 text-right bg-slate-800">Total</th>';
         $html .= '        </tr>';

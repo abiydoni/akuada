@@ -255,6 +255,7 @@
         </div>
 
         <form id="form-edit-user" action="" method="POST" class="space-y-4">
+        <?= csrf_field() ?>
             <div>
                 <label class="block font-bold text-slate-700 mb-1">Nama Lengkap: <span class="text-rose-500">*</span></label>
                 <input type="text" name="name" id="edit_user_name" required 
@@ -337,6 +338,7 @@
         <p class="text-slate-600" id="reset_user_text">Reset kata sandi untuk pengguna ini.</p>
 
         <form id="form-reset-password" action="" method="POST" class="space-y-4">
+        <?= csrf_field() ?>
             <div>
                 <label class="block font-bold text-slate-700 mb-1">Kata Sandi Baru: <span class="text-rose-500">*</span></label>
                 <input type="text" name="new_password" value="<?= esc(get_system_setting('default_account_password', 'admin123')) ?>" required 

@@ -42,25 +42,8 @@ abstract class BaseController extends Controller
         // Caution: Do not edit this line.
         parent::initController($request, $response, $logger);
 
-        // Preload any models, libraries, etc, here.
-        $companyModel = new \App\Models\CompanyModel();
-        $companyModel->groupStart()
-                     ->like('company_name', 'PT AkuAda', 'after', null, true)
-                     ->orLike('company_name', 'PT Aku Ada', 'after', null, true)
-                     ->groupEnd()
-                     ->set(['company_name' => 'AkuAda'])
-                     ->update();
-
-        if (session('company_name') && preg_match('/^pt\s+aku\s*ada/i', (string)session('company_name'))) {
-            session()->set('company_name', 'AkuAda');
-        }
-
-        if (!session('user_role')) {
-            $buyerCount = $companyModel->where('type', 'buyer')->countAllResults();
-            if ($buyerCount === 1) {
-                ensure_role_session('customer');
-            }
-        }
+        // Fix #4: Hapus DB query UPDATE di setiap request — dipindah ke seeder/migration saja
+        // Session company_name normalization cukup dilakukan saat login
         // $this->session = service('session');
     }
 }
