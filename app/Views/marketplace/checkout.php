@@ -2,11 +2,17 @@
 
 <?= $this->section('subcontent') ?>
 <?php
-$allowedTopTerms = get_allowed_top_terms();
-$minTopDays      = get_min_top_days();
-$maxTopDays      = get_max_top_days();
-$shipAmt         = (float)($shippingAmount ?? get_system_setting('default_shipping_amount', 0));
-$freeRegion      = get_system_setting('free_shipping_region', 'Corporate Jabodetabek');
+$allowedTopTerms    = get_allowed_top_terms();
+$minTopDays         = get_min_top_days();
+$maxTopDays         = get_max_top_days();
+$shipAmt            = (float)($shippingAmount ?? get_system_setting('default_shipping_amount', 0));
+$freeRegion         = get_system_setting('free_shipping_region', 'Corporate Jabodetabek');
+
+$creditLimit        = (float)($buyerCompany['credit_limit_top'] ?? 0);
+$creditUsed         = (float)($buyerCompany['credit_used_top'] ?? 0);
+$availableCredit    = max(0, $creditLimit - $creditUsed);
+$isSufficientCredit = !empty($isRegistered) && ($grandTotal <= $availableCredit);
+$creditShortfall    = max(0, $grandTotal - $availableCredit);
 ?>
 
 <div class="bg-slate-100 py-6 border-b border-slate-200">
@@ -134,15 +140,20 @@ $freeRegion      = get_system_setting('free_shipping_region', 'Corporate Jabodet
                     </div>
                 </div>
 
-                <!-- 2. B2B Payment Methods (Dynamic TOP from Settings, VA, PO) -->
+                <!-- 2. B2B Payment Methods (Dynamic TOP from Settings, Over-Limit Option, VA, PO) -->
                 <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
-                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
                         <div class="flex items-center gap-2">
                             <span class="material-symbols-outlined text-blue-600">payments</span>
                             <h2 class="text-sm font-bold text-slate-800">2. Metode Pembayaran & Termin Kredit (TOP)</h2>
                         </div>
                         <?php if (!empty($isRegistered)): ?>
-                            <span class="text-[11px] text-slate-500">Plafon Fasilitas Kredit Tersedia: <strong class="text-emerald-600"><?= format_rupiah($buyerCompany['credit_limit_top'] - $buyerCompany['credit_used_top']) ?></strong></span>
+                            <div class="flex items-center gap-2 text-[11px]">
+                                <span class="text-slate-500">Sisa Plafon Tersedia:</span>
+                                <strong class="px-2 py-0.5 rounded font-mono <?= $isSufficientCredit ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200' ?>">
+                                    <?= format_rupiah($availableCredit) ?>
+                                </strong>
+                            </div>
                         <?php else: ?>
                             <span class="text-[11px] text-rose-600 font-bold flex items-center gap-1">
                                 <span class="material-symbols-outlined text-[15px]">block</span> Kredit Tidak Tersedia (Belum Terdaftar)
@@ -150,23 +161,86 @@ $freeRegion      = get_system_setting('free_shipping_region', 'Corporate Jabodet
                         <?php endif; ?>
                     </div>
 
+                    <!-- Visual Indicator Box When Registered Buyer Has Insufficient Credit Limit -->
+                    <?php if (!empty($isRegistered) && !$isSufficientCredit): ?>
+                        <div class="p-4 rounded-2xl bg-rose-50/90 border-2 border-rose-300 text-xs space-y-3">
+                            <div class="flex items-start gap-3">
+                                <span class="material-symbols-outlined text-rose-600 text-2xl mt-0.5">warning</span>
+                                <div class="flex-1 space-y-1">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <strong class="text-rose-950 font-extrabold text-sm">Plafon Kredit TOP Reguler Tidak Mencukupi!</strong>
+                                        <span class="px-2.5 py-0.5 rounded-full bg-rose-600 text-white font-mono font-bold text-[11px]">
+                                            Kurang <?= format_rupiah($creditShortfall) ?>
+                                        </span>
+                                    </div>
+                                    <p class="text-rose-800 leading-relaxed">
+                                        Nilai tagihan PO ini (<strong><?= format_rupiah($grandTotal) ?></strong>) melebihi sisa plafon kredit perusahaan Anda (<strong><?= format_rupiah($availableCredit) ?></strong> dari total limit <?= format_rupiah($creditLimit) ?>).
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-rose-200/80 text-[11px]">
+                                <div class="p-2.5 rounded-xl bg-white border border-rose-200">
+                                    <span class="text-slate-400 block">Sisa Plafon Saat Ini:</span>
+                                    <strong class="font-mono text-slate-800"><?= format_rupiah($availableCredit) ?></strong>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-white border border-rose-200">
+                                    <span class="text-slate-400 block">Total Tagihan PO Ini:</span>
+                                    <strong class="font-mono text-purple-900"><?= format_rupiah($grandTotal) ?></strong>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-rose-100/80 border border-rose-300">
+                                    <span class="text-rose-700 font-semibold block">Selisih Kekurangan Limit:</span>
+                                    <strong class="font-mono text-rose-900"><?= format_rupiah($creditShortfall) ?></strong>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                                <span class="text-[11px] text-rose-800 font-medium">
+                                    Pilih <strong>"Tetap Open PO (Pengajuan Over-Limit TOP)"</strong> di bawah, atau lunasi tagihan lama / ajukan kenaikan limit:
+                                </span>
+                                <div class="flex items-center gap-2">
+                                    <a href="<?= base_url('customer/payables') ?>" class="px-3 py-1.5 rounded-lg bg-white hover:bg-rose-100 text-rose-800 border border-rose-300 font-bold text-[11px] flex items-center gap-1 transition">
+                                        <span class="material-symbols-outlined text-[14px]">payments</span> Lunasi Tagihan Lama
+                                    </a>
+                                    <a href="<?= base_url('customer/credit-limit') ?>" class="px-3 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white font-bold text-[11px] flex items-center gap-1 transition">
+                                        <span class="material-symbols-outlined text-[14px]">trending_up</span> Naikkan Plafon
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="space-y-3">
                         <?php
                         $defaultTopChecked = in_array(30, $allowedTopTerms) ? 30 : ($allowedTopTerms[0] ?? 30);
                         foreach ($allowedTopTerms as $topDay):
                             $isDefTop = ($topDay === $defaultTopChecked);
                         ?>
-                            <?php if (!empty($isRegistered)): ?>
+                            <?php if (!empty($isRegistered) && $isSufficientCredit): ?>
                                 <label class="flex items-start gap-3 p-4 rounded-xl <?= $isDefTop ? 'border-2 border-purple-500 bg-purple-50/40' : 'border border-slate-200 hover:border-purple-300' ?> cursor-pointer transition hover:bg-purple-50/70">
-                                    <input type="radio" name="payment_method" value="top_<?= $topDay ?>" <?= $isDefTop ? 'checked' : '' ?> class="mt-1 text-purple-600 focus:ring-purple-500">
+                                    <input type="radio" name="payment_method" value="top_<?= $topDay ?>" <?= $isDefTop ? 'checked' : '' ?> onchange="toggleOverlimitBox()" class="mt-1 text-purple-600 focus:ring-purple-500">
                                     <div class="flex-1">
                                         <div class="flex items-center justify-between">
                                             <span class="font-bold text-slate-900 text-xs">Term of Payment <?= $topDay ?> Hari (TOP <?= $topDay ?>)<?= $isDefTop ? ' - Direkomendasikan' : '' ?></span>
-                                            <span class="badge-top text-[10px]">Tempo <?= $topDay ?> Hari</span>
+                                            <span class="badge-top text-[10px]">Tempo <?= $topDay ?> Hari • Plafon Cukup</span>
                                         </div>
                                         <p class="text-[11px] text-slate-500 mt-0.5">Pembayaran dilakukan maksimal <?= $topDay ?> hari kalender setelah Berita Acara Serah Terima (BAST) ditandatangani.</p>
                                     </div>
                                 </label>
+                            <?php elseif (!empty($isRegistered) && !$isSufficientCredit): ?>
+                                <!-- Visual Locked Indicator when Insufficient Credit -->
+                                <div class="flex items-start gap-3 p-3.5 rounded-xl border border-rose-200 bg-rose-50/40 opacity-75 cursor-not-allowed">
+                                    <input type="radio" disabled class="mt-1 text-rose-300 cursor-not-allowed">
+                                    <div class="flex-1">
+                                        <div class="flex flex-wrap items-center justify-between gap-1">
+                                            <span class="font-bold text-slate-500 text-xs line-through">Term of Payment <?= $topDay ?> Hari (TOP <?= $topDay ?> Reguler)</span>
+                                            <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-300 text-[10px] font-bold">
+                                                ⚠️ Plafon Tidak Cukup — Kurang <?= format_rupiah($creditShortfall) ?>
+                                            </span>
+                                        </div>
+                                        <p class="text-[11px] text-rose-600/80 mt-0.5">Gunakan opsi <strong>Tetap Open PO (Pengajuan Over-Limit)</strong> di bawah jika ingin tetap menerbitkan PO dengan kredit tempo.</p>
+                                    </div>
+                                </div>
                             <?php else: ?>
                                 <div class="flex items-start gap-3 p-4 rounded-xl border border-slate-200 bg-slate-50/70 opacity-60 cursor-not-allowed">
                                     <input type="radio" disabled class="mt-1 text-slate-300 cursor-not-allowed">
@@ -182,9 +256,9 @@ $freeRegion      = get_system_setting('free_shipping_region', 'Corporate Jabodet
                         <?php endforeach; ?>
 
                         <!-- Corporate PO On-Account -->
-                        <?php if (!empty($isRegistered)): ?>
+                        <?php if (!empty($isRegistered) && $isSufficientCredit): ?>
                             <label class="flex items-start gap-3 p-4 rounded-xl border border-slate-200 hover:border-purple-300 cursor-pointer transition">
-                                <input type="radio" name="payment_method" value="corporate_po" class="mt-1 text-purple-600 focus:ring-purple-500">
+                                <input type="radio" name="payment_method" value="corporate_po" onchange="toggleOverlimitBox()" class="mt-1 text-purple-600 focus:ring-purple-500">
                                 <div class="flex-1">
                                     <div class="flex items-center justify-between">
                                         <span class="font-bold text-slate-900 text-xs">Corporate Purchase Order (PO) On-Account</span>
@@ -193,32 +267,70 @@ $freeRegion      = get_system_setting('free_shipping_region', 'Corporate Jabodet
                                     <p class="text-[11px] text-slate-500 mt-0.5">Penagihan faktur bulanan gabungan (Monthly Statement) langsung ke Finance Departemen.</p>
                                 </div>
                             </label>
-                        <?php else: ?>
-                            <div class="flex items-start gap-3 p-4 rounded-xl border border-slate-200 bg-slate-50/70 opacity-60 cursor-not-allowed">
-                                <input type="radio" disabled class="mt-1 text-slate-300 cursor-not-allowed">
+                        <?php elseif (!empty($isRegistered) && !$isSufficientCredit): ?>
+                            <div class="flex items-start gap-3 p-3.5 rounded-xl border border-rose-200 bg-rose-50/40 opacity-75 cursor-not-allowed">
+                                <input type="radio" disabled class="mt-1 text-rose-300 cursor-not-allowed">
                                 <div class="flex-1">
-                                    <div class="flex items-center justify-between">
+                                    <div class="flex flex-wrap items-center justify-between gap-1">
                                         <span class="font-bold text-slate-500 text-xs line-through">Corporate Purchase Order (PO) On-Account</span>
-                                        <span class="px-2 py-0.5 rounded bg-slate-200 text-slate-600 text-[10px] font-bold">🔒 Khusus Akun Terdaftar</span>
+                                        <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-300 text-[10px] font-bold">
+                                            ⚠️ Plafon Tidak Cukup — Kurang <?= format_rupiah($creditShortfall) ?>
+                                        </span>
                                     </div>
-                                    <p class="text-[11px] text-slate-400 mt-0.5">Penagihan faktur bulanan gabungan khusus buyer terdaftar.</p>
                                 </div>
                             </div>
                         <?php endif; ?>
 
-                        <!-- Bank Virtual Account (Always available, default for unregistered) -->
+                        <!-- SPECIAL OPTION WHEN OVER-LIMIT: Tetap Open PO dengan Pengajuan Over-Limit TOP -->
+                        <?php if (!empty($isRegistered) && !$isSufficientCredit): ?>
+                            <div class="rounded-2xl border-2 border-amber-500 bg-amber-50/50 p-4 space-y-3 shadow-sm">
+                                <label class="flex items-start gap-3 cursor-pointer">
+                                    <input type="radio" name="payment_method" value="overlimit_top" id="radioOverlimitTop" checked onchange="toggleOverlimitBox()" class="mt-1 text-amber-600 focus:ring-amber-500">
+                                    <div class="flex-1">
+                                        <div class="flex flex-wrap items-center justify-between gap-2">
+                                            <span class="font-extrabold text-amber-950 text-xs flex items-center gap-1.5">
+                                                <span class="material-symbols-outlined text-[16px] text-amber-600">bolt</span>
+                                                Tetap Open PO dengan Pengajuan Over-Limit TOP (Menunggu Approval Plafon Admin)
+                                            </span>
+                                            <span class="px-2.5 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-extrabold">
+                                                Tetap Bisa Open PO
+                                            </span>
+                                        </div>
+                                        <p class="text-[11px] text-amber-900 mt-1 leading-relaxed">
+                                            PO Anda <strong>tetap diterbitkan sekarang</strong> dan masuk ke antrean prioritas Superadmin AkuAda untuk persetujuan penambahan limit kredit sebesar <strong><?= format_rupiah($creditShortfall) ?></strong>.
+                                        </p>
+                                    </div>
+                                </label>
+
+                                <!-- Overlimit Tenor & Reason Inputs -->
+                                <div id="overlimitDetailBox" class="pl-7 pt-2 border-t border-amber-200/80 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                    <div>
+                                        <label class="block font-bold text-amber-950 mb-1 text-[11px]">Pilih Tenor TOP yang Diajukan:</label>
+                                        <select name="overlimit_top_days" class="w-full px-3 py-2 rounded-xl border border-amber-300 bg-white font-bold text-slate-900">
+                                            <?php foreach ($allowedTopTerms as $tDay): ?>
+                                                <option value="<?= $tDay ?>" <?= $tDay === $defaultTopChecked ? 'selected' : '' ?>>TOP <?= $tDay ?> Hari Kalender</option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <label class="block font-bold text-amber-950 mb-1 text-[11px]">Catatan / Alasan Pengajuan Over-Limit ke Admin:</label>
+                                        <input type="text" name="overlimit_reason" value="Kebutuhan pengadaan operasional mendesak, mohon persetujuan ekstra plafon TOP."
+                                               placeholder="Contoh: Proyek tender baru / pelunasan invoice sebelumnya sedang diproses finance..."
+                                               class="w-full px-3 py-2 rounded-xl border border-amber-300 bg-white text-slate-800 font-medium">
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- Bank Virtual Account (Always available) -->
                         <label class="flex items-start gap-3 p-4 rounded-xl border-2 <?= empty($isRegistered) ? 'border-purple-500 bg-purple-50/40 shadow-sm' : 'border-slate-200 hover:border-purple-300' ?> cursor-pointer transition">
-                            <input type="radio" name="payment_method" value="bank_va" <?= empty($isRegistered) ? 'checked' : '' ?> class="mt-1 text-purple-600 focus:ring-purple-500">
+                            <input type="radio" name="payment_method" value="bank_va" <?= empty($isRegistered) ? 'checked' : '' ?> onchange="toggleOverlimitBox()" class="mt-1 text-purple-600 focus:ring-purple-500">
                             <div class="flex-1">
                                 <div class="flex items-center justify-between">
                                     <span class="font-bold text-slate-900 text-xs">Corporate Virtual Account (<?= esc(get_system_setting('inv_bank1_name', 'Bank Mandiri')) ?>, <?= esc(get_system_setting('inv_bank2_name', 'Bank BCA')) ?>, <?= esc(get_system_setting('inv_bank3_name', 'Bank BNI')) ?>)</span>
-                                    <?php if (empty($isRegistered)): ?>
-                                        <span class="px-2.5 py-0.5 rounded bg-purple-600 text-white text-[10px] font-bold">Pilihan Tersedia (Non-Kredit)</span>
-                                    <?php else: ?>
-                                        <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold">Instant</span>
-                                    <?php endif; ?>
+                                    <span class="px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">Tanpa Batas Plafon (Non-Kredit)</span>
                                 </div>
-                                <p class="text-[11px] text-slate-500 mt-0.5">Bayar instan melalui corporate internet banking. Pembayaran langsung tanpa kredit.</p>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Bayar langsung melalui corporate internet banking tanpa memotong plafon kredit TOP perusahaan Anda.</p>
                             </div>
                         </label>
                     </div>
@@ -305,5 +417,18 @@ $freeRegion      = get_system_setting('free_shipping_region', 'Corporate Jabodet
         </div>
     </form>
 </div>
+
+<script>
+function toggleOverlimitBox() {
+    const box = document.getElementById('overlimitDetailBox');
+    const radio = document.getElementById('radioOverlimitTop');
+    if (!box || !radio) return;
+    if (radio.checked) {
+        box.classList.remove('hidden');
+    } else {
+        box.classList.add('hidden');
+    }
+}
+</script>
 
 <?= $this->endSection() ?>

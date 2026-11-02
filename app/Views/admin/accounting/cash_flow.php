@@ -28,7 +28,7 @@ $netCashMove  = $netOperating + $netInvesting + $netFinancing;
     </div>
 
     <!-- Summary Cards -->
-    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 max-w-5xl mx-auto space-y-6 text-xs">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 w-full space-y-6 text-xs">
         <div class="pb-4 border-b-2 border-slate-900 flex justify-between items-center">
             <div>
                 <h2 class="text-xl font-black text-slate-900"><?= esc(get_system_setting('inv_issuer_name', 'AKUADA')) ?></h2>

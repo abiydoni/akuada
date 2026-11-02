@@ -18,7 +18,7 @@ class AccountingController extends BaseController
         }
 
         return view('admin/accounting/coa', [
-            'title'          => 'Master Chart of Accounts (COA ###-###) - General Ledger AkuAda',
+            'title'          => 'Master Chart of Accounts (COA) - General Ledger AkuAda',
             'activeTab'      => 'coa',
             'accounts'       => $accounts,
             'categoryFilter' => $categoryFilter,
@@ -30,7 +30,7 @@ class AccountingController extends BaseController
         CoaModel::ensureAccountingInitialized();
         $code = strtoupper(trim((string)$this->request->getPost('account_code')));
         if (!preg_match('/^\d{3}-\d{3}$/', $code)) {
-            session()->setFlashdata('error', 'Format Kode Akun COA wajib ###-### (contoh: 111-004 atau 610-005).');
+            session()->setFlashdata('error', 'Format Kode Akun COA wajib 3 digit - 3 digit (contoh: 111-004 atau 610-005).');
             return redirect()->back();
         }
 
@@ -70,7 +70,7 @@ class AccountingController extends BaseController
         $id   = (int)$this->request->getPost('id');
         $code = strtoupper(trim((string)$this->request->getPost('account_code')));
         if (!preg_match('/^\d{3}-\d{3}$/', $code)) {
-            session()->setFlashdata('error', 'Format Kode Akun COA wajib ###-### (contoh: 111-001).');
+            session()->setFlashdata('error', 'Format Kode Akun COA wajib 3 digit - 3 digit (contoh: 111-001).');
             return redirect()->back();
         }
 
@@ -244,15 +244,16 @@ class AccountingController extends BaseController
 
     public function ledger()
     {
+        CoaModel::ensureAccountingInitialized();
         $journalModel = new JournalModel();
         $coaModel     = new CoaModel();
 
-        $coaId     = $this->request->getGet('coa_id') ? (int)$this->request->getGet('coa_id') : null;
+        $coaList   = $coaModel->where('is_active', 1)->orderBy('account_code', 'ASC')->findAll();
+        $coaId     = $this->request->getGet('coa_id') ? (int)$this->request->getGet('coa_id') : (int)($coaList[0]['id'] ?? 0);
         $startDate = $this->request->getGet('start_date') ?: '';
         $endDate   = $this->request->getGet('end_date') ?: '';
 
-        $ledgers = $journalModel->getGeneralLedger($coaId, $startDate ?: null, $endDate ?: null);
-        $coaList = $coaModel->where('is_active', 1)->orderBy('account_code', 'ASC')->findAll();
+        $ledgers = $coaId > 0 ? $journalModel->getGeneralLedger($coaId, $startDate ?: null, $endDate ?: null) : [];
 
         return view('admin/accounting/ledger', [
             'title'      => 'Buku Besar (General Ledger) - Akuntansi AkuAda',
@@ -274,13 +275,15 @@ class AccountingController extends BaseController
         $bankAccounts = array_values(array_filter($allBalances, fn($a) => (int)$a['is_cash_bank'] === 1));
         $otherCoa     = array_values(array_filter($allBalances, fn($a) => (int)$a['is_cash_bank'] === 0));
 
-        $selectedBankId = $this->request->getGet('bank_coa_id') ? (int)$this->request->getGet('bank_coa_id') : null;
+        $selectedBankId = $this->request->getGet('bank_coa_id')
+            ? (int)$this->request->getGet('bank_coa_id')
+            : (int)($bankAccounts[0]['id'] ?? 0);
         $startDate      = $this->request->getGet('start_date') ?: '';
         $endDate        = $this->request->getGet('end_date') ?: '';
 
         $bankLedgers = [];
         foreach ($bankAccounts as $ba) {
-            if ($selectedBankId && (int)$ba['id'] !== $selectedBankId) {
+            if ((int)$ba['id'] !== $selectedBankId) {
                 continue;
             }
             $lg = $journalModel->getGeneralLedger((int)$ba['id'], $startDate ?: null, $endDate ?: null);

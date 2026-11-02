@@ -63,7 +63,7 @@ $appName = get_system_setting('app_name', 'AkuAda');
                     </div>
                     <nav class="mt-1.5 space-y-1">
                         <a href="<?= base_url('admin/accounting/coa') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'admin/accounting/coa') || current_url() == base_url('admin/accounting') ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
-                            <span class="material-symbols-outlined text-[18px]">account_tree</span> Master COA (###-###)
+                            <span class="material-symbols-outlined text-[18px]">account_tree</span> Master COA
                         </a>
                         <a href="<?= base_url('admin/accounting/journals') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'admin/accounting/journals') ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">menu_book</span> Jurnal Umum

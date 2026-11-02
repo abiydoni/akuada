@@ -47,7 +47,7 @@ $isBalanced = abs($totEndDebit - $totEndCredit) < 1.0;
                 <?php endif; ?>
             </div>
             <h1 class="text-xl font-extrabold text-slate-900 mt-1">Neraca Saldo (Trial Balance)</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Rekapitulasi saldo awal, pergerakan mutasi Debit/Kredit, dan saldo akhir seluruh kode akun COA <code class="font-mono font-bold text-purple-700">###-###</code>.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Rekapitulasi saldo awal, pergerakan mutasi Debit/Kredit, dan saldo akhir seluruh kode akun COA.</p>
         </div>
         <button type="button" onclick="window.print()" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 print:hidden">
             <span class="material-symbols-outlined text-[17px]">print</span>

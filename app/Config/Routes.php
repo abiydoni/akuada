@@ -68,6 +68,7 @@ $routes->group('admin', function ($routes) {
     $routes->get('transactions', 'AdminController::transactions');
     $routes->get('orders/(:num)', 'AdminController::orderDetail/$1');
     $routes->post('transactions/update', 'AdminController::updateOrderStatus');
+    $routes->post('orders/approve-overlimit', 'AdminController::approveOverlimit');
     $routes->get('orders/invoice-customer/(:num)', 'AdminController::invoiceCustomer/$1');
     $routes->get('orders/invoice-vendor/(:num)', 'AdminController::invoiceVendor/$1');
     $routes->get('status-logs', 'AdminController::statusLogs');

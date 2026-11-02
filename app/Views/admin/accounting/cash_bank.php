@@ -76,13 +76,30 @@ $totalCashEnding  = array_sum(array_column($bankAccounts, 'ending_balance'));
         <?php endforeach; ?>
     </div>
 
-    <?php if ($selectedBankId): ?>
-        <div class="flex justify-end">
-            <a href="<?= base_url('admin/accounting/cash-bank') ?>" class="text-xs font-bold text-purple-700 hover:underline flex items-center gap-1">
-                <span class="material-symbols-outlined text-[15px]">visibility</span> Tampilkan Semua Rekening Kas & Bank
-            </a>
-        </div>
-    <?php endif; ?>
+    <!-- Filter & Bank Selector Bar -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm print:hidden">
+        <form action="<?= base_url('admin/accounting/cash-bank') ?>" method="GET" class="flex flex-wrap items-end gap-3 text-xs">
+            <div class="flex-1 min-w-[260px]">
+                <label class="block font-bold text-slate-700 mb-1">Pilih Rekening Kas / Bank:</label>
+                <select name="bank_coa_id" onchange="this.form.submit()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-bold text-slate-900">
+                    <?php foreach ($bankAccounts as $ba): ?>
+                        <option value="<?= $ba['id'] ?>" <?= (int)$selectedBankId === (int)$ba['id'] ? 'selected' : '' ?>>
+                            [<?= esc($ba['account_code']) ?>] <?= esc($ba['account_name']) ?> — Saldo: <?= format_rupiah($ba['ending_balance']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Dari Tanggal:</label>
+                <input type="date" name="start_date" value="<?= esc($startDate) ?>" class="px-3 py-2 rounded-xl border border-slate-300 font-mono">
+            </div>
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Sampai Tanggal:</label>
+                <input type="date" name="end_date" value="<?= esc($endDate) ?>" class="px-3 py-2 rounded-xl border border-slate-300 font-mono">
+            </div>
+            <button type="submit" class="btn-akuada-primary px-5 py-2.5 text-xs">Tampilkan Buku Bank</button>
+        </form>
+    </div>
 
     <!-- Mutation Tables per Bank Account -->
     <div class="space-y-6">

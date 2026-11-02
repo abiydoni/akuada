@@ -22,14 +22,13 @@ $catBadges = [
         <div>
             <div class="flex items-center gap-2">
                 <span class="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-extrabold uppercase tracking-wider">Standar Akuntansi Korporat</span>
-                <span class="text-xs text-slate-400 font-mono">Format Kode: ###-###</span>
             </div>
             <h1 class="text-xl font-extrabold text-slate-900 mt-1">Master Chart of Accounts (Daftar Akun Perkiraan COA)</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Kelola kode akun perkiraan format <code class="font-mono font-bold text-purple-700">###-###</code>, saldo awal, posisi laporan (Neraca / Laba Rugi), dan mutasi berjalan.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Kelola kode akun perkiraan, saldo awal, posisi laporan (Neraca / Laba Rugi), dan mutasi berjalan.</p>
         </div>
         <button type="button" onclick="document.getElementById('modalAddCoa').classList.remove('hidden')" class="btn-akuada-primary px-5 py-2.5 text-xs flex-shrink-0">
             <span class="material-symbols-outlined text-[18px]">add_circle</span>
-            <span>Tambah Kode COA (###-###)</span>
+            <span>Tambah Kode COA</span>
         </button>
     </div>
 
@@ -136,7 +135,7 @@ $catBadges = [
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
             <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2">
                 <span class="material-symbols-outlined text-purple-600">add_circle</span>
-                Tambah Akun Master COA Baru (Format ###-###)
+                Tambah Akun Master COA Baru
             </h3>
             <button type="button" onclick="document.getElementById('modalAddCoa').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
                 <span class="material-symbols-outlined">close</span>
@@ -146,7 +145,7 @@ $catBadges = [
         <form action="<?= base_url('admin/accounting/coa/store') ?>" method="POST" class="space-y-4">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Kode Akun (###-###) *</label>
+                    <label class="block font-bold text-slate-700 mb-1">Kode Akun COA *</label>
                     <input type="text" name="account_code" required pattern="\d{3}-\d{3}" placeholder="Contoh: 616-001"
                            class="w-full px-3.5 py-2.5 rounded-xl border border-purple-300 font-mono font-bold text-purple-900 uppercase">
                 </div>
@@ -230,7 +229,7 @@ $catBadges = [
             <input type="hidden" name="id" id="edit_coa_id">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Kode Akun (###-###) *</label>
+                    <label class="block font-bold text-slate-700 mb-1">Kode Akun COA *</label>
                     <input type="text" name="account_code" id="edit_account_code" required pattern="\d{3}-\d{3}"
                            class="w-full px-3.5 py-2.5 rounded-xl border border-purple-300 font-mono font-bold text-purple-900 uppercase">
                 </div>

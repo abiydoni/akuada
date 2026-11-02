@@ -63,10 +63,10 @@ $isBsBalanced = abs($diff) < 1.0;
         </div>
 
         <!-- Two-Column Side-by-Side Balance Sheet: AKTIVA (Left) vs PASIVA (Right) -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 text-xs items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 text-xs items-stretch">
 
             <!-- LEFT COLUMN: ASET (AKTIVA) -->
-            <div class="border border-slate-200 rounded-2xl overflow-hidden flex flex-col justify-between">
+            <div class="border border-slate-200 rounded-2xl overflow-hidden flex flex-col justify-between h-full">
                 <div>
                     <div class="bg-blue-950 text-white px-5 py-3 font-black uppercase tracking-wider text-xs flex justify-between">
                         <span>ASET (AKTIVA)</span>
@@ -121,7 +121,7 @@ $isBsBalanced = abs($diff) < 1.0;
             </div>
 
             <!-- RIGHT COLUMN: KEWAJIBAN & EKUITAS (PASIVA) -->
-            <div class="border border-slate-200 rounded-2xl overflow-hidden flex flex-col justify-between">
+            <div class="border border-slate-200 rounded-2xl overflow-hidden flex flex-col justify-between h-full">
                 <div>
                     <div class="bg-purple-950 text-white px-5 py-3 font-black uppercase tracking-wider text-xs flex justify-between">
                         <span>KEWAJIBAN & EKUITAS (PASIVA)</span>

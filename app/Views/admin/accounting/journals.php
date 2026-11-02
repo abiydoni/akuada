@@ -35,6 +35,31 @@ $grandCredit = array_sum(array_column($journals, 'total_credit'));
         </button>
     </div>
 
+    <!-- Sub-Tabs per Jenis Jurnal (Jurnal Umum di Tab Terakhir) -->
+    <?php
+    $journalTabs = [
+        ''           => 'Semua Transaksi',
+        'SALES_PO'   => 'Otomatis PO & Tagihan',
+        'RECEIPT_AR' => 'Pelunasan Piutang (AR)',
+        'PAYMENT_AP' => 'Settlement Vendor (AP)',
+        'CASH_IN'    => 'Kas/Bank Masuk',
+        'CASH_OUT'   => 'Kas/Bank Keluar',
+        'ADJUSTMENT' => 'Jurnal Penyesuaian',
+        'GENERAL'    => 'Jurnal Umum (Memorial)',
+    ];
+    ?>
+    <div class="bg-white rounded-2xl p-2 border border-slate-200/80 shadow-sm flex flex-wrap items-center gap-1.5 text-xs">
+        <?php foreach ($journalTabs as $tKey => $tTitle):
+            $isTabActive = ($typeFilter === $tKey);
+            $tabUrl = base_url('admin/accounting/journals') . ($tKey ? '?type=' . urlencode($tKey) : '');
+        ?>
+            <a href="<?= $tabUrl ?>"
+               class="px-3.5 py-2 rounded-xl font-bold transition <?= $isTabActive ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100' ?>">
+                <?= esc($tTitle) ?>
+            </a>
+        <?php endforeach; ?>
+    </div>
+
     <!-- Filter Bar & Summary -->
     <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col lg:flex-row lg:items-end justify-between gap-4 text-xs">
         <form action="<?= base_url('admin/accounting/journals') ?>" method="GET" class="flex flex-wrap items-end gap-3">
@@ -211,7 +236,7 @@ $grandCredit = array_sum(array_column($journals, 'total_credit'));
                 <table class="w-full text-left border-collapse text-xs" id="journalLinesTable">
                     <thead class="bg-slate-900 text-white text-[10px] uppercase">
                         <tr>
-                            <th class="py-2.5 px-3 w-2/5">Akun COA (###-###)</th>
+                            <th class="py-2.5 px-3 w-2/5">Akun COA</th>
                             <th class="py-2.5 px-3">Uraian Baris</th>
                             <th class="py-2.5 px-3 w-36 text-right">Debit (Rp)</th>
                             <th class="py-2.5 px-3 w-36 text-right">Kredit (Rp)</th>

@@ -29,6 +29,25 @@
     </div>
 
     <!-- Stepper Pipeline View -->
+    <?php if (str_contains((string)($order['customer_notes'] ?? ''), '[OVER-LIMIT REQUEST:')): ?>
+        <div class="bg-amber-50 border-2 border-amber-400 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+            <div class="flex items-start gap-3 text-xs">
+                <span class="material-symbols-outlined text-amber-600 text-2xl mt-0.5">warning</span>
+                <div class="space-y-1">
+                    <span class="px-2 py-0.5 rounded bg-amber-500 text-white font-extrabold text-[10px] uppercase">Menunggu Persetujuan Over-Limit Plafon TOP</span>
+                    <h3 class="text-sm font-black text-amber-950">Buyer Menerbitkan PO Melebihi Sisa Plafon Kredit Reguler</h3>
+                    <p class="text-amber-900"><?= esc($order['customer_notes']) ?></p>
+                </div>
+            </div>
+            <form action="<?= base_url('admin/orders/approve-overlimit') ?>" method="POST" class="flex-shrink-0">
+                <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow flex items-center gap-1.5 transition">
+                    <span class="material-symbols-outlined text-[18px]">verified</span>
+                    <span>Setujui Over-Limit & Naikkan Plafon Buyer</span>
+                </button>
+            </form>
+        </div>
+    <?php endif; ?>
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
             <div class="flex items-center gap-2">

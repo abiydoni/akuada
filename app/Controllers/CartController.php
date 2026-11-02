@@ -243,7 +243,20 @@ class CartController extends BaseController
         $grandTotal = $subtotal + $ppnTotal + $shippingAmount;
 
         // Aturan Keras: Jika buyer belum terdaftar di AkuAda, tidak bisa membayar PO dengan kredit (TOP / PO On-Account)
-        if (str_starts_with($paymentMethod, 'top_') || $paymentMethod === 'corporate_po') {
+        $isOverlimitRequest = ($paymentMethod === 'overlimit_top');
+        if ($isOverlimitRequest) {
+            if (!$isRegistered) {
+                session()->setFlashdata('error', 'Perusahaan Anda belum terdaftar resmi di AkuAda untuk fasilitas kredit.');
+                return redirect()->to('/checkout');
+            }
+            $overlimitDays = max(1, (int)($this->request->getPost('overlimit_top_days') ?: 30));
+            $paymentMethod = 'top_' . $overlimitDays;
+            $creditLimit = (float)($buyerCompany['credit_limit_top'] ?? 0);
+            $creditUsed = (float)($buyerCompany['credit_used_top'] ?? 0);
+            $shortfall = max(0, $grandTotal - max(0, $creditLimit - $creditUsed));
+            $reason = trim((string)($this->request->getPost('overlimit_reason') ?: 'Pengajuan ekstra limit TOP'));
+            $customerNotes = trim('[OVER-LIMIT REQUEST: Kurang ' . format_rupiah($shortfall) . ' | Alasan: ' . $reason . '] ' . $customerNotes);
+        } elseif (str_starts_with($paymentMethod, 'top_') || $paymentMethod === 'corporate_po') {
             if (!$isRegistered) {
                 session()->setFlashdata('error', 'Perusahaan Anda belum terdaftar resmi di AkuAda untuk fasilitas kredit. Pembayaran PO tidak dapat menggunakan kredit tempo (TOP 14-90 Hari / Corporate PO). Silakan pilih metode pembayaran Bank Virtual Account atau hubungi Superadmin AkuAda untuk pendaftaran akun fasilitas kredit.');
                 return redirect()->to('/checkout');
@@ -368,7 +381,9 @@ class CartController extends BaseController
         // Clear cart
         session()->remove('cart');
 
-        session()->setFlashdata('success', 'Purchase Order (PO) #' . $poNumber . ' Berhasil Diterbitkan! Vendor sedang memproses pesanan dan dokumen serah terima (BAST).');
+        session()->setFlashdata('success', $isOverlimitRequest
+            ? 'Purchase Order (PO) #' . $poNumber . ' berhasil diterbitkan dengan status Pengajuan Over-Limit TOP! Superadmin AkuAda akan segera menyetujui penambahan plafon kredit Anda.'
+            : 'Purchase Order (PO) #' . $poNumber . ' Berhasil Diterbitkan! Vendor sedang memproses pesanan dan dokumen serah terima (BAST).');
         return redirect()->to('/customer/orders/' . $orderId);
     }
 }

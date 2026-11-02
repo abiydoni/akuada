@@ -1,14 +1,14 @@
 <?php
 $activeTab = $activeTab ?? 'coa';
 $navItems = [
-    ['id' => 'coa',              'url' => 'admin/accounting/coa',              'icon' => 'account_tree',      'label' => '1. Master COA (###-###)'],
-    ['id' => 'journals',         'url' => 'admin/accounting/journals',         'icon' => 'menu_book',         'label' => '2. Jurnal Umum'],
-    ['id' => 'ledger',           'url' => 'admin/accounting/ledger',           'icon' => 'library_books',     'label' => '3. Buku Besar (GL)'],
-    ['id' => 'cash-bank',        'url' => 'admin/accounting/cash-bank',        'icon' => 'account_balance',   'label' => '4. Buku Kas & Bank'],
-    ['id' => 'trial-balance',    'url' => 'admin/accounting/trial-balance',    'icon' => 'balance',           'label' => '5. Neraca Saldo'],
-    ['id' => 'income-statement', 'url' => 'admin/accounting/income-statement', 'icon' => 'monitoring',        'label' => '6. Laporan R/L'],
-    ['id' => 'balance-sheet',    'url' => 'admin/accounting/balance-sheet',    'icon' => 'analytics',         'label' => '7. Laporan Neraca'],
-    ['id' => 'cash-flow',        'url' => 'admin/accounting/cash-flow',        'icon' => 'currency_exchange', 'label' => '8. Arus Kas'],
+    ['id' => 'coa',              'url' => 'admin/accounting/coa',              'icon' => 'account_tree',      'label' => 'Master COA'],
+    ['id' => 'journals',         'url' => 'admin/accounting/journals',         'icon' => 'menu_book',         'label' => 'Jurnal Umum'],
+    ['id' => 'ledger',           'url' => 'admin/accounting/ledger',           'icon' => 'library_books',     'label' => 'Buku Besar (GL)'],
+    ['id' => 'cash-bank',        'url' => 'admin/accounting/cash-bank',        'icon' => 'account_balance',   'label' => 'Buku Kas & Bank'],
+    ['id' => 'trial-balance',    'url' => 'admin/accounting/trial-balance',    'icon' => 'balance',           'label' => 'Neraca Saldo'],
+    ['id' => 'income-statement', 'url' => 'admin/accounting/income-statement', 'icon' => 'monitoring',        'label' => 'Laporan R/L'],
+    ['id' => 'balance-sheet',    'url' => 'admin/accounting/balance-sheet',    'icon' => 'analytics',         'label' => 'Laporan Neraca'],
+    ['id' => 'cash-flow',        'url' => 'admin/accounting/cash-flow',        'icon' => 'currency_exchange', 'label' => 'Arus Kas'],
 ];
 ?>
 <!-- General Ledger & Financial Reporting Top Tab Bar -->
@@ -31,4 +31,3 @@ $navItems = [
         <span>Sync Otomatis PO ke GL</span>
     </a>
 </div>
-

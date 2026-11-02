@@ -13,7 +13,7 @@
                 <span class="text-xs text-slate-400 font-mono">Rincian Mutasi & Saldo Berjalan per Akun COA</span>
             </div>
             <h1 class="text-xl font-extrabold text-slate-900 mt-1">Buku Besar (General Ledger)</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Telusuri histori mutasi Debit, Kredit, dan Saldo Berjalan (*Running Balance*) untuk setiap kode akun <code class="font-mono font-bold text-purple-700">###-###</code>.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Telusuri histori mutasi Debit, Kredit, dan Saldo Berjalan (*Running Balance*) sesuai akun perkiraan COA yang dipilih.</p>
         </div>
         <button type="button" onclick="window.print()" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 print:hidden">
             <span class="material-symbols-outlined text-[17px]">print</span>
@@ -25,9 +25,8 @@
     <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm print:hidden">
         <form action="<?= base_url('admin/accounting/ledger') ?>" method="GET" class="flex flex-wrap items-end gap-3 text-xs">
             <div class="flex-1 min-w-[260px]">
-                <label class="block font-bold text-slate-700 mb-1">Pilih Akun Perkiraan (COA ###-###):</label>
-                <select name="coa_id" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-bold text-slate-900">
-                    <option value="">-- Tampilkan Semua Akun yang Memiliki Saldo / Mutasi --</option>
+                <label class="block font-bold text-slate-700 mb-1">Pilih Akun Perkiraan (COA):</label>
+                <select name="coa_id" onchange="this.form.submit()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-bold text-slate-900">
                     <?php foreach ($coaList as $c): ?>
                         <option value="<?= $c['id'] ?>" <?= (int)$selectedId === (int)$c['id'] ? 'selected' : '' ?>>
                             [<?= esc($c['account_code']) ?>] <?= esc($c['account_name']) ?> (<?= esc($c['normal_balance']) ?>)

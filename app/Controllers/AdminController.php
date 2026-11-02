@@ -356,6 +356,41 @@ class AdminController extends BaseController
         return redirect()->back();
     }
 
+    public function approveOverlimit()
+    {
+        $orderId = (int)$this->request->getPost('order_id');
+        $orderModel = new OrderModel();
+        $order = $orderModel->find($orderId);
+
+        if ($order) {
+            $companyModel = new CompanyModel();
+            $buyer = $companyModel->find($order['customer_company_id']);
+            if ($buyer) {
+                $neededLimit = max((float)$buyer['credit_limit_top'], (float)$buyer['credit_used_top']);
+                $step = max(1000000, (float)get_system_setting('credit_step_amount', 25000000));
+                $newApprovedLimit = ceil($neededLimit / $step) * $step;
+                $companyModel->update($buyer['id'], ['credit_limit_top' => $newApprovedLimit]);
+            }
+
+            $cleanNotes = preg_replace('/\[OVER-LIMIT REQUEST:[^\]]+\]\s*/', '[OVER-LIMIT DISETUJUI ADMIN] ', (string)($order['customer_notes'] ?? ''));
+            $orderModel->update($orderId, [
+                'order_status'   => ($order['order_status'] === 'po_issued') ? 'po_approved' : $order['order_status'],
+                'customer_notes' => $cleanNotes,
+            ]);
+
+            $logModel = new OrderStatusLogModel();
+            $logModel->logStatus($orderId, 'po_approved', 'Persetujuan Over-Limit Plafon Kredit TOP', 'Superadmin menyetujui pengajuan Over-Limit PO dan menaikkan plafon kredit buyer.', session('user_name') ?? 'Superadmin');
+
+            session()->setFlashdata('success', 'Pengajuan Over-Limit PO berhasil disetujui dan plafon kredit perusahaan buyer telah dinaikkan secara otomatis!');
+        }
+        return redirect()->back();
+    }
+
+    protected function _unusedPlaceholder()
+    {
+        return redirect()->back();
+    }
+
     public function products()
     {
         $productModel = new ProductModel();

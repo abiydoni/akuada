@@ -67,7 +67,7 @@ $netMarginPercent   = $totalRevenue > 0 ? round(($netProfit / $totalRevenue) * 1
     </div>
 
     <!-- Official Income Statement Document Sheet -->
-    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 sm:p-10 max-w-5xl mx-auto space-y-8">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 sm:p-10 w-full space-y-8">
         <!-- Kop Surat Laporan Keuangan -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b-2 border-slate-900">
             <div>
