@@ -91,6 +91,7 @@ $routes->group('admin', function ($routes) {
     $routes->post('users/update/(:num)', 'AdminController::updateUser/$1');
     $routes->get('users/toggle/(:num)', 'AdminController::toggleUserStatus/$1');
     $routes->post('users/reset-password/(:num)', 'AdminController::resetUserPassword/$1');
+    $routes->get('users/delete/(:num)', 'AdminController::deleteUser/$1');
 
     // 12. System Settings
     $routes->get('settings', 'AdminController::settings');
@@ -172,3 +173,4 @@ $routes->group('customer', function ($routes) {
 $routes->get('chat/conversations', 'ChatController::getConversations');
 $routes->get('chat/messages/(:segment)', 'ChatController::getMessages/$1');
 $routes->post('chat/send', 'ChatController::sendMessage');
+$routes->get('api/realtime-check', 'ChatController::realtimeCheck');

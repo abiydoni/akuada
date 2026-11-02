@@ -75,6 +75,7 @@
     <!-- Centralized AkuAda Design System Stylesheet -->
     <link rel="stylesheet" href="<?= base_url('css/akuada-theme.css') ?>">
     <script src="<?= base_url('js/akuada-swal.js') ?>"></script>
+    <script src="<?= base_url('js/akuada-realtime.js') ?>"></script>
 </head>
 <body class="h-full flex flex-col font-sans antialiased text-slate-800 bg-slate-50 selection:bg-pink-500 selection:text-white">
 

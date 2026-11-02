@@ -35,6 +35,8 @@ if (!$activeThread && !empty($threads)) {
             <h1 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Pusat Pesan & Live Chat Terpadu</h1>
             <?php if ($currentUserRole === 'customer'): ?>
                 <p class="text-xs text-slate-500">Pusat bantuan & komunikasi resmi pengadaan dengan CS dan Tim AkuAda.</p>
+            <?php elseif ($currentUserRole === 'vendor'): ?>
+                <p class="text-xs text-slate-500">Pusat bantuan & komunikasi resmi kemitraan supplier dengan Tim AkuAda.</p>
             <?php else: ?>
                 <p class="text-xs text-slate-500">Saluran komunikasi langsung antara Corporate Buyer, Mitra Vendor, dan CS Superadmin AkuAda.</p>
             <?php endif; ?>
@@ -62,11 +64,11 @@ if (!$activeThread && !empty($threads)) {
                 <!-- Filter Tabs -->
                 <div class="flex items-center gap-1 overflow-x-auto text-[11px] pb-1 scrollbar-none">
                     <button type="button" onclick="filterCategory('all', this)" class="cat-pill active px-2.5 py-1 rounded-lg font-bold bg-purple-700 text-white">Semua</button>
-                    <button type="button" onclick="filterCategory('order', this)" class="cat-pill px-2.5 py-1 rounded-lg font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"><?= $currentUserRole === 'customer' ? 'Bantuan PO' : 'PO Masuk' ?></button>
-                    <?php if ($currentUserRole !== 'customer'): ?>
+                    <button type="button" onclick="filterCategory('order', this)" class="cat-pill px-2.5 py-1 rounded-lg font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"><?= $currentUserRole === 'customer' ? 'Bantuan PO' : ($currentUserRole === 'vendor' ? 'Koordinasi PO' : 'PO Masuk') ?></button>
+                    <?php if ($currentUserRole === 'admin'): ?>
                         <button type="button" onclick="filterCategory('partner', this)" class="cat-pill px-2.5 py-1 rounded-lg font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100">Mitra Langsung</button>
                     <?php endif; ?>
-                    <button type="button" onclick="filterCategory('support', this)" class="cat-pill px-2.5 py-1 rounded-lg font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100">CS AkuAda</button>
+                    <button type="button" onclick="filterCategory('support', this)" class="cat-pill px-2.5 py-1 rounded-lg font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"><?= $currentUserRole === 'vendor' ? 'Tim AkuAda' : 'CS AkuAda' ?></button>
                 </div>
             </div>
 
@@ -139,9 +141,12 @@ if (!$activeThread && !empty($threads)) {
                             </div>
 
                             <?php if (!empty($t['unread_count']) && $t['unread_count'] > 0): ?>
-                                <span class="px-1.5 py-0.5 rounded-full bg-purple-600 text-white text-[10px] font-black flex-shrink-0 shadow-xs">
-                                    <?= (int)$t['unread_count'] ?>
-                                </span>
+                                <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                                    <span class="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black shadow-sm animate-pulse">
+                                        <?= (int)$t['unread_count'] ?> baru
+                                    </span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+                                </div>
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
@@ -198,6 +203,10 @@ if (!$activeThread && !empty($threads)) {
                                 <span>Buka Dokumen PO #<?= esc($activeThread['po_number'] ?? $activeThread['order_number']) ?> ↗</span>
                             </a>
                         <?php endif; ?>
+                        <button type="button" id="chatSoundBtn" onclick="toggleChatSound()" title="Aktif/Mute Suara Notifikasi" class="px-2.5 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition flex items-center gap-1.5 text-xs font-semibold">
+                            <span class="material-symbols-outlined text-[17px] text-purple-600" id="chatSoundIcon">volume_up</span>
+                            <span id="chatSoundLabel" class="hidden sm:inline text-[11px]">Suara ON</span>
+                        </button>
                         <button type="button" onclick="loadMessages(true)" title="Segarkan Pesan" class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 border border-slate-200 transition">
                             <span class="material-symbols-outlined text-[18px]">refresh</span>
                         </button>
@@ -221,9 +230,9 @@ if (!$activeThread && !empty($threads)) {
                         <button type="button" onclick="insertQuickReply('Apakah surat jalan dan e-Faktur Pajak PPN sudah dapat diunduh?')" class="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-700 text-slate-600 border border-slate-200 transition whitespace-nowrap">Tanya Surat Jalan & Faktur</button>
                         <button type="button" onclick="insertQuickReply('Terima kasih, pesanan telah kami terima dalam kondisi baik.')" class="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-700 text-slate-600 border border-slate-200 transition whitespace-nowrap">Barang diterima baik</button>
                     <?php elseif ($currentUserRole === 'vendor'): ?>
-                        <button type="button" onclick="insertQuickReply('Pesanan Anda saat ini sedang dalam proses produksi / penyiapan di gudang kami.')" class="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 border border-slate-200 transition whitespace-nowrap">Sedang disiapkan</button>
-                        <button type="button" onclick="insertQuickReply('Barang telah selesai dipaketkan dan sedang dalam perjalanan pengiriman armada logistik.')" class="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 border border-slate-200 transition whitespace-nowrap">Sedang dikirim</button>
-                        <button type="button" onclick="insertQuickReply('Barang telah tiba di lokasi. Mohon pihak buyer memeriksa dan mengesahkan BAST di sistem.')" class="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 border border-slate-200 transition whitespace-nowrap">Mohon cek & sahkan BAST</button>
+                        <button type="button" onclick="insertQuickReply('Halo Tim AkuAda, pesanan saat ini sedang dalam penyiapan di gudang kami.')" class="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 border border-slate-200 transition whitespace-nowrap">Penyiapan gudang</button>
+                        <button type="button" onclick="insertQuickReply('Halo Tim AkuAda, pesanan telah selesai dikirim dengan armada/ekspedisi.')" class="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 border border-slate-200 transition whitespace-nowrap">Status kirim</button>
+                        <button type="button" onclick="insertQuickReply('Halo Tim AkuAda, mohon info terkait status pencairan settlement dana tagihan kami.')" class="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 border border-slate-200 transition whitespace-nowrap">Tanya settlement</button>
                     <?php else: ?>
                         <button type="button" onclick="insertQuickReply('Halo, ada yang bisa tim Superadmin AkuAda bantu untuk transaksi ini?')" class="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-700 text-slate-600 border border-slate-200 transition whitespace-nowrap">Ada kendala transaksi?</button>
                         <button type="button" onclick="insertQuickReply('Pembayaran telah diverifikasi resmi oleh Finance AkuAda. Plafon kredit telah disesuaikan.')" class="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-700 text-slate-600 border border-slate-200 transition whitespace-nowrap">Verifikasi Finance</button>
@@ -269,8 +278,8 @@ if (!$activeThread && !empty($threads)) {
                     <span class="material-symbols-outlined text-[20px]">add_comment</span>
                 </div>
                 <div>
-                    <h3 class="text-base font-extrabold text-slate-900"><?= $currentUserRole === 'customer' ? 'Mulai Chat dengan Tim AkuAda' : 'Mulai Percakapan / Chat Baru' ?></h3>
-                    <p class="text-xs text-slate-500"><?= $currentUserRole === 'customer' ? 'Konsultasi dan bantuan pengadaan langsung dengan CS & Tim AkuAda' : 'Kirim pesan langsung ke Buyer, Vendor, atau Admin' ?></p>
+                    <h3 class="text-base font-extrabold text-slate-900"><?= $currentUserRole === 'admin' ? 'Mulai Percakapan / Chat Baru' : 'Mulai Chat dengan Tim AkuAda' ?></h3>
+                    <p class="text-xs text-slate-500"><?= $currentUserRole === 'admin' ? 'Kirim pesan langsung ke Buyer atau Vendor' : 'Konsultasi dan koordinasi langsung dengan Tim Official AkuAda' ?></p>
                 </div>
             </div>
             <button type="button" onclick="closeNewChatModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
@@ -284,11 +293,11 @@ if (!$activeThread && !empty($threads)) {
             <!-- Pilih Tujuan Chat -->
             <div>
                 <label class="block font-bold text-slate-700 text-xs mb-1">Tujuan / Pihak yang Ingin Dihubungi:</label>
-                <?php if ($currentUserRole === 'customer'): ?>
+                <?php if ($currentUserRole === 'customer' || $currentUserRole === 'vendor'): ?>
                     <select id="modalRecipientSelect" name="recipient_target" onchange="onRecipientChanged()" required class="w-full px-3.5 py-2.5 rounded-xl border border-purple-300 bg-purple-50/70 focus:border-purple-600 text-xs font-bold text-purple-900">
-                        <option value="admin:0:Official Support AkuAda" selected>⭐ Official Support & CS Platform AkuAda</option>
+                        <option value="admin:0:Official Support AkuAda" selected>⭐ Official Support & Tim Platform AkuAda</option>
                     </select>
-                    <p class="text-[10px] text-slate-500 mt-1">Khusus akun Corporate Buyer, seluruh koordinasi terpusat dan didampingi langsung oleh CS & Tim Pengadaan AkuAda.</p>
+                    <p class="text-[10px] text-slate-500 mt-1"><?= $currentUserRole === 'vendor' ? 'Khusus akun Mitra Vendor, seluruh komunikasi dan koordinasi terpusat langsung ke Tim AkuAda.' : 'Khusus akun Corporate Buyer, seluruh koordinasi terpusat dan didampingi langsung oleh CS & Tim Pengadaan AkuAda.' ?></p>
                 <?php else: ?>
                     <select id="modalRecipientSelect" name="recipient_target" onchange="onRecipientChanged()" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600 text-xs bg-white font-semibold">
                         <option value="">-- Pilih Mitra atau Bantuan CS --</option>
@@ -296,21 +305,13 @@ if (!$activeThread && !empty($threads)) {
                         <!-- CS Support Platform -->
                         <option value="admin:0:Official Support AkuAda">⭐ Official Support & CS Platform AkuAda</option>
                         
-                        <?php if ($currentUserRole === 'vendor'): ?>
-                            <optgroup label="Corporate Buyer Terdaftar">
-                                <?php foreach (($buyers ?? []) as $b): ?>
-                                    <option value="customer:<?= $b['id'] ?>:<?= esc($b['company_name']) ?>">🏨 <?= esc($b['company_name']) ?> (Buyer)</option>
-                                <?php endforeach; ?>
-                            </optgroup>
-                        <?php else: ?>
-                            <optgroup label="Daftar Perusahaan">
-                                <?php foreach (($companies ?? []) as $c): ?>
-                                    <option value="<?= $c['type'] ?>:<?= $c['id'] ?>:<?= esc($c['company_name']) ?>">
-                                        <?= $c['type'] === 'vendor' ? '🏢' : '🏨' ?> <?= esc($c['company_name']) ?> (<?= ucfirst($c['type']) ?>)
-                                    </option>
-                                <?php endforeach; ?>
-                            </optgroup>
-                        <?php endif; ?>
+                        <optgroup label="Daftar Perusahaan">
+                            <?php foreach (($companies ?? []) as $c): ?>
+                                <option value="<?= $c['type'] ?>:<?= $c['id'] ?>:<?= esc($c['company_name']) ?>">
+                                    <?= $c['type'] === 'vendor' ? '🏢' : '🏨' ?> <?= esc($c['company_name']) ?> (<?= ucfirst($c['type']) ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </optgroup>
                     </select>
                 <?php endif; ?>
             </div>
@@ -359,6 +360,7 @@ if (!$activeThread && !empty($threads)) {
     let pollInterval = null;
 
     document.addEventListener('DOMContentLoaded', function() {
+        updateChatSoundUI();
         if (activeConversationKey) {
             loadMessages();
             // Start polling every 3.5 seconds
@@ -500,11 +502,38 @@ if (!$activeThread && !empty($threads)) {
             }
         });
 
+        // Check if new message arrived to play chime
+        if (typeof window.lastChatMsgCount !== 'undefined' && messages.length > window.lastChatMsgCount) {
+            const newest = messages[messages.length - 1];
+            if (!newest.is_me && typeof AkuAdaAudio !== 'undefined') {
+                AkuAdaAudio.playChime('chat');
+            }
+        }
+        window.lastChatMsgCount = messages.length;
+
         // Only update if changed or first render
         const wasScrolledToBottom = (listEl.scrollHeight - listEl.clientHeight <= listEl.scrollTop + 50);
         listEl.innerHTML = html;
         if (wasScrolledToBottom) {
             scrollMessagesToBottom();
+        }
+    }
+
+    function updateChatSoundUI() {
+        const isMuted = typeof AkuAdaAudio !== 'undefined' ? AkuAdaAudio.isMuted() : false;
+        const icon = document.getElementById('chatSoundIcon');
+        const label = document.getElementById('chatSoundLabel');
+        if (icon) icon.textContent = isMuted ? 'volume_off' : 'volume_up';
+        if (label) label.textContent = isMuted ? 'Suara Mute' : 'Suara ON';
+    }
+
+    function toggleChatSound() {
+        if (typeof AkuAdaAudio !== 'undefined') {
+            const unmuted = AkuAdaAudio.toggleMute();
+            updateChatSoundUI();
+            if (unmuted) {
+                AkuAdaAudio.playChime('chat');
+            }
         }
     }
 

@@ -61,8 +61,8 @@ class ChatController extends Controller
         }
 
         if (str_starts_with($key, 'direct_')) {
-            if ($role === 'customer') {
-                return false; // Buyer hanya boleh berkomunikasi dengan tim AkuAda
+            if ($role === 'customer' || $role === 'vendor') {
+                return false; // Buyer dan Vendor hanya boleh berkomunikasi dengan tim AkuAda
             }
             $parts = explode('_', $key);
             $c1 = isset($parts[1]) ? (int)$parts[1] : 0;
@@ -243,8 +243,8 @@ class ChatController extends Controller
             $receiverRole = $this->request->getPost('receiver_role') ?: null;
             $subject = $this->request->getPost('subject') ?: null;
 
-            if ($userRole === 'customer') {
-                // Khusus buyer lawan chat selalu tim AkuAda CS / Superadmin
+            if ($userRole === 'customer' || $userRole === 'vendor') {
+                // Khusus buyer dan vendor, lawan chat selalu tim AkuAda CS / Superadmin
                 $receiverRole = 'admin';
                 $receiverCompanyId = null;
             }
@@ -287,6 +287,138 @@ class ChatController extends Controller
                 'date_formatted'      => date('d M Y'),
                 'created_at'          => $newMessage['created_at'],
             ]
+        ]);
+    }
+
+    /**
+     * Realtime Polling API for Live Notifications & Sound Alerts
+     * Returns: unread chat count, latest unread message, latest order info
+     */
+    public function realtimeCheck()
+    {
+        $isLoggedIn = !empty(session('user_id')) || !empty(session('is_logged_in'));
+        $role = session('user_role') ?: (session('role') ?: 'guest');
+        $companyId = (int)session('company_id');
+        $db = \Config\Database::connect();
+
+        $unreadCount = 0;
+        $latestMessage = null;
+        $latestOrder = null;
+        $totalOrders = 0;
+
+        if (!$isLoggedIn) {
+            $guestKey = $this->getGuestKey();
+            $unreadCount = $db->table('order_messages')
+                ->where('conversation_key', $guestKey)
+                ->where('sender_role !=', 'guest')
+                ->where('is_read', 0)
+                ->countAllResults();
+
+            if ($unreadCount > 0) {
+                $msgRow = $db->table('order_messages')
+                    ->where('conversation_key', $guestKey)
+                    ->where('sender_role !=', 'guest')
+                    ->where('is_read', 0)
+                    ->orderBy('id', 'DESC')
+                    ->get(1)->getRowArray();
+                if ($msgRow) {
+                    $latestMessage = [
+                        'id'               => (int)$msgRow['id'],
+                        'sender_name'      => $msgRow['sender_name'],
+                        'sender_role'      => $msgRow['sender_role'],
+                        'message'          => $msgRow['message'],
+                        'conversation_key' => $guestKey,
+                        'created_at'       => $msgRow['created_at'],
+                        'time_formatted'   => date('H:i', strtotime($msgRow['created_at'])),
+                    ];
+                }
+            }
+        } else {
+            // Logged in: Admin, Vendor, or Customer
+            $messageModel = new OrderMessageModel();
+            $threads = $messageModel->getConversationsList($role, $companyId);
+            
+            // Total unread from accessible threads
+            foreach ($threads as $t) {
+                $unreadCount += (int)($t['unread_count'] ?? 0);
+            }
+
+            // Find latest unread message for notification alert
+            if ($unreadCount > 0) {
+                $builder = $db->table('order_messages');
+                $builder->where('sender_role !=', $role)->where('is_read', 0);
+
+                if ($role === 'vendor' && $companyId) {
+                    $keys = array_column($threads, 'key');
+                    if (!empty($keys)) {
+                        $builder->whereIn('conversation_key', $keys);
+                    } else {
+                        $builder->where('conversation_key', 'admin_comp_' . $companyId);
+                    }
+                } elseif ($role === 'customer' && $companyId) {
+                    $keys = array_column($threads, 'key');
+                    if (!empty($keys)) {
+                        $builder->whereIn('conversation_key', $keys);
+                    } else {
+                        $builder->where('conversation_key', 'admin_comp_' . $companyId);
+                    }
+                }
+
+                $msgRow = $builder->orderBy('id', 'DESC')->get(1)->getRowArray();
+                if ($msgRow) {
+                    $latestMessage = [
+                        'id'                  => (int)$msgRow['id'],
+                        'sender_name'         => $msgRow['sender_name'],
+                        'sender_role'         => $msgRow['sender_role'],
+                        'sender_company_name' => $msgRow['sender_company_name'] ?? '',
+                        'message'             => $msgRow['message'],
+                        'conversation_key'    => $msgRow['conversation_key'] ?? ('order_' . $msgRow['order_id']),
+                        'order_id'            => $msgRow['order_id'],
+                        'created_at'          => $msgRow['created_at'],
+                        'time_formatted'      => date('H:i', strtotime($msgRow['created_at'])),
+                    ];
+                }
+            }
+
+            // Realtime Order check
+            $orderBuilder = $db->table('orders o')
+                ->select('o.*, cb.company_name as buyer_name, cv.company_name as vendor_name')
+                ->join('companies cb', 'cb.id = o.customer_company_id', 'left')
+                ->join('companies cv', 'cv.id = o.vendor_company_id', 'left');
+
+            if ($role === 'vendor' && $companyId) {
+                $orderBuilder->where('o.vendor_company_id', $companyId);
+            } elseif ($role === 'customer' && $companyId) {
+                $orderBuilder->where('o.customer_company_id', $companyId);
+            }
+
+            $totalOrders = (clone $orderBuilder)->countAllResults();
+            $orderRow = $orderBuilder->orderBy('o.id', 'DESC')->get(1)->getRowArray();
+
+            if ($orderRow) {
+                $latestOrder = [
+                    'id'           => (int)$orderRow['id'],
+                    'order_number' => $orderRow['order_number'],
+                    'po_number'    => $orderRow['po_number'] ?? $orderRow['order_number'],
+                    'buyer_name'   => $orderRow['buyer_name'] ?? 'Buyer',
+                    'vendor_name'  => $orderRow['vendor_name'] ?? 'Vendor',
+                    'total_amount' => (float)$orderRow['total_amount'],
+                    'order_status' => $orderRow['order_status'],
+                    'created_at'   => $orderRow['created_at'],
+                    'updated_at'   => $orderRow['updated_at'],
+                ];
+            }
+        }
+
+        return $this->response->setJSON([
+            'status'            => 'success',
+            'is_logged_in'      => $isLoggedIn,
+            'role'              => $role,
+            'unread_chat_count' => $unreadCount,
+            'latest_message'    => $latestMessage,
+            'total_orders'      => $totalOrders,
+            'latest_order'      => $latestOrder,
+            'server_time'       => date('Y-m-d H:i:s'),
         ]);
     }
 }

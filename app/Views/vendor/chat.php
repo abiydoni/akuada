@@ -4,7 +4,7 @@
 
 <?= view('shared/chat_center', [
     'threads' => $threads,
-    'buyers'  => $buyers ?? [],
+    'buyers'  => [],
     'orders'  => $orders ?? [],
 ]) ?>
 

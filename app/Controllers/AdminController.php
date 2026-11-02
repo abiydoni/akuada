@@ -581,15 +581,41 @@ class AdminController extends BaseController
         $companyModel = new CompanyModel();
 
         $roleFilter = $this->request->getGet('role');
-        $users = $userModel->getAllUsersWithCompany($roleFilter);
+        $searchQuery = trim((string)$this->request->getGet('q'));
+        $users = $userModel->getAllUsersWithCompany($roleFilter, $searchQuery);
         $companies = $companyModel->orderBy('company_name', 'ASC')->findAll();
 
         return view('admin/users', [
-            'title'      => 'Manajemen Akun Pengguna (Users) - Superadmin AkuAda',
-            'users'      => $users,
-            'companies'  => $companies,
-            'roleFilter' => $roleFilter,
+            'title'       => 'Manajemen Akun Pengguna (Users) - Superadmin AkuAda',
+            'users'       => $users,
+            'companies'   => $companies,
+            'roleFilter'  => $roleFilter,
+            'searchQuery' => $searchQuery,
         ]);
+    }
+
+    public function deleteUser($id)
+    {
+        $userModel = new UserModel();
+        $user = $userModel->find($id);
+
+        if (!$user) {
+            session()->setFlashdata('error', 'Akun pengguna tidak ditemukan.');
+            return redirect()->to('/admin/users');
+        }
+
+        // Jangan izinkan hapus akun Superadmin ID 1 atau user yang sedang login
+        if ((int)$id === 1 || (int)$id === (int)session('user_id')) {
+            session()->setFlashdata('error', 'Tidak dapat menghapus akun Superadmin utama atau akun yang sedang aktif digunakan.');
+            return redirect()->to('/admin/users');
+        }
+
+        $userName = $user['name'];
+        $userEmail = $user['email'];
+        $userModel->delete($id);
+
+        session()->setFlashdata('success', 'Akun pengguna "' . $userName . '" (' . $userEmail . ') berhasil dihapus secara permanen.');
+        return redirect()->to('/admin/users');
     }
 
     public function storeUser()

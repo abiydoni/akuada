@@ -22,7 +22,7 @@ class UserModel extends Model
                     ->first();
     }
 
-    public function getAllUsersWithCompany($role = null)
+    public function getAllUsersWithCompany($role = null, $search = null)
     {
         $builder = $this->select('users.*, companies.company_name, companies.type as company_type, companies.legal_type, companies.is_verified as company_verified')
                         ->join('companies', 'companies.id = users.company_id', 'left');
@@ -31,6 +31,15 @@ class UserModel extends Model
             $builder->where('users.role', $role);
         }
 
-        return $builder->orderBy('users.id', 'DESC')->findAll();
+        if (!empty($search)) {
+            $builder->groupStart()
+                    ->like('users.name', $search)
+                    ->orLike('users.email', $search)
+                    ->orLike('users.phone', $search)
+                    ->orLike('companies.company_name', $search)
+                    ->groupEnd();
+        }
+
+        return $builder->orderBy('users.id', 'ASC')->findAll();
     }
 }

@@ -791,13 +791,13 @@ class VendorController extends BaseController
         $vendorId = $this->getVendorCompanyId();
         $messageModel = new OrderMessageModel();
         $threads = $messageModel->getConversationsList('vendor', $vendorId);
-        $buyers = (new \App\Models\CompanyModel())->where('type', 'buyer')->orderBy('company_name', 'ASC')->findAll();
+        // Sembunyikan semua buyer: Vendor hanya berkomunikasi terpusat dengan tim AkuAda
         $orders = (new \App\Models\OrderModel())->where('vendor_company_id', $vendorId)->orderBy('id', 'DESC')->findAll(30);
 
         return view('vendor/chat', [
-            'title'   => 'Pusat Pesan & Chat Pengadaan - Mitra Vendor AkuAda',
+            'title'   => 'Pusat Pesan & Chat - Mitra Vendor AkuAda',
             'threads' => $threads,
-            'buyers'  => $buyers,
+            'buyers'  => [],
             'orders'  => $orders,
         ]);
     }

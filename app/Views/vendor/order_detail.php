@@ -24,7 +24,7 @@
             </a>
             <a href="<?= base_url('vendor/chat?order_id=' . $order['id']) ?>" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs transition flex items-center gap-1.5 shadow-md shadow-blue-600/20">
                 <span class="material-symbols-outlined text-[18px]">forum</span>
-                <span>Chat dengan Buyer</span>
+                <span>Chat dengan AkuAda</span>
             </a>
             <div>
                 <?= badge_order_status($order['order_status']) ?>
@@ -436,15 +436,15 @@
                     <span class="material-symbols-outlined text-[22px]">forum</span>
                 </div>
                 <div>
-                    <strong class="text-slate-900 font-bold text-xs block">Saluran Percakapan & Live Chat dengan Buyer</strong>
+                    <strong class="text-slate-900 font-bold text-xs block">Saluran Koordinasi & Live Chat dengan Tim AkuAda</strong>
                     <p class="text-slate-500 text-[11px] mt-0.5">
-                        Buka ruang obrolan terdedikasi untuk koordinasi pengiriman, konfirmasi penerimaan barang, atau update nomor resi dengan <strong><?= esc($order['buyer_name']) ?></strong>.
+                        Hubungi Tim AkuAda untuk koordinasi penyiapan pesanan, informasi serah terima barang (BAST), atau konfirmasi penagihan invoice vendor.
                     </p>
                 </div>
             </div>
             <a href="<?= base_url('vendor/chat?order_id=' . $order['id']) ?>" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition flex items-center gap-2 shadow-md shadow-blue-600/20 flex-shrink-0">
                 <span class="material-symbols-outlined text-[18px]">chat</span>
-                <span>Buka Percakapan Chat PO ↗</span>
+                <span>Buka Percakapan dengan AkuAda ↗</span>
             </a>
         </div>
     </div>

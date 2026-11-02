@@ -227,9 +227,9 @@ class OrderMessageModel extends Model
                     } elseif ($role === 'vendor') {
                         if ((int)$order['vendor_company_id'] === $companyId) {
                             $hasAccess = true;
-                            $counterpartyName = $order['buyer_name'] ?? 'Corporate Buyer';
-                            $counterpartyRole = 'customer';
-                            $counterpartyBadge = 'Corporate Buyer';
+                            $counterpartyName = 'Tim Pengadaan & CS AkuAda';
+                            $counterpartyRole = 'admin';
+                            $counterpartyBadge = 'Official AkuAda';
                         }
                     }
                 }
@@ -247,7 +247,7 @@ class OrderMessageModel extends Model
                     $counterpartyRole = 'direct';
                     $counterpartyBadge = 'Diskusi B2B Langsung';
                     $title = $lastMsg['subject'] ?: 'Diskusi Perusahaan Langsung';
-                } elseif ($role !== 'customer' && $companyId && ($companyId === $c1 || $companyId === $c2)) {
+                } elseif ($role !== 'customer' && $role !== 'vendor' && $companyId && ($companyId === $c1 || $companyId === $c2)) {
                     $hasAccess = true;
                     $otherId = ($companyId === $c1) ? $c2 : $c1;
                     $otherComp = $db->table('companies')->where('id', $otherId)->get()->getRowArray();
@@ -338,7 +338,7 @@ class OrderMessageModel extends Model
                     'order_id'           => null,
                     'order_number'       => null,
                     'po_number'          => null,
-                    'title'              => 'Bantuan Finance & Settlement AkuAda',
+                    'title'              => 'Bantuan Finance & Kemitraan AkuAda',
                     'counterparty_name'  => 'Official Support AkuAda',
                     'counterparty_role'  => 'admin',
                     'counterparty_badge' => 'Superadmin Platform',
@@ -353,33 +353,7 @@ class OrderMessageModel extends Model
                 $knownKeys[$supportKey] = true;
             }
 
-            // Registered Buyers
-            $buyers = $db->table('companies')->where('type', 'buyer')->orderBy('company_name', 'ASC')->get()->getResultArray();
-            foreach ($buyers as $b) {
-                $c1 = min($companyId, (int)$b['id']);
-                $c2 = max($companyId, (int)$b['id']);
-                $directKey = 'direct_' . $c1 . '_' . $c2;
-                if (!isset($knownKeys[$directKey])) {
-                    $conversations[] = [
-                        'key'                => $directKey,
-                        'order_id'           => null,
-                        'order_number'       => null,
-                        'po_number'          => null,
-                        'title'              => 'Diskusi Umum & Penawaran Produk',
-                        'counterparty_name'  => $b['company_name'],
-                        'counterparty_role'  => 'customer',
-                        'counterparty_badge' => 'Corporate Buyer',
-                        'last_message'       => 'Mulai percakapan langsung dengan pembeli korporat ' . $b['company_name'] . '.',
-                        'last_sender'        => $b['company_name'],
-                        'last_sender_role'   => 'customer',
-                        'last_message_at'    => null,
-                        'time_formatted'     => 'Baru',
-                        'date_formatted'     => '-',
-                        'unread_count'       => 0,
-                    ];
-                    $knownKeys[$directKey] = true;
-                }
-            }
+            // Khusus vendor, tidak ada chat langsung ke buyer atau mitra lain. Lawan chat hanya tim AkuAda.
         } elseif ($role === 'admin') {
             // For admin, add all buyers and vendors as direct support channels if not listed
             $allComps = $db->table('companies')->orderBy('type', 'DESC')->orderBy('company_name', 'ASC')->get()->getResultArray();

@@ -19,24 +19,40 @@
         </button>
     </div>
 
-    <!-- Role Filter Pills -->
-    <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-        <a href="<?= base_url('admin/users') ?>" 
-           class="px-3.5 py-1.5 rounded-xl font-bold transition whitespace-nowrap <?= empty($roleFilter) ? 'bg-purple-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' ?>">
-            Semua Pengguna (<?= count($users) ?>)
-        </a>
-        <a href="<?= base_url('admin/users?role=admin') ?>" 
-           class="px-3.5 py-1.5 rounded-xl font-bold transition whitespace-nowrap <?= ($roleFilter === 'admin') ? 'bg-purple-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' ?>">
-            Superadmin
-        </a>
-        <a href="<?= base_url('admin/users?role=vendor') ?>" 
-           class="px-3.5 py-1.5 rounded-xl font-bold transition whitespace-nowrap <?= ($roleFilter === 'vendor') ? 'bg-purple-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' ?>">
-            Mitra Vendor
-        </a>
-        <a href="<?= base_url('admin/users?role=customer') ?>" 
-           class="px-3.5 py-1.5 rounded-xl font-bold transition whitespace-nowrap <?= ($roleFilter === 'customer') ? 'bg-purple-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' ?>">
-            Corporate Buyer
-        </a>
+    <!-- Role Filter Pills & Live Search -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-2 overflow-x-auto pb-1">
+            <a href="<?= base_url('admin/users') ?>" 
+               class="px-3.5 py-1.5 rounded-xl font-bold transition whitespace-nowrap <?= empty($roleFilter) ? 'bg-purple-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' ?>">
+                Semua Pengguna (<?= count($users) ?>)
+            </a>
+            <a href="<?= base_url('admin/users?role=admin') ?>" 
+               class="px-3.5 py-1.5 rounded-xl font-bold transition whitespace-nowrap <?= ($roleFilter === 'admin') ? 'bg-purple-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' ?>">
+                Superadmin
+            </a>
+            <a href="<?= base_url('admin/users?role=vendor') ?>" 
+               class="px-3.5 py-1.5 rounded-xl font-bold transition whitespace-nowrap <?= ($roleFilter === 'vendor') ? 'bg-purple-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' ?>">
+                Mitra Vendor
+            </a>
+            <a href="<?= base_url('admin/users?role=customer') ?>" 
+               class="px-3.5 py-1.5 rounded-xl font-bold transition whitespace-nowrap <?= ($roleFilter === 'customer') ? 'bg-purple-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' ?>">
+                Corporate Buyer
+            </a>
+        </div>
+        
+        <form method="GET" action="<?= base_url('admin/users') ?>" class="flex items-center gap-2">
+            <?php if (!empty($roleFilter)): ?>
+                <input type="hidden" name="role" value="<?= esc($roleFilter) ?>">
+            <?php endif; ?>
+            <div class="relative w-full sm:w-64">
+                <span class="material-symbols-outlined absolute left-3 top-2 text-slate-400 text-[18px]">search</span>
+                <input type="text" name="q" value="<?= esc($searchQuery ?? '') ?>" placeholder="Cari nama, email, PT..." 
+                       class="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-300 focus:border-purple-600 bg-white text-xs">
+            </div>
+            <?php if (!empty($searchQuery)): ?>
+                <a href="<?= base_url('admin/users' . (!empty($roleFilter) ? '?role=' . $roleFilter : '')) ?>" class="text-xs text-rose-600 font-bold hover:underline">Reset</a>
+            <?php endif; ?>
+        </form>
     </div>
 
     <!-- Users Table Card - Fits 100% width with NO horizontal scroll -->
@@ -154,6 +170,15 @@
                                        title="<?= $u['status'] === 'active' ? 'Tangguhkan Akun' : 'Aktifkan Akun' ?>">
                                         <span class="material-symbols-outlined text-[17px]"><?= $u['status'] === 'active' ? 'block' : 'check_circle' ?></span>
                                     </a>
+
+                                    <?php if ((int)$u['id'] !== 1 && (int)$u['id'] !== (int)session('user_id')): ?>
+                                        <a href="<?= base_url('admin/users/delete/' . $u['id']) ?>" 
+                                           onclick="return confirm('Apakah Anda yakin ingin MENGHAPUS PERMANEN akun <?= esc(addslashes($u['name'])) ?> (<?= esc($u['email']) ?>)?');"
+                                           class="p-1.5 hover:bg-rose-50 text-rose-600 rounded-lg transition border border-rose-200" 
+                                           title="Hapus Akun Pengguna">
+                                            <span class="material-symbols-outlined text-[17px]">delete</span>
+                                        </a>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
@@ -178,6 +203,7 @@
         </div>
 
         <form action="<?= base_url('admin/users/store') ?>" method="POST" class="space-y-4">
+            <?= csrf_field() ?>
             <div>
                 <label class="block font-bold text-slate-700 mb-1">Nama Lengkap: <span class="text-rose-500">*</span></label>
                 <input type="text" name="name" required placeholder="Contoh: Rian Anggara, S.Kom" 
