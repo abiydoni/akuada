@@ -48,6 +48,8 @@ class AuthController extends BaseController
 
         if ($user) {
             session()->set([
+                'is_logged_in'     => true,
+                'role'             => $user['role'],
                 'user_id'          => $user['id'],
                 'user_name'        => $user['name'],
                 'user_email'       => $user['email'],
@@ -103,6 +105,8 @@ class AuthController extends BaseController
 
         if ($user && password_verify($password, $user['password'])) {
             session()->set([
+                'is_logged_in'     => true,
+                'role'             => $user['role'],
                 'user_id'          => $user['id'],
                 'user_name'        => $user['name'],
                 'user_email'       => $user['email'],

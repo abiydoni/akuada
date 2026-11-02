@@ -74,7 +74,11 @@ $routes->group('admin', function ($routes) {
     $routes->get('status-logs', 'AdminController::statusLogs');
     $routes->get('debts', 'AdminController::debts');
     $routes->post('debts/confirm-buyer', 'AdminController::confirmBuyerPayment');
+    $routes->post('debts/reject-buyer', 'AdminController::rejectBuyerPayment');
     $routes->post('debts/pay-vendor', 'AdminController::payVendorDebt');
+    $routes->get('orders/bast/(:num)', 'AdminController::bast/$1');
+    $routes->get('orders/tax-invoice/(:num)', 'AdminController::taxInvoice/$1');
+    $routes->get('chat', 'AdminController::chatCenter');
 
     // 9 & 10. RFQs & RFQ Items
     $routes->get('rfqs', 'AdminController::rfqs');
@@ -118,7 +122,12 @@ $routes->group('vendor', function ($routes) {
     $routes->get('orders/(:num)', 'VendorController::orderDetail/$1');
     $routes->get('orders/vendor-invoice/(:num)', 'VendorController::vendorInvoice/$1');
     $routes->get('orders/invoice/(:num)', 'VendorController::vendorInvoice/$1');
+    $routes->get('orders/bast/(:num)', 'VendorController::bast/$1');
+    $routes->get('orders/tax-invoice/(:num)', 'VendorController::taxInvoice/$1');
     $routes->post('orders/update-shipping', 'VendorController::updateShipping');
+    $routes->post('orders/review-reply', 'VendorController::replyReview');
+    $routes->post('orders/return-respond', 'VendorController::respondReturn');
+    $routes->get('chat', 'VendorController::chatCenter');
     $routes->get('products', 'VendorController::products');
     $routes->get('products/new', 'VendorController::newProduct');
     $routes->post('products/store', 'VendorController::storeProduct');
@@ -128,6 +137,7 @@ $routes->group('vendor', function ($routes) {
     $routes->get('rfqs', 'VendorController::rfqs');
     $routes->post('rfqs/quote', 'VendorController::submitQuote');
     $routes->get('company-profile', 'VendorController::companyProfile');
+    $routes->post('company-profile/update', 'VendorController::updateCompanyProfile');
     $routes->get('settlements', 'VendorController::settlements');
     $routes->post('settlements/update-bank', 'VendorController::updateBankAccount');
 });
@@ -139,13 +149,26 @@ $routes->group('customer', function ($routes) {
     $routes->get('orders', 'CustomerController::orders');
     $routes->get('orders/(:num)', 'CustomerController::orderDetail/$1');
     $routes->get('orders/invoice/(:num)', 'CustomerController::invoice/$1');
+    $routes->get('orders/bast/(:num)', 'CustomerController::bast/$1');
+    $routes->get('orders/tax-invoice/(:num)', 'CustomerController::taxInvoice/$1');
+    $routes->post('orders/complete', 'CustomerController::completeOrder');
+    $routes->post('orders/confirm-delivery', 'CustomerController::confirmDelivery');
     $routes->post('orders/sign-bast', 'CustomerController::signBast');
+    $routes->post('orders/review', 'CustomerController::submitReview');
+    $routes->post('orders/return-request', 'CustomerController::requestReturn');
+    $routes->get('chat', 'CustomerController::chatCenter');
     $routes->get('rfqs', 'CustomerController::rfqs');
     $routes->get('rfqs/accept/(:num)', 'CustomerController::acceptQuote/$1');
     $routes->get('tax-invoices', 'CustomerController::taxInvoices');
     $routes->get('credit-limit', 'CustomerController::creditLimit');
     $routes->post('credit-limit/request', 'CustomerController::requestLimitIncrease');
     $routes->get('company-profile', 'CustomerController::companyProfile');
+    $routes->post('company-profile/update', 'CustomerController::updateCompanyProfile');
     $routes->get('payables', 'CustomerController::payables');
     $routes->post('payables/pay', 'CustomerController::payDebt');
 });
+
+// 8. Live Chat & Messaging API
+$routes->get('chat/conversations', 'ChatController::getConversations');
+$routes->get('chat/messages/(:segment)', 'ChatController::getMessages/$1');
+$routes->post('chat/send', 'ChatController::sendMessage');

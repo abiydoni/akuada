@@ -26,7 +26,7 @@ $appName         = get_system_setting('app_name', 'AkuAda');
             </div>
 
             <div class="flex items-center gap-4">
-                <a href="<?= base_url('/') ?>" class="text-xs text-slate-300 hover:text-white flex items-center gap-1 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
+                <a href="<?= base_url('customer/chat') ?>" class="portal-top-chat text-xs text-pink-200 hover:text-white flex items-center gap-1.5 bg-pink-950/80 hover:bg-pink-900 px-3 py-1.5 rounded-lg border border-pink-800 font-bold transition shadow-xs"><span class="material-symbols-outlined text-[16px] text-pink-400">forum</span><span>Chat Bantuan AkuAda</span></a> <a href="<?= base_url('/') ?>" class="text-xs text-slate-300 hover:text-white flex items-center gap-1 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
                     <span class="material-symbols-outlined text-[15px]">storefront</span> Katalog Marketplace
                 </a>
                 
@@ -70,12 +70,20 @@ $appName         = get_system_setting('app_name', 'AkuAda');
                         <a href="<?= base_url('customer/dashboard') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= current_url() == base_url('customer/dashboard') ? 'bg-pink-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">space_dashboard</span> Dashboard Pengadaan
                         </a>
+                        <a href="<?= base_url('customer/chat') ?>" class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold <?= str_contains(current_url(), 'customer/chat') ? 'bg-pink-600 text-white shadow-sm' : 'text-slate-800 bg-pink-50/70 border border-pink-200/80 hover:bg-pink-100/80 text-pink-950' ?>">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[19px] text-pink-700">forum</span>
+                                <span>Pusat Chat & Bantuan AkuAda</span>
+                            </div>
+                            <span class="px-1.5 py-0.2 rounded-md bg-pink-600 text-white text-[9px] font-black tracking-wider">LIVE</span>
+                        </a>
                         <a href="<?= base_url('customer/orders') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'customer/orders') ? 'bg-pink-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">receipt_long</span> Purchase Order (PO) & BAST
                         </a>
                         <a href="<?= base_url('customer/payables') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'customer/payables') ? 'bg-pink-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">payments</span> Tagihan & Bayar Hutang TOP
                         </a>
+
                         <a href="<?= base_url('customer/rfqs') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'customer/rfqs') ? 'bg-pink-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">request_quote</span> Permintaan RFQ Saya
                         </a>
@@ -103,4 +111,8 @@ $appName         = get_system_setting('app_name', 'AkuAda');
 
     </div>
 </div>
+
+<!-- Floating Live Chat Widget (Melayang Kanan Bawah untuk Buyer) -->
+<?= view('components/floating_chat') ?>
+
 <?= $this->endSection() ?>

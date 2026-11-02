@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token-name" content="<?= csrf_token() ?>">
+    <meta name="csrf-hash" content="<?= csrf_hash() ?>">
     <title><?= esc($title ?? 'AkuAda - B2B Marketplace & E-Procurement Perusahaan') ?></title>
     
     <!-- Modern Typography: Plus Jakarta Sans -->
@@ -123,6 +125,35 @@
                 AkuAdaAlert.toast('success', '<?= addslashes(session()->getFlashdata('toast')) ?>');
             <?php endif; ?>
         });
+    </script>
+    <!-- Global CSRF Auto-Injector for all POST forms -->
+    <script>
+        (function() {
+            function autoInjectCsrf() {
+                const tokenName = '<?= csrf_token() ?>';
+                const tokenHash = '<?= csrf_hash() ?>';
+                document.querySelectorAll('form').forEach(function(form) {
+                    const method = (form.getAttribute('method') || '').toUpperCase();
+                    if (method === 'POST') {
+                        let input = form.querySelector('input[name="' + tokenName + '"]');
+                        if (!input) {
+                            input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = tokenName;
+                            form.prepend(input);
+                        }
+                        input.value = tokenHash;
+                    }
+                });
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', autoInjectCsrf);
+            } else {
+                autoInjectCsrf();
+            }
+            // Re-inject on any dynamic modal or form show
+            document.addEventListener('click', function() { setTimeout(autoInjectCsrf, 50); });
+        })();
     </script>
 </body>
 </html>

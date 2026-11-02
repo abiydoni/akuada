@@ -9,6 +9,9 @@ use App\Models\CategoryModel;
 use App\Models\RfqModel;
 use App\Models\RfqItemModel;
 use App\Models\CompanyModel;
+use App\Models\OrderReviewModel;
+use App\Models\OrderMessageModel;
+use App\Models\OrderReturnModel;
 
 class VendorController extends BaseController
 {
@@ -78,9 +81,19 @@ class VendorController extends BaseController
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Pesanan tidak ditemukan');
         }
 
+        $reviewModel = new OrderReviewModel();
+        $review = $reviewModel->getByOrder((int)$id);
+
+        $returnModel = new OrderReturnModel();
+        $returns = $returnModel->getReturnsByOrder((int)$id);
+        $latestReturn = !empty($returns) ? $returns[0] : null;
+
         return view('vendor/order_detail', [
-            'title' => 'Detail Pesanan PO #' . $order['po_number'] . ' - Vendor AkuAda',
-            'order' => $order
+            'title'        => 'Detail Pesanan PO #' . ($order['po_number'] ?? $order['order_number']) . ' - Vendor AkuAda',
+            'order'        => $order,
+            'review'       => $review,
+            'returns'      => $returns,
+            'latestReturn' => $latestReturn,
         ]);
     }
 
@@ -106,22 +119,90 @@ class VendorController extends BaseController
         ]);
     }
 
+    public function bast($id)
+    {
+        $orderModel = new OrderModel();
+        $order = $orderModel->getOrderWithItems($id);
+
+        if (!$order) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Dokumen BAST tidak ditemukan');
+        }
+
+        return view('shared/bast_document', [
+            'title' => 'Berita Acara Serah Terima (BAST) & Surat Jalan ' . ($order['bast_number'] ?? $order['po_number']),
+            'order' => $order,
+        ]);
+    }
+
+    public function taxInvoice($id)
+    {
+        $orderModel = new OrderModel();
+        $order = $orderModel->getOrderWithItems($id);
+
+        if (!$order) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Faktur Pajak tidak ditemukan');
+        }
+
+        return view('shared/tax_invoice_document', [
+            'title' => 'e-Faktur Pajak PPN ' . ($order['tax_invoice_number'] ?? $order['po_number']),
+            'order' => $order,
+        ]);
+    }
+
     public function updateShipping()
     {
         $orderId = (int)$this->request->getPost('order_id');
         $status = $this->request->getPost('order_status');
-        $bastNumber = $this->request->getPost('bast_number');
-        $taxInvoiceNumber = $this->request->getPost('tax_invoice_number');
-        $shippingAmount = $this->request->getPost('shipping_amount');
 
         $orderModel = new OrderModel();
-        $orderModel->update($orderId, [
-            'order_status'       => $status,
-            'bast_number'        => $bastNumber,
-            'tax_invoice_number' => $taxInvoiceNumber,
-            'shipping_amount'    => ($shippingAmount !== null && $shippingAmount !== '') ? max(0, (float)$shippingAmount) : 0,
-            'updated_at'         => date('Y-m-d H:i:s')
-        ]);
+        $order = $orderModel->find($orderId);
+        if (!$order) {
+            session()->setFlashdata('error', 'Pesanan tidak ditemukan.');
+            return redirect()->back();
+        }
+
+        if (in_array($order['order_status'], ['completed', 'bast_signed'])) {
+            session()->setFlashdata('error', 'Pesanan telah dikonfirmasi SELESAI oleh pihak Buyer dan status telah dikunci secara permanen. Pembaruan tidak dapat dilakukan lagi.');
+            return redirect()->back();
+        }
+
+        if (in_array($status, ['completed', 'bast_signed'])) {
+            session()->setFlashdata('error', 'Status "Pesanan Selesai" dan "Pengesahan BAST" hanya dapat dikonfirmasi langsung oleh pihak Corporate Buyer setelah memeriksa barang fisik.');
+            return redirect()->back();
+        }
+
+        $bastNumber = trim((string)$this->request->getPost('bast_number'));
+        $taxInvoiceNumber = trim((string)$this->request->getPost('tax_invoice_number'));
+        $vendorInvoiceNumber = trim((string)$this->request->getPost('vendor_invoice_number'));
+        $shippingAmount = $this->request->getPost('shipping_amount');
+
+        $seq = str_pad((string)$orderId, 4, '0', STR_PAD_LEFT);
+        $ym = !empty($order['created_at']) ? date('Ym', strtotime($order['created_at'])) : date('Ym');
+
+        if (empty($bastNumber)) {
+            $bastNumber = !empty($order['bast_number']) ? $order['bast_number'] : ('BAST/AKUADA/' . $ym . '/' . $seq);
+        }
+        if (empty($taxInvoiceNumber)) {
+            $taxInvoiceNumber = !empty($order['tax_invoice_number']) ? $order['tax_invoice_number'] : ('010.002-26.' . sprintf('%08d', abs(crc32('order_' . $orderId))));
+        }
+        if (empty($vendorInvoiceNumber)) {
+            $vendorInvoiceNumber = !empty($order['vendor_invoice_number']) ? $order['vendor_invoice_number'] : ('VINV/' . $ym . '/' . $seq);
+        }
+
+        $updateData = [
+            'order_status'          => $status,
+            'bast_number'           => $bastNumber,
+            'tax_invoice_number'    => $taxInvoiceNumber,
+            'vendor_invoice_number' => $vendorInvoiceNumber,
+            'shipping_amount'       => ($shippingAmount !== null && $shippingAmount !== '') ? max(0, (float)$shippingAmount) : 0,
+            'updated_at'            => date('Y-m-d H:i:s')
+        ];
+        if ($status === 'delivered' && empty($order['delivered_at'])) {
+            $updateData['delivered_at'] = date('Y-m-d H:i:s');
+        }
+
+        $orderModel = new OrderModel();
+        $orderModel->update($orderId, $updateData);
         sync_orders_with_system_settings();
 
         $statusLabels = [
@@ -131,18 +212,204 @@ class VendorController extends BaseController
             'quality_control' => 'Pemeriksaan Mutu & Standar (QC)',
             'packaging'       => 'Pengemasan & Paletisasi Master Box',
             'shipped'         => 'Dalam Pengiriman (Surat Jalan Diterbitkan)',
-            'delivered'       => 'Barang Tiba di Lokasi Buyer',
+            'delivered'       => 'Barang Sampai di Lokasi / Tujuan',
             'bast_signed'     => 'Pengesahan BAST',
             'completed'       => 'Selesai & Lunas',
             'cancelled'       => 'Pesanan Dibatalkan',
         ];
         $statusTitle = $statusLabels[$status] ?? ucfirst($status);
-        $statusNotes = $this->request->getPost('status_notes') ?: ('Status pemrosesan pesanan diperbarui oleh ' . (session('company_name') ?? 'Vendor') . '.');
+        $statusNotes = $this->request->getPost('status_notes') ?: ('Status pengiriman diperbarui oleh ' . (session('company_name') ?? 'Vendor') . '.');
 
         $logModel = new \App\Models\OrderStatusLogModel();
         $logModel->logStatus($orderId, $status, $statusTitle, $statusNotes, session('user_name') ?? 'Vendor Mitra');
 
+        if ($status === 'delivered') {
+            $msgModel = new \App\Models\OrderMessageModel();
+            $msgModel->sendMessage(
+                $orderId,
+                (int)session('user_id'),
+                session('user_name') ?? 'Vendor Logistik',
+                'vendor',
+                "📦 Barang pesanan telah sampai di lokasi tujuan pemesan. Silakan tim Buyer memeriksa fisik barang dan menekan tombol 'Konfirmasi Selesai & Sahkan BAST'."
+            );
+        }
+
         session()->setFlashdata('success', 'Status pengadaan berhasil diperbarui menjadi: ' . $statusTitle . '!');
+        return redirect()->back();
+    }
+
+    public function replyReview()
+    {
+        $orderId = (int)$this->request->getPost('order_id');
+        $reply = trim((string)$this->request->getPost('vendor_reply'));
+
+        if (empty($reply)) {
+            session()->setFlashdata('error', 'Tanggapan balasan ulasan tidak boleh kosong.');
+            return redirect()->back();
+        }
+
+        $reviewModel = new OrderReviewModel();
+        $review = $reviewModel->getByOrder($orderId);
+        if (!$review) {
+            session()->setFlashdata('error', 'Data ulasan tidak ditemukan.');
+            return redirect()->back();
+        }
+
+        $vendorId = $this->getVendorCompanyId();
+        if ((int)$review['vendor_company_id'] !== (int)$vendorId && session('role') !== 'admin') {
+            session()->setFlashdata('error', 'Akses balasan ulasan tidak diizinkan.');
+            return redirect()->back();
+        }
+
+        $reviewModel->update($review['id'], [
+            'vendor_reply'      => $reply,
+            'vendor_replied_at' => date('Y-m-d H:i:s'),
+            'updated_at'        => date('Y-m-d H:i:s'),
+        ]);
+
+        session()->setFlashdata('success', 'Tanggapan ulasan Anda berhasil disimpan dan dikirimkan kepada pembeli!');
+        return redirect()->back();
+    }
+
+    public function respondReturn()
+    {
+        $orderId = (int)$this->request->getPost('order_id');
+        $returnId = (int)$this->request->getPost('return_id');
+        $action = $this->request->getPost('action'); // 'approve_replacement', 'approve_refund', 'reject'
+        $responseNotes = trim((string)$this->request->getPost('vendor_response'));
+        $trackingNumber = trim((string)$this->request->getPost('replacement_tracking'));
+
+        $orderModel = new OrderModel();
+        $order = $orderModel->find($orderId);
+        if (!$order) {
+            session()->setFlashdata('error', 'Pesanan tidak ditemukan.');
+            return redirect()->back();
+        }
+
+        $vendorId = $this->getVendorCompanyId();
+        if ((int)$order['vendor_company_id'] !== (int)$vendorId && session('role') !== 'admin') {
+            session()->setFlashdata('error', 'Akses respon retur tidak diizinkan.');
+            return redirect()->back();
+        }
+
+        $returnModel = new OrderReturnModel();
+        $ret = $returnModel->find($returnId);
+        if (!$ret || (int)$ret['order_id'] !== $orderId) {
+            session()->setFlashdata('error', 'Data pengajuan retur tidak ditemukan.');
+            return redirect()->back();
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $vendorName = session('company_name') ?: 'Mitra Vendor';
+
+        if ($action === 'approve_replacement') {
+            $returnModel->update($returnId, [
+                'status'               => 'approved',
+                'vendor_response'      => $responseNotes ?: 'Permohonan retur disetujui. Unit barang pengganti baru segera dikirimkan ke alamat Buyer.',
+                'vendor_responded_at'  => $now,
+                'replacement_tracking' => $trackingNumber,
+                'updated_at'           => $now,
+            ]);
+
+            $orderModel->update($orderId, [
+                'order_status' => 'replacement_shipped',
+                'updated_at'   => $now,
+            ]);
+
+            $logModel = new \App\Models\OrderStatusLogModel();
+            $logModel->logStatus(
+                $orderId,
+                'replacement_shipped',
+                'Retur Disetujui - Barang Pengganti Dikirim Vendor',
+                "Vendor menyetujui klaim retur No: {$ret['return_number']}. Barang pengganti dikirimkan dengan No. Resi/Surat Jalan: " . ($trackingNumber ?: 'Menyusul') . ". Catatan: {$responseNotes}",
+                session('user_name') ?? 'Mitra Vendor'
+            );
+
+            $messageModel = new OrderMessageModel();
+            $messageModel->addMessage(
+                $orderId,
+                session('user_id'),
+                session('user_name') ?: 'Mitra Vendor',
+                'vendor',
+                $vendorName,
+                "✅ [KLAIM RETUR DISETUJUI - BARANG PENGGANTI DIKIRIM]\nNo. Retur: {$ret['return_number']}\nSurat Jalan/Resi Pengganti: " . ($trackingNumber ?: '-') . "\nCatatan Vendor: {$responseNotes}\nBarang pengganti telah kami kirimkan menuju alamat gudang Anda."
+            );
+
+            session()->setFlashdata('success', 'Klaim retur disetujui dan pengiriman barang pengganti berhasil dicatat!');
+        } elseif ($action === 'approve_refund') {
+            $returnModel->update($returnId, [
+                'status'              => 'completed',
+                'vendor_response'     => $responseNotes ?: 'Permohonan retur disetujui untuk pemotongan tagihan TOP / Credit Note.',
+                'vendor_responded_at' => $now,
+                'updated_at'          => $now,
+            ]);
+
+            $orderModel->update($orderId, [
+                'order_status' => 'return_completed',
+                'updated_at'   => $now,
+            ]);
+
+            $logModel = new \App\Models\OrderStatusLogModel();
+            $logModel->logStatus(
+                $orderId,
+                'return_completed',
+                'Retur Disetujui - Penyelesaian Potong Tagihan TOP',
+                "Vendor menyetujui klaim retur No: {$ret['return_number']} dengan resolusi potong tagihan / Credit Note. Catatan: {$responseNotes}",
+                session('user_name') ?? 'Mitra Vendor'
+            );
+
+            $messageModel = new OrderMessageModel();
+            $messageModel->addMessage(
+                $orderId,
+                session('user_id'),
+                session('user_name') ?: 'Mitra Vendor',
+                'vendor',
+                $vendorName,
+                "✅ [KLAIM RETUR DISETUJUI - RESOLUSI KREDIT / REFUND]\nNo. Retur: {$ret['return_number']}\nVendor menyetujui pemotongan tagihan PO ini. Catatan: {$responseNotes}"
+            );
+
+            session()->setFlashdata('success', 'Klaim retur berhasil disetujui dengan resolusi penyesuaian tagihan!');
+        } else {
+            // Reject
+            if (empty($responseNotes)) {
+                session()->setFlashdata('error', 'Wajib mencantumkan alasan penolakan retur secara jelas.');
+                return redirect()->back();
+            }
+
+            $returnModel->update($returnId, [
+                'status'              => 'rejected',
+                'vendor_response'     => $responseNotes,
+                'vendor_responded_at' => $now,
+                'updated_at'          => $now,
+            ]);
+
+            $orderModel->update($orderId, [
+                'order_status' => 'return_rejected',
+                'updated_at'   => $now,
+            ]);
+
+            $logModel = new \App\Models\OrderStatusLogModel();
+            $logModel->logStatus(
+                $orderId,
+                'return_rejected',
+                'Klaim Retur Ditolak oleh Vendor',
+                "Vendor menolak klaim retur No: {$ret['return_number']} dengan alasan: {$responseNotes}",
+                session('user_name') ?? 'Mitra Vendor'
+            );
+
+            $messageModel = new OrderMessageModel();
+            $messageModel->addMessage(
+                $orderId,
+                session('user_id'),
+                session('user_name') ?: 'Mitra Vendor',
+                'vendor',
+                $vendorName,
+                "❌ [KLAIM RETUR DITOLAK OLEH VENDOR]\nNo. Retur: {$ret['return_number']}\nAlasan Penolakan: {$responseNotes}\nJika terdapat perbedaan persepsi, silakan gunakan ruang chat ini atau hubungi Tim CS Superadmin AkuAda."
+            );
+
+            session()->setFlashdata('error', 'Permohonan retur telah ditolak. Alasan penolakan telah diteruskan ke pihak Buyer.');
+        }
+
         return redirect()->back();
     }
 
@@ -439,6 +706,33 @@ class VendorController extends BaseController
         ]);
     }
 
+    public function updateCompanyProfile()
+    {
+        $vendorId = $this->getVendorCompanyId();
+        $companyModel = new CompanyModel();
+
+        $companyModel->update($vendorId, [
+            'company_name'        => trim((string)$this->request->getPost('company_name')),
+            'legal_type'          => trim((string)($this->request->getPost('legal_type') ?: 'PT')),
+            'npwp'                => trim((string)$this->request->getPost('npwp')),
+            'nib'                 => trim((string)$this->request->getPost('nib')),
+            'address'             => trim((string)$this->request->getPost('address')),
+            'city'                => trim((string)$this->request->getPost('city')),
+            'province'            => trim((string)$this->request->getPost('province')),
+            'pic_name'            => trim((string)$this->request->getPost('pic_name')),
+            'pic_phone'           => trim((string)$this->request->getPost('pic_phone')),
+            'phone'               => trim((string)$this->request->getPost('pic_phone')),
+            'email'               => trim((string)$this->request->getPost('email')),
+            'bank_name'           => trim((string)$this->request->getPost('bank_name')),
+            'bank_account_number' => trim((string)$this->request->getPost('bank_account_number')),
+            'bank_account_holder' => trim((string)$this->request->getPost('bank_account_holder')),
+            'updated_at'          => date('Y-m-d H:i:s'),
+        ]);
+
+        session()->setFlashdata('success', 'Data profil legalitas, NPWP, dan rekening bank vendor berhasil diperbarui!');
+        return redirect()->to('/vendor/company-profile');
+    }
+
     public function settlements()
     {
         $vendorId = $this->getVendorCompanyId();
@@ -490,5 +784,21 @@ class VendorController extends BaseController
 
         session()->setFlashdata('success', 'Rekening bank pencairan dana settlement berhasil diperbarui!');
         return redirect()->to('/vendor/settlements');
+    }
+
+    public function chatCenter()
+    {
+        $vendorId = $this->getVendorCompanyId();
+        $messageModel = new OrderMessageModel();
+        $threads = $messageModel->getConversationsList('vendor', $vendorId);
+        $buyers = (new \App\Models\CompanyModel())->where('type', 'buyer')->orderBy('company_name', 'ASC')->findAll();
+        $orders = (new \App\Models\OrderModel())->where('vendor_company_id', $vendorId)->orderBy('id', 'DESC')->findAll(30);
+
+        return view('vendor/chat', [
+            'title'   => 'Pusat Pesan & Chat Pengadaan - Mitra Vendor AkuAda',
+            'threads' => $threads,
+            'buyers'  => $buyers,
+            'orders'  => $orders,
+        ]);
     }
 }

@@ -19,6 +19,17 @@ $percentage     = $limit > 0 ? round(($used / $limit) * 100) : 0;
     </div>
 
     <!-- Status Card -->
+    <?php if (!empty($pendingRequest) && ($pendingRequest['status'] ?? '') === 'pending'): ?>
+        <div class="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 flex items-start gap-3 shadow-sm text-xs">
+            <span class="material-symbols-outlined text-amber-600 text-2xl mt-0.5">pending_actions</span>
+            <div class="space-y-0.5">
+                <strong class="font-bold text-slate-900 block">Pengajuan Kenaikan Plafon Sedang Ditinjau:</strong>
+                <p>
+                    Anda telah mengajukan kenaikan plafon kredit menjadi <strong class="font-mono text-purple-900 font-bold"><?= format_rupiah($pendingRequest['requested_limit'] ?? 0) ?></strong> (Termin Net <?= (int)($pendingRequest['preferred_top'] ?? 30) ?> Hari) pada <?= date('d M Y, H:i', strtotime($pendingRequest['requested_at'] ?? 'now')) ?>. Tim Credit Risk Analyst AkuAda sedang memproses evaluasi kelayakan.
+                </p>
+            </div>
+        </div>
+    <?php endif; ?>
     <div class="bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
         <div class="max-w-xl space-y-4 relative z-10">
             <span class="px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-bold uppercase tracking-wider backdrop-blur">

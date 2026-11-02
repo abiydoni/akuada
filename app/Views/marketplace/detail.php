@@ -60,6 +60,11 @@
                             <h4 class="font-bold text-slate-900 text-sm"><?= esc($product['vendor_name']) ?></h4>
                             <span class="material-symbols-outlined text-blue-600 text-[18px]">verified</span>
                         </div>
+                        <div class="flex items-center gap-1.5 my-0.5">
+                            <span class="material-symbols-outlined text-[15px] text-amber-500 font-fill">star</span>
+                            <span class="text-xs font-black text-slate-800"><?= (float)($vendorRating['average'] ?? 5.0) ?></span>
+                            <span class="text-[10px] text-slate-400 font-medium">(<?= (int)($vendorRating['total'] ?? 0) ?> ulasan)</span>
+                        </div>
                         <p class="text-[11px] text-slate-500">Legalitas: <strong><?= esc($product['vendor_legal_type'] ?? 'PT') ?></strong> | NPWP: <?= esc($product['vendor_npwp'] ?? 'Aktif') ?></p>
                         <p class="text-[11px] text-slate-500">Lokasi: <?= esc($product['vendor_city'] ?? 'Jakarta Timur') ?></p>
                     </div>
@@ -161,6 +166,40 @@
                     <div class="p-3 rounded-lg border border-slate-200 bg-white">
                         <span class="text-slate-400 text-[11px] block">Stok Tersedia</span>
                         <strong class="text-slate-800 text-sm"><?= number_format($product['stock']) ?> <?= esc($product['uom']) ?></strong>
+                    </div>
+                </div>
+
+                <!-- Ulasan & Rating Pembeli Terverifikasi -->
+                <?php if (!empty($vendorReviews)): ?>
+                    <div class="pt-4 border-t border-slate-200/80 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-amber-500 text-[18px]">reviews</span>
+                                Ulasan Pembeli Terverifikasi
+                            </h3>
+                            <span class="text-[11px] font-bold text-amber-600"><?= (float)($vendorRating['average'] ?? 5.0) ?> / 5.0 (<?= count($vendorReviews) ?> ulasan)</span>
+                        </div>
+                        <div class="space-y-2.5">
+                            <?php foreach ($vendorReviews as $rev): ?>
+                                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1 text-xs">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-1 text-amber-400">
+                                            <?php for ($s = 1; $s <= 5; $s++): ?>
+                                                <span class="material-symbols-outlined text-[14px] <?= $s <= (int)$rev['rating'] ? 'text-amber-400 font-fill' : 'text-slate-300' ?>">star</span>
+                                            <?php endfor; ?>
+                                            <span class="font-bold text-slate-700 ml-1 text-[11px]"><?= esc($rev['buyer_name']) ?></span>
+                                        </div>
+                                        <span class="text-[10px] text-slate-400 font-mono"><?= date('d M Y', strtotime($rev['created_at'])) ?></span>
+                                    </div>
+                                    <?php if (!empty($rev['review_title'])): ?>
+                                        <strong class="text-slate-900 block text-[11px]"><?= esc($rev['review_title']) ?></strong>
+                                    <?php endif; ?>
+                                    <p class="text-slate-600 text-[11px] italic">"<?= esc($rev['review_text']) ?>"</p>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
                     </div>
                 </div>
             </div>

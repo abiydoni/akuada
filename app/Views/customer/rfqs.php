@@ -10,7 +10,7 @@
                 <span class="px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-800 text-[10px] font-bold uppercase tracking-wider">Tender & Negosiasi</span>
             </div>
             <h1 class="text-xl font-extrabold text-slate-900 mt-1">Permintaan Penawaran Resmi (RFQ) Saya</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Pantau status tanggapan penawaran harga dari vendor dan setujui penawaran untuk menerbitkan PO.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Pantau status tanggapan penawaran harga dari vendor dan setujui penawaran untuk menerbitkan PO resmi.</p>
         </div>
         <a href="<?= base_url('rfq/create') ?>" class="btn-akuada-primary text-xs px-4 py-2.5 shadow-md flex items-center gap-2 self-start sm:self-auto">
             <span class="material-symbols-outlined text-[18px]">add</span>
@@ -45,13 +45,13 @@
                         </p>
                     </div>
                     <div>
-                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-200">
-                            Status: <?= esc($rfq['status']) ?>
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider <?= $rfq['status'] === 'approved' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-purple-100 text-purple-800 border border-purple-200' ?>">
+                            Status: <?= strtoupper(esc($rfq['status'])) ?>
                         </span>
                     </div>
                 </div>
 
-                <!-- Items & Quotes Table - Fits 100% width with NO horizontal scroll -->
+                <!-- Items & Quotes Table -->
                 <div class="w-full rounded-xl border border-slate-200 overflow-hidden">
                     <table class="w-full text-xs text-left border-collapse">
                         <thead class="bg-slate-50/90 border-b border-slate-200 text-slate-600 font-semibold uppercase text-[11px] tracking-wider">
@@ -95,11 +95,29 @@
                     <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div>
                             <strong class="text-emerald-900 block font-bold">Vendor Telah Mengirimkan Penawaran Resmi!</strong>
-                            <span class="text-[11px] text-emerald-700">Harga penawaran telah diverifikasi memenuhi spesifikasi Anda. Anda dapat menyetujui penawaran ini.</span>
+                            <span class="text-[11px] text-emerald-700">Harga penawaran telah diverifikasi memenuhi spesifikasi Anda. Anda dapat menyetujui penawaran ini untuk otomatis menerbitkan PO.</span>
                         </div>
                         <a href="<?= base_url('customer/rfqs/accept/' . $rfq['id']) ?>" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition shadow-sm whitespace-nowrap">
                             Setujui & Terbitkan PO &rarr;
                         </a>
+                    </div>
+                <?php elseif ($rfq['status'] === 'approved'): ?>
+                    <?php
+                        $poId = null;
+                        if (preg_match('/\[PO-ID:(\d+)/', (string)($rfq['notes'] ?? ''), $m)) {
+                            $poId = (int)$m[1];
+                        }
+                    ?>
+                    <div class="p-3.5 bg-purple-50/80 rounded-xl border border-purple-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-purple-700 text-[18px]">verified</span>
+                            <span class="text-xs text-purple-950 font-bold">Penawaran RFQ Disetujui & Purchase Order (PO) Resmi Telah Diterbitkan!</span>
+                        </div>
+                        <?php if ($poId): ?>
+                            <a href="<?= base_url('customer/orders/' . $poId) ?>" class="px-3.5 py-1.5 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded-lg transition shadow-sm">
+                                Buka Lembar PO &rarr;
+                            </a>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
             </div>

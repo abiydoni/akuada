@@ -92,7 +92,11 @@
                                 <a href="<?= base_url('customer/orders/' . $ord['id']) ?>" 
                                    class="px-3 py-1.5 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50 font-bold text-xs transition inline-flex items-center gap-1 shadow-sm">
                                     <span class="material-symbols-outlined text-[14px]">visibility</span>
-                                    <span>Lihat PO</span>
+                                    <a href="<?= base_url('customer/orders/tax-invoice/' . $ord['id']) ?>" target="_blank"
+                                       class="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition inline-flex items-center gap-1 shadow-sm">
+                                        <span class="material-symbols-outlined text-[14px]">receipt</span>
+                                        <span>e-Faktur DJP</span>
+                                    </a>
                                 </a>
                             </td>
                         </tr>

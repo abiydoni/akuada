@@ -10,7 +10,7 @@
                 <span class="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold uppercase tracking-wider">Fasilitas Kredit Korporat</span>
             </div>
             <h1 class="text-xl font-extrabold text-slate-900 mt-1">Manajemen Perusahaan Pembeli & Plafon Kredit TOP</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Daftarkan akun buyer baru, atur limit fasilitas tempo (TOP), dan pantau saldo kredit terpakai.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Daftarkan akun buyer baru, atur limit fasilitas tempo (TOP), pantau saldo kredit, dan setujui pengajuan limit kredit buyer.</p>
         </div>
         <a href="<?= base_url('admin/buyers/create') ?>" class="btn-akuada-primary px-4 py-2.5 text-xs shadow-md flex items-center gap-2 self-start sm:self-auto">
             <span class="material-symbols-outlined text-[18px]">add_business</span>
@@ -18,7 +18,7 @@
         </a>
     </div>
 
-    <!-- Info Banner Card - Full width, clean padding -->
+    <!-- Info Banner Card -->
     <div class="p-4 rounded-2xl bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 border border-purple-200/80 text-xs text-purple-950 flex items-start gap-3 shadow-sm">
         <span class="material-symbols-outlined text-purple-600 text-[22px] flex-shrink-0 mt-0.5">account_balance_wallet</span>
         <div class="space-y-0.5">
@@ -29,7 +29,7 @@
         </div>
     </div>
 
-    <!-- Buyers Table Card - Fits 100% width with NO horizontal scroll -->
+    <!-- Buyers Table Card -->
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -47,7 +47,7 @@
                         <th class="px-4 py-3.5">Kontak PIC Procurement</th>
                         <th class="px-4 py-3.5 text-right w-52">Plafon TOP & Terpakai</th>
                         <th class="px-4 py-3.5 text-right w-44">Sisa Saldo Plafon</th>
-                        <th class="px-4 py-3.5 text-center w-32">Aksi</th>
+                        <th class="px-4 py-3.5 text-center w-36">Aksi Plafon</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
@@ -69,9 +69,11 @@
                             $used = (float)$b['credit_used_top'];
                             $remaining = max(0, $limit - $used);
                             $usedPercent = $limit > 0 ? min(100, round(($used / $limit) * 100)) : 0;
+                            $hasPendingIncrease = !empty($creditRequests[$b['id']]);
+                            $reqData = $hasPendingIncrease ? $creditRequests[$b['id']] : null;
                         ?>
-                        <tr class="hover:bg-slate-50/80 transition-colors">
-                            <!-- Company & Legality (No text cut-off) -->
+                        <tr class="hover:bg-slate-50/80 transition-colors <?= $hasPendingIncrease ? 'bg-amber-50/30' : '' ?>">
+                            <!-- Company & Legality -->
                             <td class="px-4 py-3.5 align-top">
                                 <div class="flex items-start gap-3">
                                     <div class="w-9 h-9 rounded-xl bg-pink-100 text-pink-700 font-black flex items-center justify-center text-sm shadow-sm flex-shrink-0 mt-0.5">
@@ -94,18 +96,29 @@
                                         <div class="text-[11px] text-slate-400 font-mono pt-0.5">
                                             NPWP: <?= esc($b['npwp'] ?? '-') ?> | NIB: <?= esc($b['nib'] ?? '-') ?>
                                         </div>
+
+                                        <?php if ($hasPendingIncrease): ?>
+                                            <div class="mt-1.5 p-2 rounded-xl bg-amber-100 border border-amber-300 text-amber-900">
+                                                <span class="font-extrabold text-[10px] uppercase block flex items-center gap-1">
+                                                    <span class="material-symbols-outlined text-[13px]">notification_important</span>
+                                                    Permintaan Kenaikan Plafon Baru:
+                                                </span>
+                                                <strong class="font-mono text-purple-950 block"><?= format_rupiah($reqData['requested_limit'] ?? 0) ?></strong>
+                                                <span class="text-[10px] text-slate-600 italic block mt-0.5">"<?= esc($reqData['notes'] ?? '-') ?>"</span>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </td>
 
-                            <!-- PIC (No text cut-off) -->
+                            <!-- PIC -->
                             <td class="px-4 py-3.5 align-top">
                                 <div class="font-bold text-slate-800 break-words"><?= esc($b['pic_name']) ?></div>
                                 <div class="text-[11px] text-slate-500 font-mono mt-0.5"><?= esc($b['pic_phone'] ?? '-') ?></div>
                                 <div class="text-[11px] text-slate-400 break-words"><?= esc($b['email']) ?></div>
                             </td>
 
-                            <!-- Plafon Limit & Used with clean progress -->
+                            <!-- Plafon Limit & Used -->
                             <td class="px-4 py-3.5 align-top text-right font-mono">
                                 <div class="font-extrabold text-purple-900 text-sm"><?= format_rupiah($limit) ?></div>
                                 <div class="text-[11px] text-rose-600 font-semibold mt-0.5">
@@ -124,10 +137,17 @@
 
                             <!-- Action -->
                             <td class="px-4 py-3.5 align-top text-center">
+                                <?php if ($hasPendingIncrease): ?>
+                                    <button type="button" 
+                                            onclick="openLimitModal(<?= $b['id'] ?>, '<?= esc($b['company_name']) ?>', <?= (float)($reqData['requested_limit'] ?? $limit) ?>)"
+                                            class="w-full px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition inline-flex items-center justify-center gap-1 shadow-sm mb-1.5">
+                                        <span class="material-symbols-outlined text-[15px]">verified</span>
+                                        <span>Setujui Limit</span>
+                                    </button>
+                                <?php endif; ?>
                                 <button type="button" 
                                         onclick="openLimitModal(<?= $b['id'] ?>, '<?= esc($b['company_name']) ?>', <?= $limit ?>)"
-                                        class="px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 transition inline-flex items-center gap-1 border border-purple-200 shadow-sm"
-                                        title="Ubah Plafon Kredit TOP">
+                                        class="w-full px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 transition inline-flex items-center justify-center gap-1 border border-purple-200 shadow-sm">
                                     <span class="material-symbols-outlined text-[15px]">edit_note</span>
                                     <span>Ubah Plafon</span>
                                 </button>

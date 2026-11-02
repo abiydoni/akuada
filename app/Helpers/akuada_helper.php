@@ -134,15 +134,15 @@ if (!function_exists('render_order_progress_stepper')) {
             'quality_control' => ['title' => 'Pemeriksaan Mutu (QC)', 'sub' => 'Uji SNI / Standar', 'icon' => 'fact_check', 'rank' => 4],
             'packaging'       => ['title' => 'Pengemasan', 'sub' => 'Palet & Segel', 'icon' => 'inventory_2', 'rank' => 5],
             'shipped'         => ['title' => 'Pengiriman', 'sub' => 'Surat Jalan Aktif', 'icon' => 'local_shipping', 'rank' => 6],
-            'delivered'       => ['title' => 'Tiba di Lokasi', 'sub' => 'Diterima Logistik', 'icon' => 'where_to_vote', 'rank' => 7],
-            'bast_signed'     => ['title' => 'Pengesahan BAST', 'sub' => 'BAST Sah & Selesai', 'icon' => 'assignment_turned_in', 'rank' => 8],
+            'delivered'       => ['title' => 'Sampai di Tujuan', 'sub' => 'Update Vendor', 'icon' => 'where_to_vote', 'rank' => 7],
+            'completed'       => ['title' => 'Pesanan Selesai', 'sub' => 'Konfirmasi Buyer', 'icon' => 'check_circle', 'rank' => 8],
         ];
 
         // Map legacy statuses
         $statusAliases = [
             'pending_po_approval' => 'po_issued',
             'processing'          => 'in_production',
-            'completed'           => 'bast_signed',
+            'bast_signed'         => 'completed',
         ];
         $normStatus = $statusAliases[$currentStatus] ?? $currentStatus;
         $currentRank = $steps[$normStatus]['rank'] ?? 1;
@@ -303,6 +303,27 @@ if (!function_exists('badge_payment_method')) {
 
         $m = $methods[$method] ?? ['label' => strtoupper($method), 'color' => 'bg-gray-100 text-gray-800 border-gray-200'];
         return '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ' . $m['color'] . '">' . $m['label'] . '</span>';
+    }
+}
+
+if (!function_exists('badge_payment_status')) {
+    /**
+     * Render payment status badge
+     */
+    function badge_payment_status(string $status): string
+    {
+        $statuses = [
+            'unpaid'               => ['label' => 'Belum Lunas (Tempo)', 'color' => 'bg-amber-50 text-amber-800 border-amber-200', 'icon' => 'schedule'],
+            'pending_approval'     => ['label' => 'Menunggu Verifikasi', 'color' => 'bg-blue-50 text-blue-800 border-blue-200', 'icon' => 'hourglass_top'],
+            'pending_verification' => ['label' => 'Verifikasi Pembayaran', 'color' => 'bg-blue-50 text-blue-800 border-blue-200', 'icon' => 'hourglass_top'],
+            'paid'                 => ['label' => 'Lunas', 'color' => 'bg-emerald-50 text-emerald-800 border-emerald-200', 'icon' => 'check_circle'],
+            'partially_paid'       => ['label' => 'Sebagian Dibayar', 'color' => 'bg-indigo-50 text-indigo-800 border-indigo-200', 'icon' => 'payments'],
+            'overdue'              => ['label' => 'Jatuh Tempo', 'color' => 'bg-rose-50 text-rose-800 border-rose-200', 'icon' => 'warning'],
+            'refunded'             => ['label' => 'Dikembalikan / Refund', 'color' => 'bg-purple-50 text-purple-800 border-purple-200', 'icon' => 'assignment_return'],
+        ];
+
+        $s = $statuses[$status] ?? ['label' => ucfirst($status), 'color' => 'bg-slate-100 text-slate-800 border-slate-200', 'icon' => 'info'];
+        return '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ' . $s['color'] . '"><span class="material-symbols-outlined text-[13px]">' . $s['icon'] . '</span>' . $s['label'] . '</span>';
     }
 }
 
@@ -470,14 +491,29 @@ if (!function_exists('sync_orders_with_system_settings')) {
             $defaultShip = (float)get_system_setting('default_shipping_amount', 0);
             $shipAmt = ((float)($ord['shipping_amount'] ?? 0) > 0) ? (float)$ord['shipping_amount'] : $defaultShip;
             $ordTotal = $ordSubtotal + $ordPpn + $shipAmt;
-            $db->table('orders')->where('id', $ord['id'])->update([
+            $seq = str_pad((string)$ord['id'], 4, '0', STR_PAD_LEFT);
+            $ym = !empty($ord['created_at']) ? date('Ym', strtotime($ord['created_at'])) : date('Ym');
+            $updOrder = [
                 'subtotal'          => $ordSubtotal,
                 'ppn_amount'        => $ordPpn,
                 'total_vendor_fee'  => $ordFee,
                 'vendor_net_payout' => $ordNet,
                 'shipping_amount'   => $shipAmt,
                 'total_amount'      => $ordTotal,
-            ]);
+            ];
+            if (empty($ord['bast_number'])) {
+                $updOrder['bast_number'] = 'BAST/AKUADA/' . $ym . '/' . $seq;
+            }
+            if (empty($ord['invoice_number'])) {
+                $updOrder['invoice_number'] = 'INV/AKUADA/' . $ym . '/' . $seq;
+            }
+            if (empty($ord['vendor_invoice_number'])) {
+                $updOrder['vendor_invoice_number'] = 'VINV/' . $ym . '/' . $seq;
+            }
+            if (empty($ord['tax_invoice_number'])) {
+                $updOrder['tax_invoice_number'] = '010.002-26.' . sprintf('%08d', abs(crc32('order_' . $ord['id'])));
+            }
+            $db->table('orders')->where('id', $ord['id'])->update($updOrder);
         }
     }
 }
@@ -579,6 +615,8 @@ if (!function_exists('ensure_role_session')) {
 
         if ($user && !empty($user['company_id'])) {
             session()->set([
+                'is_logged_in'     => true,
+                'role'             => $user['role'],
                 'user_id'          => $user['id'],
                 'user_name'        => $user['name'],
                 'user_email'       => $user['email'],

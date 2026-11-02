@@ -2,10 +2,12 @@
 
 <?= $this->section('admin_content') ?>
 <?php
-$totalCashOpening = array_sum(array_column($bankAccounts, 'effective_opening'));
-$totalCashIn      = array_sum(array_column($bankAccounts, 'mutation_debit'));
-$totalCashOut     = array_sum(array_column($bankAccounts, 'mutation_credit'));
-$totalCashEnding  = array_sum(array_column($bankAccounts, 'ending_balance'));
+$activeLedger     = $bankLedgers[0] ?? null;
+$activeBankAcc    = $activeLedger['account'] ?? ($bankAccounts[0] ?? []);
+$totalCashOpening = (float)($activeLedger['opening_balance'] ?? 0);
+$totalCashIn      = (float)($activeLedger['total_debit'] ?? 0);
+$totalCashOut     = (float)($activeLedger['total_credit'] ?? 0);
+$totalCashEnding  = (float)($activeLedger['ending_balance'] ?? 0);
 ?>
 
 <div class="space-y-6">
@@ -36,24 +38,24 @@ $totalCashEnding  = array_sum(array_column($bankAccounts, 'ending_balance'));
     <!-- Liquidity Summary Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-            <span class="text-[11px] font-bold text-slate-400 uppercase">Saldo Awal Kas & Bank</span>
+            <span class="text-[11px] font-bold text-slate-400 uppercase">Saldo Awal Rekening Terpilih</span>
             <div class="text-lg font-black font-mono text-slate-800 mt-1"><?= format_rupiah($totalCashOpening) ?></div>
-            <span class="text-[10px] text-slate-500">Akumulasi <?= count($bankAccounts) ?> Rekening</span>
+            <span class="text-[10px] text-slate-500"><?= esc($activeBankAcc['account_name'] ?? 'Rekening') ?></span>
         </div>
         <div class="bg-emerald-50/70 p-5 rounded-2xl border border-emerald-200 shadow-sm">
-            <span class="text-[11px] font-bold text-emerald-800 uppercase">Total Kas/Bank Masuk (Debit)</span>
+            <span class="text-[11px] font-bold text-emerald-800 uppercase">Mutasi Masuk (Debit)</span>
             <div class="text-lg font-black font-mono text-emerald-700 mt-1">+ <?= format_rupiah($totalCashIn) ?></div>
             <span class="text-[10px] text-emerald-700">Pelunasan Buyer & Penerimaan</span>
         </div>
         <div class="bg-rose-50/70 p-5 rounded-2xl border border-rose-200 shadow-sm">
-            <span class="text-[11px] font-bold text-rose-800 uppercase">Total Kas/Bank Keluar (Kredit)</span>
+            <span class="text-[11px] font-bold text-rose-800 uppercase">Mutasi Keluar (Kredit)</span>
             <div class="text-lg font-black font-mono text-rose-700 mt-1">- <?= format_rupiah($totalCashOut) ?></div>
             <span class="text-[10px] text-rose-700">Settlement Vendor & Biaya OPEX</span>
         </div>
         <div class="bg-gradient-to-br from-purple-900 to-indigo-950 p-5 rounded-2xl text-white shadow-md">
-            <span class="text-[11px] font-bold text-purple-200 uppercase">Total Posisi Saldo Akhir</span>
+            <span class="text-[11px] font-bold text-purple-200 uppercase">Saldo Akhir Rekening Terpilih</span>
             <div class="text-xl font-black font-mono text-emerald-300 mt-1"><?= format_rupiah($totalCashEnding) ?></div>
-            <span class="text-[10px] text-purple-200">Likuiditas Aktif Siap Pakai</span>
+            <span class="text-[10px] text-purple-200"><?= esc($activeBankAcc['bank_account_number'] ?: 'Kas Operasional') ?></span>
         </div>
     </div>
 
@@ -185,7 +187,7 @@ $totalCashEnding  = array_sum(array_column($bankAccounts, 'ending_balance'));
                 <label class="block font-bold text-slate-700 mb-1">Pilih Rekening Kas / Bank AkuAda *</label>
                 <select name="bank_coa_id" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-bold">
                     <?php foreach ($bankAccounts as $ba): ?>
-                        <option value="<?= $ba['id'] ?>">[<?= esc($ba['account_code']) ?>] <?= esc($ba['account_name']) ?> (Saldo: <?= format_rupiah($ba['ending_balance']) ?>)</option>
+                        <option value="<?= $ba['id'] ?>" <?= (int)$selectedBankId === (int)$ba['id'] ? 'selected' : '' ?>>[<?= esc($ba['account_code']) ?>] <?= esc($ba['account_name']) ?> (Saldo: <?= format_rupiah($ba['ending_balance']) ?>)</option>
                     <?php endforeach; ?>
                 </select>
             </div>

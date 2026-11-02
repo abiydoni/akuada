@@ -18,7 +18,7 @@
             </div>
 
             <div class="flex items-center gap-4">
-                <a href="<?= base_url('/') ?>" class="text-xs text-slate-300 hover:text-white flex items-center gap-1 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
+                <a href="<?= base_url('vendor/chat') ?>" class="portal-top-chat text-xs text-blue-200 hover:text-white flex items-center gap-1.5 bg-blue-950/80 hover:bg-blue-900 px-3 py-1.5 rounded-lg border border-blue-800 font-bold transition shadow-xs"><span class="material-symbols-outlined text-[16px] text-blue-400">forum</span><span>Live Chat</span></a> <a href="<?= base_url('/') ?>" class="text-xs text-slate-300 hover:text-white flex items-center gap-1 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
                     <span class="material-symbols-outlined text-[15px]">open_in_new</span> Lihat Marketplace
                 </a>
                 
@@ -44,12 +44,20 @@
                         <a href="<?= base_url('vendor/dashboard') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= current_url() == base_url('vendor/dashboard') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">space_dashboard</span> Ringkasan Penjualan
                         </a>
+                        <a href="<?= base_url('vendor/chat') ?>" class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold <?= str_contains(current_url(), 'vendor/chat') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-800 bg-blue-50/70 border border-blue-200/80 hover:bg-blue-100/80 text-blue-950' ?>">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[19px] text-blue-700">forum</span>
+                                <span>Pusat Chat & Pesan Buyer</span>
+                            </div>
+                            <span class="px-1.5 py-0.2 rounded-md bg-blue-600 text-white text-[9px] font-black tracking-wider">LIVE</span>
+                        </a>
                         <a href="<?= base_url('vendor/orders') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'vendor/orders') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">local_shipping</span> Pesanan PO & BAST
                         </a>
                         <a href="<?= base_url('vendor/settlements') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'vendor/settlements') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">payments</span> Piutang & Pencairan Dana
                         </a>
+
                         <a href="<?= base_url('vendor/rfqs') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'vendor/rfqs') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">price_change</span> Minta Nego & RFQ
                         </a>

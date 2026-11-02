@@ -20,7 +20,11 @@ $appName = get_system_setting('app_name', 'AkuAda');
                 </a>
             </div>
 
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3">
+                <a href="<?= base_url('admin/chat') ?>" class="text-xs text-purple-200 hover:text-white flex items-center gap-1.5 bg-purple-900/80 hover:bg-purple-800 px-3 py-1.5 rounded-lg border border-purple-700 font-bold transition shadow-xs">
+                    <span class="material-symbols-outlined text-[16px] text-pink-400">forum</span>
+                    <span>Live Chat</span>
+                </a>
                 <a href="<?= base_url('/') ?>" class="text-xs text-slate-300 hover:text-white flex items-center gap-1 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
                     <span class="material-symbols-outlined text-[15px]">open_in_new</span> Lihat Marketplace
                 </a>
@@ -46,6 +50,13 @@ $appName = get_system_setting('app_name', 'AkuAda');
                     <nav class="mt-1.5 space-y-1">
                         <a href="<?= base_url('admin/dashboard') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= current_url() == base_url('admin/dashboard') ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">dashboard</span> Dashboard Utama
+                        </a>
+                        <a href="<?= base_url('admin/chat') ?>" class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold <?= str_contains(current_url(), 'admin/chat') ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-800 bg-purple-50/70 border border-purple-200/80 hover:bg-purple-100/80 text-purple-950' ?>">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[19px] text-purple-700">forum</span>
+                                <span>Pusat Chat & Pesan B2B</span>
+                            </div>
+                            <span class="px-1.5 py-0.2 rounded-md bg-purple-700 text-white text-[9px] font-black tracking-wider">LIVE</span>
                         </a>
                         <a href="<?= base_url('admin/transactions') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'admin/transactions') ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">receipt_long</span> Transaksi & PO Masuk

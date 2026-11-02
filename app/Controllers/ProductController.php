@@ -43,6 +43,10 @@ class ProductController extends BaseController
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Barang pengadaan tidak ditemukan');
         }
 
+        $reviewModel = new \App\Models\OrderReviewModel();
+        $vendorRating = $reviewModel->getVendorRatingSummary((int)($product['vendor_company_id'] ?? 0));
+        $vendorReviews = $reviewModel->getVendorReviews((int)($product['vendor_company_id'] ?? 0), 5);
+
         $relatedProducts = $productModel->where('category_id', $product['category_id'])
                                        ->where('id !=', $product['id'])
                                        ->findAll(4);
@@ -50,7 +54,9 @@ class ProductController extends BaseController
         return view('marketplace/detail', [
             'title'           => $product['name'] . ' - AkuAda B2B',
             'product'         => $product,
-            'relatedProducts' => $relatedProducts
+            'relatedProducts' => $relatedProducts,
+            'vendorRating'    => $vendorRating,
+            'vendorReviews'   => $vendorReviews
         ]);
     }
 

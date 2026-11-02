@@ -292,4 +292,7 @@ $ppnLabel      = format_tax_rate();
     </div>
 </footer>
 
+<!-- Floating Live Chat Widget (Melayang Kanan Bawah untuk Marketplace) -->
+<?= view('components/floating_chat') ?>
+
 <?= $this->endSection() ?>

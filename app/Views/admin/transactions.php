@@ -116,11 +116,12 @@
                                         <span>Rincian PO</span>
                                     </a>
 
-                                    <form action="<?= base_url('admin/transactions/update') ?>" method="POST" class="w-full">
+                                    <form action="<?= base_url('admin/transactions/update') ?>" method="POST" class="w-full"><?= csrf_field() ?>
                                         <input type="hidden" name="order_id" value="<?= $ord['id'] ?>">
                                         <select name="order_status" 
+                                                data-current="<?= esc($ord['order_status']) ?>"
                                                 class="w-full text-[11px] py-1 px-1.5 rounded-lg border border-slate-300 bg-white font-medium text-slate-700 focus:border-purple-600 focus:ring-1 focus:ring-purple-600 cursor-pointer" 
-                                                onchange="this.form.submit()" 
+                                                onchange="confirmAdminStatusChange(this, '<?= esc($ord['po_number'] ?? $ord['order_number']) ?>')" 
                                                 title="Ganti status langsung">
                                             <option value="po_issued" <?= in_array($ord['order_status'], ['po_issued', 'pending_po_approval']) ? 'selected' : '' ?>>1. Penerbitan PO</option>
                                             <option value="po_approved" <?= $ord['order_status'] === 'po_approved' ? 'selected' : '' ?>>2. PO Dikonfirmasi</option>
@@ -131,6 +132,9 @@
                                             <option value="delivered" <?= $ord['order_status'] === 'delivered' ? 'selected' : '' ?>>7. Tiba di Lokasi</option>
                                             <option value="bast_signed" <?= $ord['order_status'] === 'bast_signed' ? 'selected' : '' ?>>8. BAST Disahkan</option>
                                             <option value="completed" <?= $ord['order_status'] === 'completed' ? 'selected' : '' ?>>9. Selesai & Lunas</option>
+                                            <option value="return_requested" <?= $ord['order_status'] === 'return_requested' ? 'selected' : '' ?>>⚠️ Klaim Retur Diajukan</option>
+                                            <option value="return_approved" <?= $ord['order_status'] === 'return_approved' ? 'selected' : '' ?>>⚠️ Retur Disetujui Vendor</option>
+                                            <option value="replacement_shipped" <?= $ord['order_status'] === 'replacement_shipped' ? 'selected' : '' ?>>📦 Barang Pengganti Dikirim</option>
                                             <option value="cancelled" <?= $ord['order_status'] === 'cancelled' ? 'selected' : '' ?>>Dibatalkan</option>
                                         </select>
                                     </form>
@@ -143,5 +147,25 @@
         </div>
     </div>
 </div>
+
+<script>
+function confirmAdminStatusChange(selectEl, poNumber) {
+    const selectedOption = selectEl.options[selectEl.selectedIndex];
+    const newStatusLabel = selectedOption.text;
+    const prevStatus = selectEl.getAttribute('data-current') || selectEl.value;
+    const form = selectEl.closest('form');
+
+    AkuAdaAlert.confirm(
+        'Perbarui Status PO?',
+        'Ubah status untuk pesanan ' + poNumber + ' menjadi: "' + newStatusLabel + '"?',
+        function() {
+            form.submit();
+        },
+        function() {
+            selectEl.value = prevStatus;
+        }
+    );
+}
+</script>
 
 <?= $this->endSection() ?>

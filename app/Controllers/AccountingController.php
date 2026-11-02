@@ -211,7 +211,7 @@ class AccountingController extends BaseController
             ]));
         }
 
-        session()->setFlashdata('success', 'Jurnal Umum #' . $jrnNumber . ' senilai ' . format_rupiah($totalDebit) . ' berhasil diposting ke Buku Besar!');
+        session()->setFlashdata('success', 'Jurnal Umum ' . $jrnNumber . ' senilai ' . format_rupiah($totalDebit) . ' berhasil diposting ke Buku Besar!');
         return redirect()->to('/admin/accounting/journals');
     }
 
@@ -228,7 +228,7 @@ class AccountingController extends BaseController
             }
             $db->table('acc_journal_items')->where('journal_id', (int)$id)->delete();
             $db->table('acc_journals')->where('id', (int)$id)->delete();
-            session()->setFlashdata('success', 'Jurnal #' . $jrn['journal_number'] . ' berhasil dihapus.');
+            session()->setFlashdata('success', 'Jurnal ' . $jrn['journal_number'] . ' berhasil dihapus.');
         }
 
         return redirect()->back();
@@ -402,8 +402,8 @@ class AccountingController extends BaseController
         }
 
         $db->table('acc_journal_items')->insertBatch($lines);
-        session()->setFlashdata('success', 'Transaksi Buku Bank #' . $jrnNumber . ' sebesar ' . format_rupiah($amount) . ' berhasil dicatat!');
-        return redirect()->to('/admin/accounting/cash-bank');
+        session()->setFlashdata('success', 'Transaksi Buku Bank ' . $jrnNumber . ' sebesar ' . format_rupiah($amount) . ' berhasil dicatat!');
+        return redirect()->to('/admin/accounting/cash-bank?bank_coa_id=' . $bankCoaId);
     }
 
     public function trialBalance()

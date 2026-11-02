@@ -13,6 +13,9 @@ use App\Models\RfqModel;
 use App\Models\RfqItemModel;
 use App\Models\SettingModel;
 use App\Models\UserModel;
+use App\Models\OrderReviewModel;
+use App\Models\OrderMessageModel;
+use App\Models\OrderReturnModel;
 
 class AdminController extends BaseController
 {
@@ -130,6 +133,11 @@ class AdminController extends BaseController
             'delivered'       => 'Barang Tiba di Lokasi Buyer',
             'bast_signed'     => 'Pengesahan BAST',
             'completed'       => 'Selesai & Lunas',
+            'return_requested'    => 'Klaim Retur Diajukan Buyer',
+            'return_approved'     => 'Klaim Retur Disetujui Vendor',
+            'replacement_shipped' => 'Barang Pengganti Dikirim Vendor',
+            'return_completed'    => 'Klaim Retur Selesai',
+            'return_rejected'     => 'Klaim Retur Ditolak Vendor',
             'cancelled'       => 'Pesanan Dibatalkan',
         ];
         $statusTitle = $statusLabels[$status] ?? ucfirst($status);
@@ -434,9 +442,19 @@ class AdminController extends BaseController
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Pesanan tidak ditemukan');
         }
 
+        $reviewModel = new OrderReviewModel();
+        $review = $reviewModel->getByOrder((int)$id);
+
+        $returnModel = new OrderReturnModel();
+        $returns = $returnModel->getReturnsByOrder((int)$id);
+        $latestReturn = !empty($returns) ? $returns[0] : null;
+
         return view('admin/order_detail', [
             'title' => 'Detail PO & Audit Log Transaksi #' . ($order['po_number'] ?? $order['order_number']) . ' - Superadmin AkuAda',
-            'order' => $order
+            'order'  => $order,
+            'review'       => $review,
+            'returns'      => $returns,
+            'latestReturn' => $latestReturn,
         ]);
     }
 
@@ -743,6 +761,8 @@ class AdminController extends BaseController
         $vendorOverdueTotal = 0;
         $vendorPaidTotal = 0;
 
+        $buyerPendingTotal = 0;
+        $buyerPendingCount = 0;
         $today = date('Y-m-d');
 
         foreach ($orders as $o) {
@@ -750,6 +770,10 @@ class AdminController extends BaseController
             $buyerDue = $o['due_date'] ?: date('Y-m-d', strtotime($o['created_at'] . ' +30 days'));
             if ($o['payment_status'] === 'paid') {
                 $buyerPaidTotal += $buyerAmt;
+            } elseif ($o['payment_status'] === 'pending_approval') {
+                $buyerPendingTotal += $buyerAmt;
+                $buyerPendingCount++;
+                $buyerUnpaidTotal += $buyerAmt;
             } else {
                 $buyerUnpaidTotal += $buyerAmt;
                 if ($buyerDue < $today || $o['payment_status'] === 'overdue') {
@@ -773,10 +797,16 @@ class AdminController extends BaseController
         $buyerAging = calculate_aging_summary($orders, 'buyer', $buyers, 'buyer_name');
         $vendorAging = calculate_aging_summary($orders, 'vendor', $vendors, 'vendor_name');
 
+        $coaModel = new \App\Models\CoaModel();
+        $bankAccounts = $coaModel->where('is_cash_bank', 1)->where('is_active', 1)->orderBy('account_code', 'ASC')->findAll();
+
         return view('admin/debts', [
             'title'              => 'Manajemen Hutang Piutang TOP & Aging Schedule - Admin AkuAda',
             'orders'             => $orders,
+            'bankAccounts'       => $bankAccounts,
             'buyerUnpaidTotal'   => $buyerUnpaidTotal,
+            'buyerPendingTotal'  => $buyerPendingTotal,
+            'buyerPendingCount'  => $buyerPendingCount,
             'buyerOverdueTotal'  => $buyerOverdueTotal,
             'buyerPaidTotal'     => $buyerPaidTotal,
             'vendorUnpaidTotal'  => $vendorUnpaidTotal,
@@ -799,11 +829,12 @@ class AdminController extends BaseController
         if ($order && $order['payment_status'] !== 'paid') {
             $now = date('Y-m-d H:i:s');
             $orderModel->update($orderId, [
-                'payment_status'     => 'paid',
-                'buyer_paid_at'      => $now,
-                'buyer_payment_bank' => $paymentBank,
-                'buyer_payment_ref'  => $paymentRef,
-                'updated_at'         => $now,
+                'payment_status'           => 'paid',
+                'buyer_paid_at'            => !empty($order['buyer_paid_at']) ? $order['buyer_paid_at'] : $now,
+                'buyer_payment_bank'       => $paymentBank,
+                'buyer_payment_ref'        => $paymentRef,
+                'payment_rejection_reason' => null,
+                'updated_at'               => $now,
             ]);
 
             $companyModel = new CompanyModel();
@@ -812,6 +843,8 @@ class AdminController extends BaseController
                 $newUsed = max(0, (float)$company['credit_used_top'] - (float)$order['total_amount']);
                 $companyModel->update($company['id'], ['credit_used_top' => $newUsed]);
             }
+
+            \App\Models\CoaModel::syncOrdersToJournals();
 
             $logModel = new OrderStatusLogModel();
             $logModel->logStatus(
@@ -861,6 +894,82 @@ class AdminController extends BaseController
 
         session()->setFlashdata('success', 'Pembayaran hutang settlement ke Mitra Vendor berhasil dicairkan!');
         return redirect()->to('/admin/debts?tab=vendor');
+    }
+
+    public function rejectBuyerPayment()
+    {
+        $orderId = (int)$this->request->getPost('order_id');
+        $reason = trim((string)$this->request->getPost('rejection_reason')) ?: 'Mutasi dana belum masuk di rekening escrow / bukti transfer tidak valid.';
+
+        $orderModel = new OrderModel();
+        $order = $orderModel->find($orderId);
+
+        if ($order) {
+            $now = date('Y-m-d H:i:s');
+            $orderModel->update($orderId, [
+                'payment_status'           => 'unpaid',
+                'payment_rejection_reason' => $reason,
+                'updated_at'               => $now,
+            ]);
+
+            $logModel = new OrderStatusLogModel();
+            $logModel->logStatus(
+                $orderId,
+                $order['order_status'],
+                'Bukti Pembayaran Ditolak oleh Admin Finance',
+                'Konfirmasi pembayaran tagihan ditolak dengan alasan: ' . $reason . '. Buyer diminta mengunggah ulang bukti transfer yang valid.',
+                session('user_name') ?? 'Superadmin Finance'
+            );
+
+            session()->setFlashdata('error', 'Bukti pembayaran PO ' . ($order['po_number'] ?? $order['order_number']) . ' telah ditolak. Alasan penolakan telah diteruskan ke Buyer.');
+        }
+
+        return redirect()->back();
+    }
+
+    public function bast($id)
+    {
+        $orderModel = new OrderModel();
+        $order = $orderModel->getOrderWithItems($id);
+
+        if (!$order) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Dokumen BAST tidak ditemukan');
+        }
+
+        return view('shared/bast_document', [
+            'title' => 'Berita Acara Serah Terima (BAST) & Surat Jalan ' . ($order['bast_number'] ?? $order['po_number']),
+            'order' => $order,
+        ]);
+    }
+
+    public function taxInvoice($id)
+    {
+        $orderModel = new OrderModel();
+        $order = $orderModel->getOrderWithItems($id);
+
+        if (!$order) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Faktur Pajak tidak ditemukan');
+        }
+
+        return view('shared/tax_invoice_document', [
+            'title' => 'e-Faktur Pajak PPN ' . ($order['tax_invoice_number'] ?? $order['po_number']),
+            'order' => $order,
+        ]);
+    }
+
+    public function chatCenter()
+    {
+        $messageModel = new OrderMessageModel();
+        $threads = $messageModel->getConversationsList('admin', null);
+        $companies = (new \App\Models\CompanyModel())->findAll();
+        $orders = (new \App\Models\OrderModel())->orderBy('id', 'DESC')->findAll(30);
+
+        return view('admin/chat', [
+            'title'     => 'Pusat Pesan & Chat Pengadaan - Superadmin AkuAda',
+            'threads'   => $threads,
+            'companies' => $companies,
+            'orders'    => $orders,
+        ]);
     }
 
     private function _unusedSettingsStub() {
