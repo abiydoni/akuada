@@ -173,7 +173,7 @@ class OrderMessageModel extends Model
         $db = $this->db;
         $conversations = [];
 
-        // 1. Fetch conversations from existing messages
+        // 1. Fetch personal conversations from existing messages
         $msgRows = $db->table('order_messages')
             ->select('conversation_key, order_id, MAX(id) as last_msg_id, COUNT(id) as total_messages')
             ->groupBy('conversation_key')
@@ -183,94 +183,66 @@ class OrderMessageModel extends Model
         $knownKeys = [];
 
         foreach ($msgRows as $row) {
-            $key = $row['conversation_key'] ?? ('order_' . $row['order_id']);
+            $key = $row['conversation_key'] ?? null;
             if (empty($key)) continue;
+
+            // Hapus/abaikan obrolan gabungan vendor & buyer (order_ dan direct_)
+            if (str_starts_with($key, 'order_') || str_starts_with($key, 'direct_')) {
+                continue;
+            }
 
             $lastMsg = $this->find((int)$row['last_msg_id']);
             if (!$lastMsg) continue;
 
-            // Check access permission based on role & companyId
             $hasAccess = false;
-            $order = null;
             $counterpartyName = 'AkuAda Support';
             $counterpartyRole = 'admin';
             $counterpartyBadge = 'Superadmin AkuAda';
-            $title = $lastMsg['subject'] ?? 'Diskusi Pengadaan';
+            $title = $lastMsg['subject'] ?? 'Pusat Bantuan & Layanan B2B';
             $orderNumber = null;
             $poNumber = null;
 
-            if (!empty($lastMsg['order_id'])) {
-                $order = $db->table('orders o')
-                    ->select('o.*, cb.company_name as buyer_name, cv.company_name as vendor_name')
-                    ->join('companies cb', 'cb.id = o.customer_company_id', 'left')
-                    ->join('companies cv', 'cv.id = o.vendor_company_id', 'left')
-                    ->where('o.id', (int)$lastMsg['order_id'])
-                    ->get()->getRowArray();
-
-                if ($order) {
-                    $orderNumber = $order['order_number'];
-                    $poNumber = $order['po_number'];
-                    $title = 'PO ' . ($order['po_number'] ?? $order['order_number']);
-
-                    if ($role === 'admin') {
-                        $hasAccess = true;
-                        $counterpartyName = $order['buyer_name'] . ' & ' . $order['vendor_name'];
-                        $counterpartyRole = 'order';
-                        $counterpartyBadge = 'Transaksi PO';
-                    } elseif ($role === 'customer') {
-                        if ((int)$order['customer_company_id'] === $companyId) {
-                            $hasAccess = true;
-                            $counterpartyName = 'Tim CS & Pengadaan AkuAda';
-                            $counterpartyRole = 'admin';
-                            $counterpartyBadge = 'Official AkuAda';
-                        }
-                    } elseif ($role === 'vendor') {
-                        if ((int)$order['vendor_company_id'] === $companyId) {
-                            $hasAccess = true;
-                            $counterpartyName = 'Tim Pengadaan & CS AkuAda';
-                            $counterpartyRole = 'admin';
-                            $counterpartyBadge = 'Official AkuAda';
-                        }
-                    }
-                }
-            } elseif (str_starts_with($key, 'direct_')) {
-                // direct_1_2
-                $parts = explode('_', $key);
-                $c1 = isset($parts[1]) ? (int)$parts[1] : 0;
-                $c2 = isset($parts[2]) ? (int)$parts[2] : 0;
-
-                if ($role === 'admin') {
-                    $hasAccess = true;
-                    $comp1 = $db->table('companies')->where('id', $c1)->get()->getRowArray();
-                    $comp2 = $db->table('companies')->where('id', $c2)->get()->getRowArray();
-                    $counterpartyName = ($comp1['company_name'] ?? 'Comp 1') . ' ↔ ' . ($comp2['company_name'] ?? 'Comp 2');
-                    $counterpartyRole = 'direct';
-                    $counterpartyBadge = 'Diskusi B2B Langsung';
-                    $title = $lastMsg['subject'] ?: 'Diskusi Perusahaan Langsung';
-                } elseif ($role !== 'customer' && $role !== 'vendor' && $companyId && ($companyId === $c1 || $companyId === $c2)) {
-                    $hasAccess = true;
-                    $otherId = ($companyId === $c1) ? $c2 : $c1;
-                    $otherComp = $db->table('companies')->where('id', $otherId)->get()->getRowArray();
-                    $counterpartyName = $otherComp['company_name'] ?? 'Perusahaan Mitra';
-                    $counterpartyRole = $otherComp['type'] ?? 'vendor';
-                    $counterpartyBadge = $counterpartyRole === 'vendor' ? 'Mitra Vendor' : 'Corporate Buyer';
-                    $title = $lastMsg['subject'] ?: ('Diskusi Langsung dengan ' . $counterpartyName);
-                }
-            } elseif (str_starts_with($key, 'admin_comp_')) {
+            if (str_starts_with($key, 'admin_comp_')) {
                 $targetCompId = (int)str_replace('admin_comp_', '', $key);
                 if ($role === 'admin') {
                     $hasAccess = true;
                     $comp = $db->table('companies')->where('id', $targetCompId)->get()->getRowArray();
                     $counterpartyName = $comp['company_name'] ?? 'Perusahaan';
-                    $counterpartyRole = $comp['type'] ?? 'user';
+                    $counterpartyRole = $comp['type'] ?? 'customer';
                     $counterpartyBadge = $counterpartyRole === 'vendor' ? 'Mitra Vendor' : 'Corporate Buyer';
-                    $title = $lastMsg['subject'] ?: ('Bantuan & Support ' . $counterpartyName);
+                    $title = $lastMsg['subject'] ?: ('Saluran Personal: ' . $counterpartyName);
                 } elseif ($companyId && $companyId === $targetCompId) {
                     $hasAccess = true;
-                    $counterpartyName = 'Tim Helpdesk / Support AkuAda';
+                    $counterpartyName = 'Official Support & CS AkuAda';
                     $counterpartyRole = 'admin';
-                    $counterpartyBadge = 'Official Superadmin';
+                    $counterpartyBadge = 'Superadmin Platform';
                     $title = $lastMsg['subject'] ?: 'Bantuan & Layanan Pelanggan AkuAda';
+                }
+            } elseif (str_starts_with($key, 'guest_')) {
+                if ($role === 'admin') {
+                    $hasAccess = true;
+                    // Ambil identitas nama PIC dan perusahaan yang diisi oleh pembeli umum (guest)
+                    $guestMsg = $this->where('conversation_key', $key)
+                                     ->where('sender_role', 'guest')
+                                     ->orderBy('id', 'ASC')
+                                     ->first();
+
+                    $gName = !empty($guestMsg['sender_name']) ? $guestMsg['sender_name'] : ($lastMsg['sender_name'] ?? '');
+                    $gComp = !empty($guestMsg['sender_company_name']) ? $guestMsg['sender_company_name'] : ($lastMsg['sender_company_name'] ?? '');
+
+                    $displayName = 'Buyer Umum (Tamu)';
+                    if (!empty($gName) && !empty($gComp) && $gComp !== 'Calon Mitra Korporat' && $gComp !== 'Calon Pembeli') {
+                        $displayName = $gComp . ' (' . $gName . ')';
+                    } elseif (!empty($gComp) && $gComp !== 'Calon Mitra Korporat' && $gComp !== 'Calon Pembeli') {
+                        $displayName = $gComp;
+                    } elseif (!empty($gName) && $gName !== 'Pengunjung B2B' && $gName !== 'Pengunjung Umum') {
+                        $displayName = $gName . ' (Tamu)';
+                    }
+
+                    $counterpartyName = $displayName;
+                    $counterpartyRole = 'guest';
+                    $counterpartyBadge = 'Buyer Umum (Tamu)';
+                    $title = (!empty($gComp) && $gComp !== 'Calon Mitra Korporat' && $gComp !== 'Calon Pembeli') ? ('Inquiry Pembeli: ' . $gComp) : 'Inquiry Buyer Belum Terdaftar';
                 }
             }
 
@@ -283,7 +255,7 @@ class OrderMessageModel extends Model
 
                 $conversations[] = [
                     'key'                => $key,
-                    'order_id'           => $lastMsg['order_id'],
+                    'order_id'           => $lastMsg['order_id'] ?? null,
                     'order_number'       => $orderNumber,
                     'po_number'          => $poNumber,
                     'title'              => $title,
@@ -302,10 +274,8 @@ class OrderMessageModel extends Model
             }
         }
 
-        // 2. Add potential default conversations if not yet started
-        // For Buyer: Provide Support thread and all Vendors
+        // 2. Add potential default personal conversations if not yet started
         if ($role === 'customer' && $companyId) {
-            // AkuAda Support
             $supportKey = 'admin_comp_' . $companyId;
             if (!isset($knownKeys[$supportKey])) {
                 $conversations[] = [
@@ -327,10 +297,7 @@ class OrderMessageModel extends Model
                 ];
                 $knownKeys[$supportKey] = true;
             }
-
-            // Khusus buyer, tidak ada chat langsung ke vendor. Lawan chat hanya tim AkuAda.
         } elseif ($role === 'vendor' && $companyId) {
-            // Support AkuAda
             $supportKey = 'admin_comp_' . $companyId;
             if (!isset($knownKeys[$supportKey])) {
                 $conversations[] = [
@@ -352,10 +319,8 @@ class OrderMessageModel extends Model
                 ];
                 $knownKeys[$supportKey] = true;
             }
-
-            // Khusus vendor, tidak ada chat langsung ke buyer atau mitra lain. Lawan chat hanya tim AkuAda.
         } elseif ($role === 'admin') {
-            // For admin, add all buyers and vendors as direct support channels if not listed
+            // Untuk Admin: daftarkan seluruh perusahaan (Buyer & Vendor) sebagai jalur chat personal 1-on-1
             $allComps = $db->table('companies')->orderBy('type', 'DESC')->orderBy('company_name', 'ASC')->get()->getResultArray();
             foreach ($allComps as $c) {
                 $supportKey = 'admin_comp_' . $c['id'];
@@ -365,11 +330,11 @@ class OrderMessageModel extends Model
                         'order_id'           => null,
                         'order_number'       => null,
                         'po_number'          => null,
-                        'title'              => 'Layanan CS: ' . $c['company_name'],
+                        'title'              => 'Saluran Personal: ' . $c['company_name'],
                         'counterparty_name'  => $c['company_name'],
                         'counterparty_role'  => $c['type'],
                         'counterparty_badge' => $c['type'] === 'vendor' ? 'Mitra Vendor' : 'Corporate Buyer',
-                        'last_message'       => 'Saluran komunikasi langsung Superadmin dengan ' . $c['company_name'] . '.',
+                        'last_message'       => 'Saluran komunikasi personal 1-on-1 Superadmin dengan ' . $c['company_name'] . '.',
                         'last_sender'        => $c['company_name'],
                         'last_sender_role'   => $c['type'],
                         'last_message_at'    => null,

@@ -16,8 +16,8 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        <!-- Left Column: Product Image & Vendor Card (5 Cols) -->
-        <div class="lg:col-span-5 space-y-6">
+        <!-- Left Column: Product Image & Vendor Card (4 Cols) -->
+        <div class="lg:col-span-4 space-y-6">
             <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm overflow-hidden">
                 <div class="aspect-square bg-slate-50 rounded-xl overflow-hidden relative group">
                     <img id="mainProductImg" src="<?= esc($product['image_url']) ?>" alt="<?= esc($product['name']) ?>" class="w-full h-full object-cover">
@@ -72,8 +72,8 @@
             </div>
         </div>
 
-        <!-- Middle Column: Product Details & Specs (4 Cols) -->
-        <div class="lg:col-span-4 space-y-6">
+        <!-- Middle Column: Product Details & Specs (5 Cols) -->
+        <div class="lg:col-span-5 space-y-6">
             <div class="space-y-3">
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800">
@@ -200,77 +200,87 @@
                         </div>
                     </div>
                 <?php endif; ?>
-                    </div>
-                </div>
             </div>
         </div>
 
         <!-- Right Column: Interactive Purchase Card & Tax Calculator (3 Cols) -->
         <div class="lg:col-span-3">
-            <div class="bg-white rounded-2xl p-5 border border-purple-200 shadow-xl shadow-purple-900/5 sticky top-24 space-y-5">
+            <div class="bg-white rounded-2xl p-4 sm:p-5 border border-purple-200/90 shadow-xl shadow-purple-900/5 sticky top-24 space-y-4">
+                <!-- Card Header -->
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Kalkulator Pengadaan PO</h3>
-                    <span class="badge-top text-[10px]">TOP Support</span>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined text-[18px]">shopping_bag</span>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-black uppercase tracking-wider text-slate-800">Atur Pesanan PO</h3>
+                            <p class="text-[10px] text-slate-400">Estimasi nilai & kalkulator B2B</p>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-bold border border-purple-200/80">TOP Support</span>
                 </div>
 
-                <form action="<?= base_url('cart/add') ?>" method="POST" id="purchaseForm" class="space-y-4">
+                <form action="<?= base_url('cart/add') ?>" method="POST" id="purchaseForm" class="space-y-3.5">
                     <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
 
                     <!-- Quantity Input with MOQ Enforced -->
                     <div>
                         <div class="flex items-center justify-between text-xs mb-1.5">
                             <label for="qtyInput" class="font-bold text-slate-700">Jumlah Pesanan:</label>
-                            <span class="text-[11px] text-pink-600 font-semibold">Min. <?= $product['moq'] ?> <?= esc($product['uom']) ?></span>
+                            <span class="text-[11px] text-pink-600 font-bold">Min. <?= $product['moq'] ?> <?= esc($product['uom']) ?></span>
                         </div>
-                        <div class="flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:border-purple-600 focus-within:ring-2 focus-within:ring-purple-100">
-                            <button type="button" onclick="adjustQty(-1)" class="px-3.5 py-2.5 bg-slate-100 text-slate-600 hover:bg-slate-200 transition font-bold text-sm">-</button>
+                        <div class="flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:border-purple-600 focus-within:ring-2 focus-within:ring-purple-100 bg-white shadow-2xs">
+                            <button type="button" onclick="adjustQty(-1)" class="w-10 py-2 bg-slate-50 text-slate-700 hover:bg-slate-200 transition font-bold text-sm flex items-center justify-center select-none border-r border-slate-200">-</button>
                             <input type="number" id="qtyInput" name="qty" value="<?= $product['moq'] ?>" min="<?= $product['moq'] ?>" max="<?= $product['stock'] ?>" 
-                                   class="w-full text-center text-sm font-bold text-slate-900 border-none focus:ring-0 py-2" oninput="calculatePrice()">
-                            <button type="button" onclick="adjustQty(1)" class="px-3.5 py-2.5 bg-slate-100 text-slate-600 hover:bg-slate-200 transition font-bold text-sm">+</button>
+                                   class="w-full text-center text-sm font-extrabold text-slate-900 border-none focus:ring-0 py-2" oninput="calculatePrice()">
+                            <button type="button" onclick="adjustQty(1)" class="w-10 py-2 bg-slate-50 text-slate-700 hover:bg-slate-200 transition font-bold text-sm flex items-center justify-center select-none border-l border-slate-200">+</button>
                         </div>
                     </div>
 
                     <!-- Live Calculation Breakdown -->
-                    <div class="bg-slate-50 p-3.5 rounded-xl space-y-2 text-xs border border-slate-200/80">
-                        <div class="flex justify-between text-slate-500">
-                            <span>Harga Satuan Terpilih:</span>
+                    <div class="bg-slate-50 p-3 rounded-xl space-y-2 text-xs border border-slate-200/80">
+                        <div class="flex justify-between text-slate-500 text-[11px]">
+                            <span>Harga Satuan:</span>
                             <span class="font-bold text-slate-800" id="calcUnitRate">Rp 0</span>
                         </div>
-                        <div class="flex justify-between text-slate-500">
+                        <div class="flex justify-between text-slate-500 text-[11px]">
                             <span>Subtotal Barang:</span>
                             <span class="font-bold text-slate-800" id="calcSubtotal">Rp 0</span>
                         </div>
-                        <div class="flex justify-between text-slate-500">
+                        <div class="flex justify-between text-slate-500 text-[11px]">
                             <span>PPN <?= esc(format_tax_rate()) ?> (e-Faktur):</span>
                             <span class="font-bold text-blue-700" id="calcPpn">Rp 0</span>
                         </div>
                         <div class="border-t border-slate-200 pt-2 flex justify-between items-baseline font-bold">
-                            <span class="text-slate-800">Total Nilai PO:</span>
-                            <span class="text-base text-purple-900 font-extrabold" id="calcGrandTotal">Rp 0</span>
+                            <span class="text-slate-800 text-xs">Total Nilai PO:</span>
+                            <span class="text-base text-purple-900 font-black tracking-tight" id="calcGrandTotal">Rp 0</span>
                         </div>
                     </div>
 
                     <!-- Payment Term Options Preview -->
-                    <div class="text-[11px] text-slate-500 space-y-1">
-                        <p class="flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[14px] text-purple-600">verified</span>
+                    <div class="text-[11px] text-slate-500 space-y-1.5 bg-purple-50/50 p-2.5 rounded-xl border border-purple-100/60">
+                        <p class="flex items-center gap-1.5 text-purple-900">
+                            <span class="material-symbols-outlined text-[15px] text-purple-600">verified</span>
                             <span>Bisa bayar tempo <strong>TOP <?= implode('/', get_allowed_top_terms()) ?> hari</strong></span>
                         </p>
-                        <p class="flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[14px] text-blue-600">local_shipping</span>
-                            <span><?= (float)get_system_setting('default_shipping_amount', 0) > 0 ? 'Biaya logistik ' . format_rupiah((float)get_system_setting('default_shipping_amount', 0)) : 'Gratis pengiriman ' . esc(get_system_setting('free_shipping_region', 'korporat Jabodetabek')) ?></span>
+                        <p class="flex items-center gap-1.5 text-slate-600">
+                            <span class="material-symbols-outlined text-[15px] text-blue-600">local_shipping</span>
+                            <span><?= (float)get_system_setting('default_shipping_amount', 0) > 0 ? 'Logistik ' . format_rupiah((float)get_system_setting('default_shipping_amount', 0)) : 'Gratis pengiriman ' . esc(get_system_setting('free_shipping_region', 'korporat Jabodetabek')) ?></span>
                         </p>
                     </div>
 
                     <!-- Add to PO Cart Button -->
-                    <button type="submit" class="w-full btn-akuada-primary py-3 text-xs">
+                    <button type="submit" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-700 via-indigo-700 to-pink-600 hover:from-purple-800 hover:to-pink-700 text-white font-extrabold text-xs shadow-md shadow-purple-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]">
                         <span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
                         <span>Tambah ke Keranjang PO</span>
                     </button>
                 </form>
 
-                <div class="border-t border-slate-100 pt-3 text-center">
-                    <span class="text-[11px] text-slate-400">Plafon kredit korporat Anda aman terproteksi.</span>
+                <div class="border-t border-slate-100 pt-2.5 text-center">
+                    <span class="text-[10px] text-slate-400 flex items-center justify-center gap-1">
+                        <span class="material-symbols-outlined text-[13px] text-emerald-600">security</span>
+                        Plafon kredit korporat Anda aman terproteksi
+                    </span>
                 </div>
             </div>
         </div>

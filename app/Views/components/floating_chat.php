@@ -110,9 +110,15 @@ $fullChatUrl = ($currentUserRole === 'customer') ? base_url('customer/chat') : (
                     </div>
                 <?php else: ?>
                     <!-- Guest PIC input for unauthenticated marketplace visitors -->
-                    <div class="grid grid-cols-2 gap-1.5 text-[10px]">
-                        <input type="text" name="guest_name" placeholder="Nama Anda (PIC)..." class="px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 text-[11px]">
-                        <input type="text" name="guest_company" placeholder="Nama Perusahaan / PT..." class="px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 text-[11px]">
+                    <div id="guestIdentityInputs" class="space-y-1">
+                        <div class="grid grid-cols-2 gap-1.5 text-[10px]">
+                            <input type="text" id="floatingGuestName" name="guest_name" value="<?= esc(session('guest_name') ?? '') ?>" placeholder="Nama Anda (PIC)..." class="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-[11px] focus:bg-white focus:border-purple-600 focus:outline-none">
+                            <input type="text" id="floatingGuestCompany" name="guest_company" value="<?= esc(session('guest_company') ?? '') ?>" placeholder="Nama Perusahaan / PT..." class="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-[11px] focus:bg-white focus:border-purple-600 focus:outline-none">
+                        </div>
+                    </div>
+                    <div id="guestIdentityBadge" class="hidden items-center justify-between text-[10px] text-slate-600 bg-purple-50/70 border border-purple-200/80 rounded-xl px-2.5 py-1">
+                        <span class="truncate">Sebagai: <strong id="guestDisplayIdentity" class="text-purple-900 font-bold"></strong></span>
+                        <button type="button" onclick="editGuestIdentity()" class="text-[10px] text-purple-700 hover:underline font-semibold ml-1 flex-shrink-0">Ubah</button>
                     </div>
                 <?php endif; ?>
 
@@ -140,6 +146,56 @@ $fullChatUrl = ($currentUserRole === 'customer') ? base_url('customer/chat') : (
     let isFloatingChatOpen = false;
     let floatingActiveKey = '';
     let floatingPollInterval = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initGuestIdentity();
+    });
+
+    function initGuestIdentity() {
+        const nameInput = document.getElementById('floatingGuestName');
+        const compInput = document.getElementById('floatingGuestCompany');
+        if (!nameInput) return;
+
+        const savedName = localStorage.getItem('akuada_guest_name') || nameInput.value;
+        const savedComp = localStorage.getItem('akuada_guest_company') || (compInput ? compInput.value : '');
+
+        if (savedName) nameInput.value = savedName;
+        if (compInput && savedComp) compInput.value = savedComp;
+
+        if (savedName || savedComp) {
+            updateGuestBadgeUI(savedName, savedComp);
+        }
+    }
+
+    function updateGuestBadgeUI(name, comp) {
+        const badge = document.getElementById('guestIdentityBadge');
+        const inputs = document.getElementById('guestIdentityInputs');
+        const display = document.getElementById('guestDisplayIdentity');
+        if (!badge || !inputs || !display) return;
+
+        const currentName = name || document.getElementById('floatingGuestName')?.value || '';
+        const currentComp = comp || document.getElementById('floatingGuestCompany')?.value || '';
+
+        if (currentName || currentComp) {
+            display.textContent = currentName + (currentComp ? ' (' + currentComp + ')' : '');
+            badge.classList.remove('hidden');
+            badge.classList.add('flex');
+            inputs.classList.add('hidden');
+        }
+    }
+
+    function editGuestIdentity() {
+        const badge = document.getElementById('guestIdentityBadge');
+        const inputs = document.getElementById('guestIdentityInputs');
+        if (badge) {
+            badge.classList.add('hidden');
+            badge.classList.remove('flex');
+        }
+        if (inputs) {
+            inputs.classList.remove('hidden');
+            document.getElementById('floatingGuestName')?.focus();
+        }
+    }
 
     function toggleFloatingChat() {
         const win = document.getElementById('floatingChatWindow');
@@ -313,6 +369,15 @@ $fullChatUrl = ($currentUserRole === 'customer') ? base_url('customer/chat') : (
         const sendBtn = document.getElementById('floatingSendBtn');
         if (sendBtn) sendBtn.disabled = true;
 
+        const nameInput = document.getElementById('floatingGuestName');
+        const compInput = document.getElementById('floatingGuestCompany');
+        if (nameInput && nameInput.value.trim()) {
+            localStorage.setItem('akuada_guest_name', nameInput.value.trim());
+        }
+        if (compInput && compInput.value.trim()) {
+            localStorage.setItem('akuada_guest_company', compInput.value.trim());
+        }
+
         const formData = new FormData(document.getElementById('floatingChatForm'));
 
         fetch('<?= base_url('chat/send') ?>', {
@@ -325,6 +390,7 @@ $fullChatUrl = ($currentUserRole === 'customer') ? base_url('customer/chat') : (
             if (sendBtn) sendBtn.disabled = false;
             if (data.status === 'success') {
                 input.value = '';
+                updateGuestBadgeUI();
                 fetchFloatingMessages(false);
             } else {
                 alert(data.message || 'Gagal mengirim pesan.');

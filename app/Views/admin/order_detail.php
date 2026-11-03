@@ -30,9 +30,13 @@
                 <span class="material-symbols-outlined text-[18px] text-teal-700">receipt</span>
                 <span>e-Faktur PPN</span>
             </a>
-            <a href="<?= base_url('admin/chat?order_id=' . $order['id']) ?>" class="px-3.5 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs transition flex items-center gap-1.5 shadow-md shadow-purple-600/20">
-                <span class="material-symbols-outlined text-[18px]">forum</span>
-                <span>Pusat Chat Transaksi</span>
+            <a href="<?= base_url('admin/chat?key=admin_comp_' . $order['customer_company_id']) ?>" class="px-3 py-2 rounded-xl bg-pink-700 hover:bg-pink-800 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-sm">
+                <span class="material-symbols-outlined text-[16px]">domain</span>
+                <span>Chat Buyer</span>
+            </a>
+            <a href="<?= base_url('admin/chat?key=admin_comp_' . $order['vendor_company_id']) ?>" class="px-3 py-2 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-sm">
+                <span class="material-symbols-outlined text-[16px]">storefront</span>
+                <span>Chat Vendor</span>
             </a>
         </div>
     </div>
@@ -401,16 +405,22 @@
                     <span class="material-symbols-outlined text-[22px]">forum</span>
                 </div>
                 <div>
-                    <strong class="text-slate-900 font-bold text-xs block">Monitoring Percakapan Live Chat Pesanan Ini</strong>
+                    <strong class="text-slate-900 font-bold text-xs block">Saluran Komunikasi Personal Transaksi Ini</strong>
                     <p class="text-slate-500 text-[11px] mt-0.5">
-                        Pantau diskusi antara <strong><?= esc($order['buyer_name']) ?></strong> dan <strong><?= esc($order['vendor_name']) ?></strong>, atau kirim bantuan mediasi langsung dari Superadmin.
+                        Hubungi <strong><?= esc($order['buyer_name']) ?></strong> (Buyer) atau <strong><?= esc($order['vendor_name']) ?></strong> (Vendor) secara personal 1-on-1 tanpa ruang obrolan gabungan.
                     </p>
                 </div>
             </div>
-            <a href="<?= base_url('admin/chat?order_id=' . $order['id']) ?>" class="px-5 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs transition flex items-center gap-2 shadow-md shadow-purple-600/20 flex-shrink-0">
-                <span class="material-symbols-outlined text-[18px]">chat</span>
-                <span>Buka Percakapan Chat PO ↗</span>
-            </a>
+            <div class="flex items-center gap-2 flex-wrap flex-shrink-0">
+                <a href="<?= base_url('admin/chat?key=admin_comp_' . $order['customer_company_id']) ?>" class="px-4 py-2 rounded-xl bg-pink-700 hover:bg-pink-800 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-sm">
+                    <span class="material-symbols-outlined text-[16px]">domain</span>
+                    <span>Chat Buyer ↗</span>
+                </a>
+                <a href="<?= base_url('admin/chat?key=admin_comp_' . $order['vendor_company_id']) ?>" class="px-4 py-2 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-sm">
+                    <span class="material-symbols-outlined text-[16px]">storefront</span>
+                    <span>Chat Vendor ↗</span>
+                </a>
+            </div>
         </div>
     </div>
 

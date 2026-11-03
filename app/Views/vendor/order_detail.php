@@ -22,7 +22,7 @@
                 <span class="material-symbols-outlined text-[18px] text-blue-700">contract</span>
                 <span>BAST & Surat Jalan</span>
             </a>
-            <a href="<?= base_url('vendor/chat?order_id=' . $order['id']) ?>" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs transition flex items-center gap-1.5 shadow-md shadow-blue-600/20">
+            <a href="<?= base_url('vendor/chat?key=admin_comp_' . $order['vendor_company_id']) ?>" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs transition flex items-center gap-1.5 shadow-md shadow-blue-600/20">
                 <span class="material-symbols-outlined text-[18px]">forum</span>
                 <span>Chat dengan AkuAda</span>
             </a>
@@ -442,7 +442,7 @@
                     </p>
                 </div>
             </div>
-            <a href="<?= base_url('vendor/chat?order_id=' . $order['id']) ?>" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition flex items-center gap-2 shadow-md shadow-blue-600/20 flex-shrink-0">
+            <a href="<?= base_url('vendor/chat?key=admin_comp_' . $order['vendor_company_id']) ?>" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition flex items-center gap-2 shadow-md shadow-blue-600/20 flex-shrink-0">
                 <span class="material-symbols-outlined text-[18px]">chat</span>
                 <span>Buka Percakapan dengan AkuAda ↗</span>
             </a>

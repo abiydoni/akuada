@@ -66,7 +66,7 @@ class OrderReviewModel extends Model
 
     public function getVendorReviews(int $vendorCompanyId, int $limit = 20): array
     {
-        return $this->select('order_reviews.*, c.name as customer_name, o.order_number, o.po_number')
+        return $this->select('order_reviews.*, c.company_name as customer_name, o.order_number, o.po_number')
                     ->join('companies c', 'c.id = order_reviews.customer_company_id', 'left')
                     ->join('orders o', 'o.id = order_reviews.order_id', 'left')
                     ->where('order_reviews.vendor_company_id', $vendorCompanyId)

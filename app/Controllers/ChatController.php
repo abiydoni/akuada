@@ -92,12 +92,16 @@ class ChatController extends Controller
             $guestKey = $this->getGuestKey();
             $recentMsgs = $messageModel->getMessagesByConversation($guestKey);
             $lastMsg = !empty($recentMsgs) ? end($recentMsgs) : null;
+            $savedGuestName = session('guest_name') ?? '';
+            $savedGuestCompany = session('guest_company') ?? '';
 
             return $this->response->setJSON([
-                'status'       => 'success',
-                'is_logged_in' => false,
-                'guest_key'    => $guestKey,
-                'threads'      => [
+                'status'        => 'success',
+                'is_logged_in'  => false,
+                'guest_key'     => $guestKey,
+                'guest_name'    => $savedGuestName,
+                'guest_company' => $savedGuestCompany,
+                'threads'       => [
                     [
                         'key'                => $guestKey,
                         'order_id'           => null,
@@ -207,18 +211,35 @@ class ChatController extends Controller
             $key = $guestKey;
             $orderId = null;
             $userId = null;
-            $userName = trim((string)$this->request->getPost('guest_name')) ?: 'Pengunjung B2B';
+            
+            $inputName = trim((string)$this->request->getPost('guest_name'));
+            $inputCompany = trim((string)$this->request->getPost('guest_company'));
+
+            if (!empty($inputName)) {
+                session()->set('guest_name', $inputName);
+            }
+            if (!empty($inputCompany)) {
+                session()->set('guest_company', $inputCompany);
+            }
+
+            $userName = session('guest_name') ?: ($inputName ?: 'Pengunjung Umum');
+            $companyName = session('guest_company') ?: ($inputCompany ?: 'Calon Pembeli');
             $userRole = 'guest';
             $companyId = null;
-            $companyName = trim((string)$this->request->getPost('guest_company')) ?: 'Calon Mitra Korporat';
             $receiverRole = 'admin';
             $receiverCompanyId = null;
-            $subject = 'Inquiry Marketplace Publik';
+            $subject = (!empty($companyName) && $companyName !== 'Calon Pembeli')
+                ? ('Inquiry: ' . $companyName)
+                : 'Inquiry Marketplace Publik';
         } else {
-            if (!empty($rawKey)) {
+            $companyId = session('company_id') ? (int)session('company_id') : null;
+            $userRole = session('user_role') ?: (session('role') ?: 'customer');
+
+            if ($userRole !== 'admin') {
+                // Seluruh obrolan Buyer dan Vendor adalah personal 1-on-1 dengan AkuAda
+                $key = 'admin_comp_' . $companyId;
+            } elseif (!empty($rawKey)) {
                 $key = $rawKey;
-            } elseif (!empty($rawOrderId)) {
-                $key = 'order_' . (int)$rawOrderId;
             } else {
                 return $this->response->setStatusCode(400)->setJSON([
                     'status'  => 'error',

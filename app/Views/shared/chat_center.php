@@ -38,7 +38,7 @@ if (!$activeThread && !empty($threads)) {
             <?php elseif ($currentUserRole === 'vendor'): ?>
                 <p class="text-xs text-slate-500">Pusat bantuan & komunikasi resmi kemitraan supplier dengan Tim AkuAda.</p>
             <?php else: ?>
-                <p class="text-xs text-slate-500">Saluran komunikasi langsung antara Corporate Buyer, Mitra Vendor, dan CS Superadmin AkuAda.</p>
+                <p class="text-xs text-slate-500">Saluran komunikasi personal 1-on-1 dengan Corporate Buyer, Mitra Vendor, dan Pengunjung Marketplace.</p>
             <?php endif; ?>
         </div>
         <div class="flex items-center gap-2 w-full sm:w-auto">
@@ -64,11 +64,13 @@ if (!$activeThread && !empty($threads)) {
                 <!-- Filter Tabs -->
                 <div class="flex items-center gap-1 overflow-x-auto text-[11px] pb-1 scrollbar-none">
                     <button type="button" onclick="filterCategory('all', this)" class="cat-pill active px-2.5 py-1 rounded-lg font-bold bg-purple-700 text-white">Semua</button>
-                    <button type="button" onclick="filterCategory('order', this)" class="cat-pill px-2.5 py-1 rounded-lg font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"><?= $currentUserRole === 'customer' ? 'Bantuan PO' : ($currentUserRole === 'vendor' ? 'Koordinasi PO' : 'PO Masuk') ?></button>
                     <?php if ($currentUserRole === 'admin'): ?>
-                        <button type="button" onclick="filterCategory('partner', this)" class="cat-pill px-2.5 py-1 rounded-lg font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100">Mitra Langsung</button>
+                        <button type="button" onclick="filterCategory('buyer', this)" class="cat-pill px-2.5 py-1 rounded-lg font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100">Corporate Buyer</button>
+                        <button type="button" onclick="filterCategory('vendor', this)" class="cat-pill px-2.5 py-1 rounded-lg font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100">Mitra Vendor</button>
+                        <button type="button" onclick="filterCategory('guest', this)" class="cat-pill px-2.5 py-1 rounded-lg font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100">Tamu Web</button>
+                    <?php else: ?>
+                        <button type="button" onclick="filterCategory('support', this)" class="cat-pill px-2.5 py-1 rounded-lg font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100">CS & Tim AkuAda</button>
                     <?php endif; ?>
-                    <button type="button" onclick="filterCategory('support', this)" class="cat-pill px-2.5 py-1 rounded-lg font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"><?= $currentUserRole === 'vendor' ? 'Tim AkuAda' : 'CS AkuAda' ?></button>
                 </div>
             </div>
 
@@ -83,19 +85,20 @@ if (!$activeThread && !empty($threads)) {
                 <?php else: ?>
                     <?php foreach ($threads as $t): 
                         $isSelected = ($t['key'] === $activeKey);
-                        $isOrder = !empty($t['order_id']) || str_starts_with($t['key'], 'order_');
-                        $isSupport = str_starts_with($t['key'], 'admin_comp_');
-                        $cat = $isOrder ? 'order' : ($isSupport ? 'support' : 'partner');
+                        $roleKey = ($t['counterparty_role'] === 'customer' || $t['counterparty_role'] === 'buyer') ? 'buyer' : $t['counterparty_role'];
+                        $cat = ($roleKey === 'admin') ? 'support' : $roleKey;
 
                         // Avatar initials & color
                         $initial = strtoupper(substr($t['counterparty_name'], 0, 1));
                         $avatarBg = 'bg-purple-100 text-purple-800';
-                        if ($t['counterparty_role'] === 'vendor') {
+                        if ($roleKey === 'vendor') {
                             $avatarBg = 'bg-blue-100 text-blue-800';
-                        } elseif ($t['counterparty_role'] === 'customer') {
+                        } elseif ($roleKey === 'buyer') {
                             $avatarBg = 'bg-pink-100 text-pink-800';
-                        } elseif ($t['counterparty_role'] === 'admin') {
-                            $avatarBg = 'bg-amber-100 text-amber-900';
+                        } elseif ($roleKey === 'guest') {
+                            $avatarBg = 'bg-emerald-100 text-emerald-800';
+                        } elseif ($roleKey === 'admin') {
+                            $avatarBg = 'bg-purple-100 text-purple-900';
                         }
                     ?>
                         <div onclick="selectConversation('<?= esc($t['key']) ?>')" 
@@ -462,8 +465,8 @@ if (!$activeThread && !empty($threads)) {
             }
 
             const isMe = m.is_me;
-            const roleBadgeClass = m.sender_role === 'vendor' ? 'bg-blue-100 text-blue-800' : (m.sender_role === 'admin' ? 'bg-amber-100 text-amber-900' : 'bg-pink-100 text-pink-800');
-            const roleName = m.sender_role === 'vendor' ? 'Vendor' : (m.sender_role === 'admin' ? 'Superadmin' : 'Buyer');
+            const roleBadgeClass = m.sender_role === 'vendor' ? 'bg-blue-100 text-blue-800' : (m.sender_role === 'admin' ? 'bg-purple-100 text-purple-900' : (m.sender_role === 'guest' ? 'bg-emerald-100 text-emerald-800' : 'bg-pink-100 text-pink-800'));
+            const roleName = m.sender_role === 'vendor' ? 'Vendor' : (m.sender_role === 'admin' ? 'Superadmin' : (m.sender_role === 'guest' ? 'Tamu Publik' : 'Buyer'));
 
             if (isMe) {
                 html += `
@@ -486,8 +489,9 @@ if (!$activeThread && !empty($threads)) {
                             ${(m.sender_name || 'U').charAt(0).toUpperCase()}
                         </div>
                         <div class="max-w-md sm:max-w-lg space-y-1">
-                            <div class="flex items-center gap-1.5 text-[11px]">
+                            <div class="flex items-center gap-1.5 text-[11px] flex-wrap">
                                 <strong class="text-slate-900 font-bold">${m.sender_name}</strong>
+                                ${m.sender_company_name ? '<span class="text-slate-500 font-semibold text-[10px]">(' + m.sender_company_name + ')</span>' : ''}
                                 <span class="px-1.5 py-0.2 rounded text-[9px] font-bold ${roleBadgeClass}">${roleName}</span>
                             </div>
                             <div class="p-3.5 rounded-2xl rounded-tl-xs bg-white border border-slate-200/90 text-slate-800 text-xs leading-relaxed shadow-2xs">
@@ -658,15 +662,15 @@ if (!$activeThread && !empty($threads)) {
         const targetCompanyId = parseInt(parts[1]) || 0;
 
         let convKey = '';
-        if (orderId) {
-            convKey = 'order_' + orderId;
-        } else if (targetRole === 'admin') {
-            convKey = 'admin_comp_<?= (int)session('company_id') ?>';
+        if ('<?= $currentUserRole ?>' === 'admin') {
+            if (targetCompanyId) {
+                convKey = 'admin_comp_' + targetCompanyId;
+            } else {
+                convKey = 'admin_comp_<?= (int)session('company_id') ?>';
+            }
         } else {
-            const myCompanyId = <?= (int)session('company_id') ?>;
-            const c1 = Math.min(myCompanyId, targetCompanyId);
-            const c2 = Math.max(myCompanyId, targetCompanyId);
-            convKey = 'direct_' + c1 + '_' + c2;
+            // Customer dan Vendor selalu menggunakan saluran personal 1-on-1 dengan AkuAda
+            convKey = 'admin_comp_<?= (int)session('company_id') ?>';
         }
 
         const formData = new FormData();
