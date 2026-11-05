@@ -154,26 +154,39 @@ class CartController extends BaseController
 
         // Identify buyer company from session
         $companyModel = new CompanyModel();
-        $buyerCompanyId = (session('user_role') === 'customer' && session('company_id')) ? session('company_id') : ($companyModel->where('type', 'buyer')->countAllResults() === 1 ? ensure_role_session('customer') : session('company_id'));
+        $isLoggedInCustomer = !empty(session('user_id')) && (session('user_role') === 'customer' || session('role') === 'customer');
+        $buyerCompanyId = $isLoggedInCustomer ? (int)session('company_id') : null;
         $buyerCompany = null;
         $isRegistered = false;
 
+        $maxUnpaidLimit = get_max_unpaid_notes_limit();
+        $unpaidNotesCount = 0;
+        $remainingNotes = $maxUnpaidLimit;
+        $isSufficientCredit = true;
+
         if ($buyerCompanyId) {
             $buyerCompany = $companyModel->find($buyerCompanyId);
-            if ($buyerCompany && $buyerCompany['type'] === 'buyer' && $buyerCompany['is_verified'] == 1 && (float)$buyerCompany['credit_limit_top'] > 0) {
+            if ($buyerCompany && $buyerCompany['type'] === 'buyer' && (int)$buyerCompany['is_verified'] === 1) {
                 $isRegistered = true;
+                $unpaidNotesCount = get_buyer_unpaid_notes_count($buyerCompanyId);
+                $remainingNotes = max(0, $maxUnpaidLimit - $unpaidNotesCount);
+                $isSufficientCredit = ($unpaidNotesCount < $maxUnpaidLimit);
             }
         }
 
         return view('marketplace/checkout', [
-            'title'        => 'Checkout Pengadaan B2B - AkuAda',
-            'cart'         => $cart,
-            'subtotal'     => $subtotal,
-            'ppnTotal'       => $ppnTotal,
-            'shippingAmount' => $shippingAmount,
-            'grandTotal'   => $grandTotal,
-            'buyerCompany' => $buyerCompany,
-            'isRegistered' => $isRegistered,
+            'title'              => 'Checkout Pengadaan B2B - AkuAda',
+            'cart'               => $cart,
+            'subtotal'           => $subtotal,
+            'ppnTotal'           => $ppnTotal,
+            'shippingAmount'     => $shippingAmount,
+            'grandTotal'         => $grandTotal,
+            'buyerCompany'       => $buyerCompany,
+            'isRegistered'       => $isRegistered,
+            'maxUnpaidLimit'     => $maxUnpaidLimit,
+            'unpaidNotesCount'   => $unpaidNotesCount,
+            'remainingNotes'     => $remainingNotes,
+            'isSufficientCredit' => $isSufficientCredit,
         ]);
     }
 
@@ -190,15 +203,22 @@ class CartController extends BaseController
         $customerNotes = $this->request->getPost('customer_notes');
         $shippingAddress = $this->request->getPost('shipping_address');
 
-        $buyerCompanyId = (session('user_role') === 'customer' && session('company_id')) ? session('company_id') : ($companyModel->where('type', 'buyer')->countAllResults() === 1 ? ensure_role_session('customer') : session('company_id'));
+        $isLoggedInCustomer = !empty(session('user_id')) && (session('user_role') === 'customer' || session('role') === 'customer');
+        $buyerCompanyId = $isLoggedInCustomer ? (int)session('company_id') : null;
         $companyModel = new CompanyModel();
         $buyerCompany = null;
         $isRegistered = false;
 
+        $maxUnpaidLimit = get_max_unpaid_notes_limit();
+        $unpaidNotesCount = 0;
+        $isSufficientCredit = true;
+
         if ($buyerCompanyId) {
             $buyerCompany = $companyModel->find($buyerCompanyId);
-            if ($buyerCompany && $buyerCompany['type'] === 'buyer' && $buyerCompany['is_verified'] == 1 && (float)$buyerCompany['credit_limit_top'] > 0) {
+            if ($buyerCompany && $buyerCompany['type'] === 'buyer' && (int)$buyerCompany['is_verified'] === 1) {
                 $isRegistered = true;
+                $unpaidNotesCount = get_buyer_unpaid_notes_count($buyerCompanyId);
+                $isSufficientCredit = ($unpaidNotesCount < $maxUnpaidLimit);
             }
         }
 
@@ -251,38 +271,33 @@ class CartController extends BaseController
             }
             $overlimitDays = max(1, (int)($this->request->getPost('overlimit_top_days') ?: 30));
             $paymentMethod = 'top_' . $overlimitDays;
-            $creditLimit = (float)($buyerCompany['credit_limit_top'] ?? 0);
-            $creditUsed = (float)($buyerCompany['credit_used_top'] ?? 0);
-            $shortfall = max(0, $grandTotal - max(0, $creditLimit - $creditUsed));
-            $reason = trim((string)($this->request->getPost('overlimit_reason') ?: 'Pengajuan ekstra limit TOP'));
-            $customerNotes = trim('[OVER-LIMIT REQUEST: Kurang ' . format_rupiah($shortfall) . ' | Alasan: ' . $reason . '] ' . $customerNotes);
+            $reason = trim((string)($this->request->getPost('overlimit_reason') ?: 'Pengajuan ekstra nota kredit'));
+            $customerNotes = trim("[OVER-LIMIT REQUEST: Batas {$maxUnpaidLimit} Nota Tercapai ({$unpaidNotesCount} Nota Belum Lunas) | Alasan: {$reason}] " . $customerNotes);
         } elseif (str_starts_with($paymentMethod, 'top_') || $paymentMethod === 'corporate_po') {
             if (!$isRegistered) {
                 session()->setFlashdata('error', 'Perusahaan Anda belum terdaftar resmi di AkuAda untuk fasilitas kredit. Pembayaran PO tidak dapat menggunakan kredit tempo (TOP 14-90 Hari / Corporate PO). Silakan pilih metode pembayaran Bank Virtual Account atau hubungi Superadmin AkuAda untuk pendaftaran akun fasilitas kredit.');
                 return redirect()->to('/checkout');
             }
 
-            $creditLimit = (float)($buyerCompany['credit_limit_top'] ?? 0);
-            $creditUsed = (float)($buyerCompany['credit_used_top'] ?? 0);
-            $availableCredit = max(0, $creditLimit - $creditUsed);
-
-            if ($grandTotal > $availableCredit) {
-                session()->setFlashdata('error', 'Sisa fasilitas kredit TOP perusahaan Anda tidak mencukupi untuk pesanan ini. Tersedia: ' . format_rupiah($availableCredit) . ', Total Tagihan PO: ' . format_rupiah($grandTotal) . '. Silakan ajukan kenaikan fasilitas kredit ke Superadmin AkuAda atau gunakan pembayaran tunai/VA.');
+            if (!$isSufficientCredit) {
+                session()->setFlashdata('error', "Batas kredit tempo tercapai. Perusahaan Anda saat ini memiliki {$unpaidNotesCount} dari batas maksimal {$maxUnpaidLimit} nota yang belum terbayarkan dalam bulan ini. Silakan lakukan pelunasan tagihan sebelumnya atau gunakan pembayaran Bank Virtual Account.");
                 return redirect()->to('/checkout');
             }
         }
 
         // Jika buyer belum terdaftar resmi dan membayar dengan Bank VA (Non-Kredit)
+        $isGuestCheckout = false;
         if (!$buyerCompanyId) {
+            $isGuestCheckout = true;
             $companyName = trim($this->request->getPost('guest_company_name') ?: '');
             if (empty($companyName)) {
                 $companyName = 'Perusahaan Pembeli Baru (Non-Kredit)';
             }
             $legalType = $this->request->getPost('guest_legal_type') ?: 'PT';
             $npwp = $this->request->getPost('guest_npwp') ?: null;
-            $email = $this->request->getPost('guest_email') ?: 'purchasing@tamu.co.id';
-            $phone = $this->request->getPost('guest_phone') ?: null;
-            $picName = $this->request->getPost('guest_pic_name') ?: 'PIC Purchasing';
+            $email = trim($this->request->getPost('guest_email') ?: 'purchasing@tamu.co.id');
+            $phone = trim($this->request->getPost('guest_phone') ?: '');
+            $picName = trim($this->request->getPost('guest_pic_name') ?: 'PIC Purchasing');
 
             $buyerCompanyId = $companyModel->insert([
                 'type'             => 'buyer',
@@ -294,11 +309,50 @@ class CartController extends BaseController
                 'pic_name'         => $picName,
                 'pic_phone'        => $phone,
                 'pic_email'        => $email,
-                'credit_limit_top' => 0.00, // Tidak ada fasilitas kredit
+                'credit_limit_top' => 0.00, // Tidak ada fasilitas kredit awal
                 'credit_used_top'  => 0.00,
-                'is_verified'      => 0, // Belum terverifikasi
+                'is_verified'      => 0, // Belum terverifikasi fasilitas kredit
                 'created_at'       => date('Y-m-d H:i:s'),
                 'updated_at'       => date('Y-m-d H:i:s'),
+            ]);
+
+            // Buatkan akun login customer otomatis untuk buyer umum agar langsung bisa melihat PO, Faktur & VA
+            $userModel = new \App\Models\UserModel();
+            $existingUser = $userModel->where('email', $email)->first();
+            if (!$existingUser) {
+                $tempPassword = bin2hex(random_bytes(4));
+                $authUserId = $userModel->insert([
+                    'name'       => $picName,
+                    'email'      => $email,
+                    'password'   => password_hash($tempPassword, PASSWORD_DEFAULT),
+                    'role'       => 'customer',
+                    'phone'      => $phone,
+                    'company_id' => $buyerCompanyId,
+                    'position'   => 'PIC Procurement',
+                    'status'     => 'active',
+                ]);
+            } else {
+                $authUserId = $existingUser['id'];
+                if (empty($existingUser['company_id'])) {
+                    $userModel->update($authUserId, ['company_id' => $buyerCompanyId]);
+                }
+            }
+
+            // Inisialisasi session login sebagai customer
+            session()->set([
+                'is_logged_in'     => true,
+                'role'             => 'customer',
+                'user_id'          => $authUserId,
+                'user_name'        => $picName,
+                'user_email'       => $email,
+                'user_role'        => 'customer',
+                'company_id'       => $buyerCompanyId,
+                'company_name'     => $companyName,
+                'company_legal'    => $legalType,
+                'company_npwp'     => $npwp,
+                'commission_rate'  => 0,
+                'credit_limit_top' => 0.00,
+                'credit_used_top'  => 0.00,
             ]);
         }
 
@@ -383,7 +437,10 @@ class CartController extends BaseController
 
         session()->setFlashdata('success', $isOverlimitRequest
             ? 'Purchase Order (PO) #' . $poNumber . ' berhasil diterbitkan dengan status Pengajuan Over-Limit TOP! Superadmin AkuAda akan segera menyetujui penambahan plafon kredit Anda.'
-            : 'Purchase Order (PO) #' . $poNumber . ' Berhasil Diterbitkan! Vendor sedang memproses pesanan dan dokumen serah terima (BAST).');
+            : ($isGuestCheckout
+                ? 'Purchase Order (PO) #' . $poNumber . ' berhasil diterbitkan! Akun portal pengadaan korporat Anda telah aktif. Silakan lakukan pembayaran melalui Virtual Account untuk proses serah terima barang.'
+                : 'Purchase Order (PO) #' . $poNumber . ' Berhasil Diterbitkan! Vendor sedang memproses pesanan dan dokumen serah terima (BAST).')
+        );
         return redirect()->to('/customer/orders/' . $orderId);
     }
 }

@@ -221,6 +221,7 @@
                 </div>
 
                 <form action="<?= base_url('cart/add') ?>" method="POST" id="purchaseForm" class="space-y-3.5">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
 
                     <!-- Quantity Input with MOQ Enforced -->

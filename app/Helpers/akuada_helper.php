@@ -262,6 +262,8 @@ if (!function_exists('get_active_buyer_credit_info')) {
                         'company_name'     => $comp['company_name'],
                         'credit_limit_top' => (float)$comp['credit_limit_top'],
                         'credit_used_top'  => (float)$comp['credit_used_top'],
+                        'cashback_balance' => (float)($comp['cashback_balance'] ?? 0),
+                        'is_verified'      => (int)($comp['is_verified'] ?? 0),
                     ];
                 }
             }
@@ -271,6 +273,8 @@ if (!function_exists('get_active_buyer_credit_info')) {
                     'company_name'     => $firstBuyer['company_name'],
                     'credit_limit_top' => (float)$firstBuyer['credit_limit_top'],
                     'credit_used_top'  => (float)$firstBuyer['credit_used_top'],
+                    'cashback_balance' => (float)($firstBuyer['cashback_balance'] ?? 0),
+                    'is_verified'      => (int)($firstBuyer['is_verified'] ?? 0),
                 ];
             }
         } catch (\Throwable $e) {
@@ -281,7 +285,127 @@ if (!function_exists('get_active_buyer_credit_info')) {
             'company_name'     => session('company_name') ?? 'Perusahaan Pembeli',
             'credit_limit_top' => (float)(session('credit_limit_top') ?? $defaultLimit),
             'credit_used_top'  => (float)(session('credit_used_top') ?? 0),
+            'cashback_balance' => 0.0,
+            'is_verified'      => 0,
         ];
+    }
+}
+
+if (!function_exists('get_buyer_cashback_rate')) {
+    /**
+     * Ambil persentase cashback saldo pembeli dari setting admin (default 1%)
+     */
+    function get_buyer_cashback_rate(): float
+    {
+        return (float)get_system_setting('buyer_cashback_percent', 1.0);
+    }
+}
+
+if (!function_exists('get_max_unpaid_notes_limit')) {
+    /**
+     * Ambil batas maksimal nota belum terbayarkan dalam sebulan dari setting admin (normalnya 3 nota)
+     */
+    function get_max_unpaid_notes_limit(): int
+    {
+        return max(1, (int)get_system_setting('max_unpaid_notes_limit', 3));
+    }
+}
+
+if (!function_exists('get_buyer_unpaid_notes_count')) {
+    /**
+     * Hitung jumlah nota/PO yang belum terbayarkan oleh buyer dalam sebulan ini
+     */
+    function get_buyer_unpaid_notes_count(int $buyerCompanyId, bool $currentMonthOnly = true): int
+    {
+        try {
+            $orderModel = new \App\Models\OrderModel();
+            $builder = $orderModel->where('customer_company_id', $buyerCompanyId)
+                                  ->where('payment_status !=', 'paid');
+            if ($currentMonthOnly) {
+                $builder->where('YEAR(created_at)', date('Y'))
+                        ->where('MONTH(created_at)', date('m'));
+            }
+            return $builder->countAllResults();
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+}
+
+if (!function_exists('process_buyer_order_cashback')) {
+    /**
+     * Otomatis berikan cashback ke saldo buyer saat pesanan berstatus 'paid'
+     * Kecuali buyer yang tidak terdaftar (is_verified != 1) tidak menerima apa-apa.
+     */
+    function process_buyer_order_cashback(int $orderId): ?float
+    {
+        $orderModel = new \App\Models\OrderModel();
+        $order = $orderModel->find($orderId);
+        if (!$order) {
+            return null;
+        }
+
+        // Hanya jika status lunas dan belum pernah diberikan cashback
+        if (($order['payment_status'] ?? '') !== 'paid' || !empty($order['is_cashback_awarded'])) {
+            return null;
+        }
+
+        $companyModel = new \App\Models\CompanyModel();
+        $buyer = $companyModel->find($order['customer_company_id']);
+
+        // Aturan Keras: Kecuali buyer yang tidak terdaftar, mereka tidak akan menerima apa-apa
+        if (!$buyer || ($buyer['type'] ?? '') !== 'buyer' || (int)($buyer['is_verified'] ?? 0) !== 1) {
+            $orderModel->update($orderId, [
+                'cashback_percent'    => 0.00,
+                'cashback_amount'     => 0.00,
+                'is_cashback_awarded' => 1,
+            ]);
+            return 0.0;
+        }
+
+        $cbPercent = get_buyer_cashback_rate();
+        $totalAmount = (float)$order['total_amount'];
+        $cbAmount = round(($totalAmount * $cbPercent) / 100, 2);
+
+        $currentBalance = (float)($buyer['cashback_balance'] ?? 0);
+        $newBalance = $currentBalance + $cbAmount;
+
+        // Update saldo buyer
+        $companyModel->update($buyer['id'], [
+            'cashback_balance' => $newBalance
+        ]);
+
+        // Tandai order sudah menerima cashback
+        $orderModel->update($orderId, [
+            'cashback_percent'    => $cbPercent,
+            'cashback_amount'     => $cbAmount,
+            'is_cashback_awarded' => 1,
+        ]);
+
+        // Catat mutasi kredit saldo cashback
+        $mutationModel = new \App\Models\BuyerCashbackMutationModel();
+        $poNum = $order['po_number'] ?: $order['order_number'];
+        $mutationModel->recordMutation(
+            (int)$buyer['id'],
+            'credit',
+            $cbAmount,
+            $newBalance,
+            "Cashback {$cbPercent}% Transaksi Lunas PO #{$poNum}",
+            $orderId,
+            null
+        );
+
+        // Catat ke log status pesanan
+        $logModel = new \App\Models\OrderStatusLogModel();
+        $logModel->logStatus(
+            $orderId,
+            $order['order_status'],
+            'Cashback Saldo Buyer Diberikan',
+            "Cashback sebesar " . format_rupiah($cbAmount) . " ({$cbPercent}%) otomatis ditambahkan ke Saldo Cashback {$buyer['company_name']}.",
+            'Sistem Cashback AkuAda'
+        );
+
+        return $cbAmount;
     }
 }
 

@@ -194,6 +194,25 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-4 rounded-xl border-2 border-purple-400 bg-purple-50/70 space-y-1.5 md:col-span-3">
+                    <div class="flex items-center justify-between">
+                        <label class="block font-black text-purple-950 text-sm flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-purple-700 text-lg">receipt_long</span>
+                            Batas Maksimal Nota Belum Terbayar per Bulan (Kredit TOP):
+                        </label>
+                        <span class="px-2.5 py-0.5 rounded-full bg-purple-200 text-purple-900 text-[10px] font-extrabold">Normal: 3 Nota / Bulan</span>
+                    </div>
+                    <div class="flex items-center gap-2 max-w-xs">
+                        <input type="number" min="1" max="100" name="max_unpaid_notes_limit" 
+                               value="<?= esc($val($pay, 'max_unpaid_notes_limit', '3')) ?>"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-purple-300 bg-white font-mono font-black text-purple-950 text-base">
+                        <span class="font-bold text-purple-900 text-xs whitespace-nowrap">Nota / PO</span>
+                    </div>
+                    <p class="text-[10px] text-purple-900 leading-relaxed">
+                        Batas kredit transaksi <strong>tidak lagi diatur dengan nominal Plafon Rupiah</strong>, melainkan <strong>berdasarkan jumlah nota yang belum terbayarkan dalam sebulan</strong>. Jika buyer telah mencapai jumlah nota belum lunas ini, fasilitas kredit tempo otomatis terkunci.
+                    </p>
+                </div>
+
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Opsi Hari TOP yang Diizinkan:</label>
                     <input type="text" name="allowed_top_terms" value="<?= esc($val($pay, 'allowed_top_terms', '14,30,60,90')) ?>"
@@ -254,6 +273,20 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="p-4 rounded-xl border-2 border-purple-300 bg-purple-50/60 space-y-1.5">
+                    <label class="block font-bold text-purple-950 flex items-center justify-between">
+                        <span>Cashback Saldo Buyer (%):</span>
+                        <span class="px-2 py-0.5 rounded bg-purple-200 text-purple-900 text-[10px] font-extrabold">Default 1%</span>
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" step="0.1" min="0" max="100" name="buyer_cashback_percent"
+                               value="<?= esc($val($fee, 'buyer_cashback_percent', '1.0')) ?>"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-purple-300 bg-white font-bold text-purple-950 font-mono">
+                        <span class="text-purple-700 font-bold">%</span>
+                    </div>
+                    <p class="text-[10px] text-purple-800 leading-relaxed">Persentase fee cashback dari total transaksi PO yang sudah lunas terbayar. Kecuali buyer yang tidak terdaftar, mereka tidak akan menerima apa-apa.</p>
+                </div>
+
                 <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 space-y-1.5">
                     <label class="block font-bold text-emerald-950">Tarif Fee Default Platform (%):</label>
                     <div class="flex items-center gap-2">

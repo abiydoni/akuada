@@ -126,7 +126,7 @@ $grandCredit = array_sum(array_column($journals, 'total_credit'));
                         <span class="text-[11px] text-slate-400">Oleh: <strong><?= esc($jrn['created_by']) ?></strong></span>
                         <?php if ($jrn['reference_type'] === 'manual' || $jrn['reference_type'] === 'cash_bank_manual'): ?>
                             <a href="<?= base_url('admin/accounting/journals/delete/' . $jrn['id']) ?>"
-                               onclick="return confirm('Hapus jurnal manual <?= esc($jrn['journal_number']) ?> ini?')"
+                               data-confirm="Hapus jurnal manual <?= esc($jrn['journal_number']) ?> ini?"
                                class="text-rose-600 hover:underline font-bold flex items-center gap-0.5 text-[11px]">
                                 <span class="material-symbols-outlined text-[15px]">delete</span> Hapus
                             </a>

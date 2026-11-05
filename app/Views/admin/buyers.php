@@ -45,8 +45,8 @@
                     <tr>
                         <th class="px-4 py-3.5">Perusahaan Pembeli & Legalitas</th>
                         <th class="px-4 py-3.5">Kontak PIC Procurement</th>
-                        <th class="px-4 py-3.5 text-right w-52">Plafon TOP & Terpakai</th>
-                        <th class="px-4 py-3.5 text-right w-44">Sisa Saldo Plafon</th>
+                        <th class="px-4 py-3.5 text-right w-48">Batas Nota Belum Lunas</th>
+                        <th class="px-4 py-3.5 text-right w-44">Saldo Cashback</th>
                         <th class="px-4 py-3.5 text-center w-36">Aksi Plafon</th>
                     </tr>
                 </thead>
@@ -118,21 +118,28 @@
                                 <div class="text-[11px] text-slate-400 break-words"><?= esc($b['email']) ?></div>
                             </td>
 
-                            <!-- Plafon Limit & Used -->
+                            <!-- Batas Nota Belum Lunas (Batas Kredit Pengganti Plafon) -->
+                            <?php
+                                $bUnpaid = get_buyer_unpaid_notes_count((int)$b['id']);
+                                $bMaxNotes = get_max_unpaid_notes_limit();
+                                $bQuotaOk = ($bUnpaid < $bMaxNotes);
+                            ?>
                             <td class="px-4 py-3.5 align-top text-right font-mono">
-                                <div class="font-extrabold text-purple-900 text-sm"><?= format_rupiah($limit) ?></div>
-                                <div class="text-[11px] text-rose-600 font-semibold mt-0.5">
-                                    Terpakai: <?= format_rupiah($used) ?> (<?= $usedPercent ?>%)
+                                <div class="font-extrabold text-sm <?= $bQuotaOk ? 'text-emerald-700' : 'text-rose-700' ?>">
+                                    <?= $bUnpaid ?> / <?= $bMaxNotes ?> Nota
+                                </div>
+                                <div class="text-[10px] <?= $bQuotaOk ? 'text-emerald-600' : 'text-rose-600' ?> font-semibold mt-0.5">
+                                    <?= $bQuotaOk ? 'Sisa ' . ($bMaxNotes - $bUnpaid) . ' nota bulan ini' : 'Batas 3 nota tercapai' ?>
                                 </div>
                                 <div class="w-full bg-slate-100 rounded-full h-1.5 mt-1.5 overflow-hidden">
-                                    <div class="bg-gradient-to-r from-purple-500 to-rose-500 h-1.5 rounded-full" style="width: <?= $usedPercent ?>%"></div>
+                                    <div class="<?= $bQuotaOk ? 'bg-purple-600' : 'bg-rose-600' ?> h-1.5 rounded-full" style="width: <?= min(100, round(($bUnpaid / $bMaxNotes) * 100)) ?>%"></div>
                                 </div>
                             </td>
 
-                            <!-- Remaining Credit -->
+                            <!-- Saldo Cashback -->
                             <td class="px-4 py-3.5 align-top text-right font-mono">
-                                <div class="font-black text-emerald-700 text-sm"><?= format_rupiah($remaining) ?></div>
-                                <div class="text-[10px] text-emerald-600 font-semibold mt-0.5">Siap Belanja PO</div>
+                                <div class="font-black text-purple-900 text-sm"><?= format_rupiah($b['cashback_balance'] ?? 0) ?></div>
+                                <div class="text-[10px] text-purple-700 font-semibold mt-0.5">Saldo Cashback Aktif</div>
                             </td>
 
                             <!-- Action -->

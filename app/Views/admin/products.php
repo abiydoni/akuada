@@ -128,13 +128,13 @@
                             <td class="px-4 py-3.5 align-top text-center">
                                 <div class="inline-flex items-center gap-1">
                                     <a href="<?= base_url('admin/products/toggle/' . $p['id']) ?>" 
-                                       onclick="return confirm('Ubah status publikasi produk ini?');"
+                                       data-confirm="Ubah status publikasi produk ini?"
                                        class="p-1.5 rounded-lg hover:bg-purple-50 text-slate-600 hover:text-purple-700 transition border border-slate-200" 
                                        title="Toggle Status Aktif">
                                         <span class="material-symbols-outlined text-[17px]"><?= ($p['status'] ?? 'active') === 'active' ? 'visibility_off' : 'visibility' ?></span>
                                     </a>
                                     <a href="<?= base_url('admin/products/delete/' . $p['id']) ?>" 
-                                       onclick="return confirm('Hapus barang ini dari marketplace?');"
+                                       data-confirm="Hapus barang ini dari marketplace?"
                                        class="p-1.5 rounded-lg hover:bg-rose-50 text-rose-600 transition border border-rose-200" 
                                        title="Hapus Barang">
                                         <span class="material-symbols-outlined text-[17px]">delete</span>

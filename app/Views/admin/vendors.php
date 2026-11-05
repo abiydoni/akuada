@@ -126,7 +126,7 @@
                                         <span>Atur Fee</span>
                                     </button>
                                     <a href="<?= base_url('admin/vendors/toggle/' . $vendor['id']) ?>" 
-                                       onclick="return confirm('Ubah status verifikasi untuk <?= esc($vendor['company_name']) ?>?');"
+                                       data-confirm="Ubah status verifikasi untuk <?= esc($vendor['company_name']) ?>?"
                                        class="w-full px-2.5 py-1 rounded-lg text-xs font-semibold transition text-center <?= $vendor['is_verified'] ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200' ?>"
                                        title="<?= $vendor['is_verified'] ? 'Cabut verifikasi mitra' : 'Setujui verifikasi mitra' ?>">
                                         <?= $vendor['is_verified'] ? 'Cabut Akses' : 'Verifikasi' ?>

@@ -12,7 +12,7 @@ class CompanyModel extends Model
         'type', 'company_name', 'legal_type', 'npwp', 'nib', 'address',
         'city', 'province', 'phone', 'email', 'pic_name', 'pic_phone',
         'pic_email', 'bank_name', 'bank_account_number', 'bank_account_holder',
-        'credit_limit_top', 'credit_used_top', 'commission_rate', 'is_verified'
+        'credit_limit_top', 'credit_used_top', 'cashback_balance', 'commission_rate', 'is_verified'
     ];
     protected $useTimestamps = true;
 

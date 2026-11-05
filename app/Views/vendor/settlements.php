@@ -151,8 +151,18 @@
                                     <?php if (!empty($o['vendor_payout_ref'])): ?>
                                         <div class="text-[10px] font-mono text-slate-500 mt-1">Ref: <?= esc($o['vendor_payout_ref']) ?></div>
                                     <?php endif; ?>
+                                <?php elseif (($o['vendor_payout_status'] ?? '') === 'pending_payout'): ?>
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">SEDANG DIPROSES</span>
                                 <?php else: ?>
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">MENUNGGU PENCAIRAN</span>
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300">MENUNGGU PENCAIRAN</span>
+                                    <?php if (in_array($o['order_status'], ['delivered', 'bast_signed', 'completed'])): ?>
+                                        <form action="<?= base_url('vendor/settlements/request-payout') ?>" method="POST" data-confirm="Ajukan pencairan dana senilai <?= format_rupiah($totalReceive) ?> ke rekening bank Anda?"><?= csrf_field() ?>
+                                            <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
+                                            <button type="submit" class="mt-1.5 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[10px] transition inline-flex items-center gap-1 shadow-sm">
+                                                <span class="material-symbols-outlined text-[12px]">payments</span> Ajukan Pencairan
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             </td>
                             <td class="px-4 py-3.5 align-top text-center">

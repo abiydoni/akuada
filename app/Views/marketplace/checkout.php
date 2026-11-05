@@ -29,6 +29,7 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <form action="<?= base_url('checkout/process') ?>" method="POST" id="checkoutForm">
+        <?= csrf_field() ?>
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
             <!-- Left Form: Company Details & Payment Terms (8 Cols) -->
@@ -149,9 +150,9 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                         </div>
                         <?php if (!empty($isRegistered)): ?>
                             <div class="flex items-center gap-2 text-[11px]">
-                                <span class="text-slate-500">Sisa Plafon Tersedia:</span>
+                                <span class="text-slate-500">Kuota Kredit Bulan Ini:</span>
                                 <strong class="px-2 py-0.5 rounded font-mono <?= $isSufficientCredit ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200' ?>">
-                                    <?= format_rupiah($availableCredit) ?>
+                                    <?= (int)($unpaidNotesCount ?? 0) ?> / <?= (int)($maxUnpaidLimit ?? 3) ?> Nota Belum Lunas
                                 </strong>
                             </div>
                         <?php else: ?>
@@ -161,49 +162,46 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                         <?php endif; ?>
                     </div>
 
-                    <!-- Visual Indicator Box When Registered Buyer Has Insufficient Credit Limit -->
+                    <!-- Visual Indicator Box When Registered Buyer Has Reached Unpaid Notes Limit -->
                     <?php if (!empty($isRegistered) && !$isSufficientCredit): ?>
                         <div class="p-4 rounded-2xl bg-rose-50/90 border-2 border-rose-300 text-xs space-y-3">
                             <div class="flex items-start gap-3">
                                 <span class="material-symbols-outlined text-rose-600 text-2xl mt-0.5">warning</span>
                                 <div class="flex-1 space-y-1">
                                     <div class="flex flex-wrap items-center justify-between gap-2">
-                                        <strong class="text-rose-950 font-extrabold text-sm">Plafon Kredit TOP Reguler Tidak Mencukupi!</strong>
+                                        <strong class="text-rose-950 font-extrabold text-sm">Batas Kredit Nota Tercapai (<?= (int)$unpaidNotesCount ?> dari <?= (int)$maxUnpaidLimit ?> Nota Belum Lunas)</strong>
                                         <span class="px-2.5 py-0.5 rounded-full bg-rose-600 text-white font-mono font-bold text-[11px]">
-                                            Kurang <?= format_rupiah($creditShortfall) ?>
+                                            Maksimal <?= (int)$maxUnpaidLimit ?> Nota / Bulan
                                         </span>
                                     </div>
                                     <p class="text-rose-800 leading-relaxed">
-                                        Nilai tagihan PO ini (<strong><?= format_rupiah($grandTotal) ?></strong>) melebihi sisa plafon kredit perusahaan Anda (<strong><?= format_rupiah($availableCredit) ?></strong> dari total limit <?= format_rupiah($creditLimit) ?>).
+                                        Sesuai kebijakan kredit tempo AkuAda, batas kredit diatur maksimal <strong><?= (int)$maxUnpaidLimit ?> nota yang belum terbayarkan dalam sebulan</strong>. Perusahaan Anda saat ini memiliki <strong><?= (int)$unpaidNotesCount ?> nota aktif yang belum lunas</strong>.
                                     </p>
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-rose-200/80 text-[11px]">
                                 <div class="p-2.5 rounded-xl bg-white border border-rose-200">
-                                    <span class="text-slate-400 block">Sisa Plafon Saat Ini:</span>
-                                    <strong class="font-mono text-slate-800"><?= format_rupiah($availableCredit) ?></strong>
+                                    <span class="text-slate-400 block">Nota Belum Lunas:</span>
+                                    <strong class="font-mono text-rose-900"><?= (int)$unpaidNotesCount ?> Nota</strong>
                                 </div>
                                 <div class="p-2.5 rounded-xl bg-white border border-rose-200">
-                                    <span class="text-slate-400 block">Total Tagihan PO Ini:</span>
-                                    <strong class="font-mono text-purple-900"><?= format_rupiah($grandTotal) ?></strong>
+                                    <span class="text-slate-400 block">Batas Maksimal:</span>
+                                    <strong class="font-mono text-slate-800"><?= (int)$maxUnpaidLimit ?> Nota / Bulan</strong>
                                 </div>
                                 <div class="p-2.5 rounded-xl bg-rose-100/80 border border-rose-300">
-                                    <span class="text-rose-700 font-semibold block">Selisih Kekurangan Limit:</span>
-                                    <strong class="font-mono text-rose-900"><?= format_rupiah($creditShortfall) ?></strong>
+                                    <span class="text-rose-700 font-semibold block">Sisa Kuota Kredit:</span>
+                                    <strong class="font-mono text-rose-900">0 Nota (Terkunci)</strong>
                                 </div>
                             </div>
 
                             <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
                                 <span class="text-[11px] text-rose-800 font-medium">
-                                    Pilih <strong>"Tetap Open PO (Pengajuan Over-Limit TOP)"</strong> di bawah, atau lunasi tagihan lama / ajukan kenaikan limit:
+                                    Pilih <strong>"Tetap Open PO (Pengajuan Over-Limit)"</strong> di bawah, atau selesaikan pelunasan tagihan PO sebelumnya:
                                 </span>
                                 <div class="flex items-center gap-2">
                                     <a href="<?= base_url('customer/payables') ?>" class="px-3 py-1.5 rounded-lg bg-white hover:bg-rose-100 text-rose-800 border border-rose-300 font-bold text-[11px] flex items-center gap-1 transition">
-                                        <span class="material-symbols-outlined text-[14px]">payments</span> Lunasi Tagihan Lama
-                                    </a>
-                                    <a href="<?= base_url('customer/credit-limit') ?>" class="px-3 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white font-bold text-[11px] flex items-center gap-1 transition">
-                                        <span class="material-symbols-outlined text-[14px]">trending_up</span> Naikkan Plafon
+                                        <span class="material-symbols-outlined text-[14px]">payments</span> Lunasi Tagihan Sebelumnya
                                     </a>
                                 </div>
                             </div>
@@ -222,7 +220,7 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                                     <div class="flex-1">
                                         <div class="flex items-center justify-between">
                                             <span class="font-bold text-slate-900 text-xs">Term of Payment <?= $topDay ?> Hari (TOP <?= $topDay ?>)<?= $isDefTop ? ' - Direkomendasikan' : '' ?></span>
-                                            <span class="badge-top text-[10px]">Tempo <?= $topDay ?> Hari • Plafon Cukup</span>
+                                            <span class="badge-top text-[10px]">Tempo <?= $topDay ?> Hari • Sisa Kuota (<?= (int)$remainingNotes ?> Nota)</span>
                                         </div>
                                         <p class="text-[11px] text-slate-500 mt-0.5">Pembayaran dilakukan maksimal <?= $topDay ?> hari kalender setelah Berita Acara Serah Terima (BAST) ditandatangani.</p>
                                     </div>
@@ -235,7 +233,7 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                                         <div class="flex flex-wrap items-center justify-between gap-1">
                                             <span class="font-bold text-slate-500 text-xs line-through">Term of Payment <?= $topDay ?> Hari (TOP <?= $topDay ?> Reguler)</span>
                                             <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-300 text-[10px] font-bold">
-                                                ⚠️ Plafon Tidak Cukup — Kurang <?= format_rupiah($creditShortfall) ?>
+                                                ⚠️ Batas <?= (int)$maxUnpaidLimit ?> Nota Tercapai (<?= (int)$unpaidNotesCount ?> Belum Lunas)
                                             </span>
                                         </div>
                                         <p class="text-[11px] text-rose-600/80 mt-0.5">Gunakan opsi <strong>Tetap Open PO (Pengajuan Over-Limit)</strong> di bawah jika ingin tetap menerbitkan PO dengan kredit tempo.</p>
@@ -274,7 +272,7 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                                     <div class="flex flex-wrap items-center justify-between gap-1">
                                         <span class="font-bold text-slate-500 text-xs line-through">Corporate Purchase Order (PO) On-Account</span>
                                         <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-300 text-[10px] font-bold">
-                                            ⚠️ Plafon Tidak Cukup — Kurang <?= format_rupiah($creditShortfall) ?>
+                                            ⚠️ Batas <?= (int)$maxUnpaidLimit ?> Nota Tercapai (<?= (int)$unpaidNotesCount ?> Belum Lunas)
                                         </span>
                                     </div>
                                 </div>
@@ -297,7 +295,7 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                                             </span>
                                         </div>
                                         <p class="text-[11px] text-amber-900 mt-1 leading-relaxed">
-                                            PO Anda <strong>tetap diterbitkan sekarang</strong> dan masuk ke antrean prioritas Superadmin AkuAda untuk persetujuan penambahan limit kredit sebesar <strong><?= format_rupiah($creditShortfall) ?></strong>.
+                                            PO Anda <strong>tetap diterbitkan sekarang</strong> dan masuk ke antrean prioritas Superadmin AkuAda untuk persetujuan penambahan kuota kredit nota di atas batas <?= (int)$maxUnpaidLimit ?> nota.
                                         </p>
                                     </div>
                                 </label>

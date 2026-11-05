@@ -449,9 +449,13 @@ class AdminController extends BaseController
         $returns = $returnModel->getReturnsByOrder((int)$id);
         $latestReturn = !empty($returns) ? $returns[0] : null;
 
+        $companyModel = new CompanyModel();
+        $vendorCompany = $companyModel->find($order['vendor_company_id']);
+
         return view('admin/order_detail', [
             'title' => 'Detail PO & Audit Log Transaksi #' . ($order['po_number'] ?? $order['order_number']) . ' - Superadmin AkuAda',
             'order'  => $order,
+            'vendorCompany' => $vendorCompany,
             'review'       => $review,
             'returns'      => $returns,
             'latestReturn' => $latestReturn,
@@ -950,6 +954,106 @@ class AdminController extends BaseController
             session()->setFlashdata('error', 'Bukti pembayaran PO ' . ($order['po_number'] ?? $order['order_number']) . ' telah ditolak. Alasan penolakan telah diteruskan ke Buyer.');
         }
 
+        return redirect()->back();
+    }
+
+    public function confirmBuyerPaymentDirect()
+    {
+        $orderId = (int)$this->request->getPost('order_id');
+        $orderModel = new OrderModel();
+        $order = $orderModel->find($orderId);
+
+        if (!$order) {
+            session()->setFlashdata('error', 'Pesanan tidak ditemukan.');
+            return redirect()->back();
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $paymentBank = $this->request->getPost('payment_bank') ?: ($order['buyer_payment_bank'] ?: 'Bank Mandiri (Escrow) AkuAda');
+        $paymentRef = $this->request->getPost('payment_ref') ?: ($order['buyer_payment_ref'] ?: ('VERIFIED-' . date('YmdHis')));
+
+        $orderModel->update($orderId, [
+            'payment_status'           => 'paid',
+            'buyer_paid_at'            => !empty($order['buyer_paid_at']) ? $order['buyer_paid_at'] : $now,
+            'buyer_payment_bank'       => $paymentBank,
+            'buyer_payment_ref'        => $paymentRef,
+            'payment_rejection_reason' => null,
+            'updated_at'               => $now,
+        ]);
+
+        $companyModel = new CompanyModel();
+        $company = $companyModel->find($order['customer_company_id']);
+        if ($company && (float)$company['credit_used_top'] > 0) {
+            $newUsed = max(0, (float)$company['credit_used_top'] - (float)$order['total_amount']);
+            $companyModel->update($company['id'], ['credit_used_top' => $newUsed]);
+        }
+
+        \App\Models\CoaModel::syncOrdersToJournals();
+
+        $logModel = new OrderStatusLogModel();
+        $logModel->logStatus(
+            $orderId,
+            $order['order_status'],
+            'Verifikasi Pelunasan Pembayaran Buyer Lunas',
+            'Pembayaran sebesar ' . format_rupiah($order['total_amount']) . ' via ' . $paymentBank . ' (Ref: ' . $paymentRef . ') telah diverifikasi sah & lunas oleh Tim Finance AkuAda.',
+            session('user_name') ?? 'Superadmin Finance AkuAda'
+        );
+
+        $cbAmount = process_buyer_order_cashback($orderId);
+        $cbMsg = ($cbAmount && $cbAmount > 0) ? ' & Cashback ' . format_rupiah($cbAmount) . ' otomatis dikreditkan ke saldo buyer!' : '';
+
+        session()->setFlashdata('success', 'Pembayaran Buyer sebesar ' . format_rupiah($order['total_amount']) . ' berhasil disahkan LUNAS!' . $cbMsg);
+        return redirect()->back();
+    }
+
+    public function rejectBuyerPaymentDirect()
+    {
+        return $this->rejectBuyerPayment();
+    }
+
+    public function payoutVendorDirect()
+    {
+        $orderId = (int)$this->request->getPost('order_id');
+        $orderModel = new OrderModel();
+        $order = $orderModel->find($orderId);
+
+        if (!$order) {
+            session()->setFlashdata('error', 'Pesanan tidak ditemukan.');
+            return redirect()->back();
+        }
+
+        $companyModel = new CompanyModel();
+        $vendor = $companyModel->find($order['vendor_company_id']);
+
+        $vendorBank = $this->request->getPost('payout_bank') ?: ($vendor['bank_name'] ?? 'Bank BCA Corporate');
+        $vendorAcc = $this->request->getPost('payout_account') ?: ($vendor['bank_account_number'] ?? '-');
+        $vendorHolder = $this->request->getPost('payout_holder') ?: ($vendor['bank_account_holder'] ?? ($vendor['company_name'] ?? 'Mitra Vendor'));
+        $payoutRef = $this->request->getPost('payout_ref') ?: ('PAYOUT-' . date('YmdHis'));
+
+        $now = date('Y-m-d H:i:s');
+        $fee = (float)($order['total_vendor_fee'] ?? 0);
+        $netTotal = (float)($order['vendor_net_payout'] ?? ($order['subtotal'] - $fee)) + (float)($order['ppn_amount'] ?? 0);
+
+        $orderModel->update($orderId, [
+            'vendor_payout_status' => 'paid',
+            'vendor_paid_at'       => $now,
+            'vendor_payout_bank'   => $vendorBank . ' (' . $vendorAcc . ' a/n ' . $vendorHolder . ')',
+            'vendor_payout_ref'    => $payoutRef,
+            'updated_at'           => $now,
+        ]);
+
+        \App\Models\CoaModel::syncOrdersToJournals();
+
+        $logModel = new OrderStatusLogModel();
+        $logModel->logStatus(
+            $orderId,
+            $order['order_status'],
+            'Pencairan Dana Settlement ke Rekening Vendor',
+            'AkuAda telah mentransfer hak bersih penjualan sebesar ' . format_rupiah($netTotal) . ' ke ' . $vendorBank . ' Rek. ' . $vendorAcc . ' a/n ' . $vendorHolder . ' (No. Ref: ' . $payoutRef . ').',
+            session('user_name') ?? 'Superadmin Finance AkuAda'
+        );
+
+        session()->setFlashdata('success', 'Dana hak bersih vendor sebesar ' . format_rupiah($netTotal) . ' berhasil dicairkan ke rekening ' . $vendorBank . '!');
         return redirect()->back();
     }
 

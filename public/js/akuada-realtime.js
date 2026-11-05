@@ -1,7 +1,7 @@
 /**
  * AkuAda Realtime Notification & Sound Engine
  * - Web Audio API synthetic chime (zero external dependencies)
- * - Browser Desktop Notifications + In-App Floating Toasts
+ * - Browser Desktop Notifications + In-App Floating Toasts with Mute Control
  * - Live Polling & Unread Badge Synchronizer for Admin, Vendor, and Customer
  */
 
@@ -135,6 +135,7 @@
 
             const iconName = type === 'order' ? 'receipt_long' : 'forum';
             const iconBg = type === 'order' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700';
+            const isMuted = AkuAdaAudio.isMuted();
 
             toast.innerHTML = `
                 <div class="w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center flex-shrink-0 font-bold shadow-xs">
@@ -148,9 +149,14 @@
                     <p class="text-[11px] text-slate-600 line-clamp-2 mt-0.5 leading-snug">${body}</p>
                     ${url ? `<a href="${url}" class="inline-flex items-center gap-1 text-[11px] font-bold ${type === 'order' ? 'text-blue-700 hover:text-blue-900' : 'text-purple-700 hover:text-purple-900'} mt-1.5 hover:underline">Lihat Detail ↗</a>` : ''}
                 </div>
-                <button type="button" class="text-slate-400 hover:text-slate-600 p-1 flex-shrink-0" onclick="this.parentElement.remove()">
-                    <span class="material-symbols-outlined text-[16px]">close</span>
-                </button>
+                <div class="flex flex-col items-center gap-1 flex-shrink-0">
+                    <button type="button" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100" title="${isMuted ? 'Suara Dinonaktifkan' : 'Bisukan Suara Notifikasi'}" onclick="AkuAdaAudio.toggleMute(); this.querySelector('span').textContent = AkuAdaAudio.isMuted() ? 'volume_off' : 'volume_up';">
+                        <span class="material-symbols-outlined text-[16px]">${isMuted ? 'volume_off' : 'volume_up'}</span>
+                    </button>
+                    <button type="button" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100" title="Tutup" onclick="this.closest('.pointer-events-auto').remove()">
+                        <span class="material-symbols-outlined text-[16px]">close</span>
+                    </button>
+                </div>
             `;
 
             if (url) {
@@ -182,16 +188,18 @@
     // 3. Realtime Engine & Polling Synchronizer
     const AkuAdaRealtime = {
         pollTimer: null,
-        intervalMs: 3500,
+        intervalMs: 5000,
         lastSeenMessageId: 0,
         lastSeenOrderId: 0,
         isFirstRun: true,
         originalTitle: document.title,
 
         init: function() {
-            // Restore last seen IDs from session to prevent spamming notification on fresh page navigation
-            this.lastSeenMessageId = parseInt(sessionStorage.getItem('akuada_last_msg_id') || '0', 10);
-            this.lastSeenOrderId   = parseInt(sessionStorage.getItem('akuada_last_order_id') || '0', 10);
+            // Restore last seen IDs from localStorage with sessionStorage fallback
+            const storedMsgId = localStorage.getItem('akuada_last_msg_id') || sessionStorage.getItem('akuada_last_msg_id') || '0';
+            const storedOrderId = localStorage.getItem('akuada_last_order_id') || sessionStorage.getItem('akuada_last_order_id') || '0';
+            this.lastSeenMessageId = parseInt(storedMsgId, 10) || 0;
+            this.lastSeenOrderId   = parseInt(storedOrderId, 10) || 0;
 
             // Ask notification permission on first interaction
             document.addEventListener('click', function() {
@@ -223,6 +231,7 @@
         },
 
         handlePayload: function(data) {
+            const self = this;
             const unreadCount = parseInt(data.unread_chat_count || 0, 10);
             const latestMsg   = data.latest_message;
             const latestOrder = data.latest_order;
@@ -233,59 +242,90 @@
 
             // 2. Handle New Incoming Chat Message
             if (latestMsg && latestMsg.id) {
-                if (this.lastSeenMessageId > 0 && latestMsg.id > this.lastSeenMessageId) {
-                    // New message arrived!
-                    AkuAdaAudio.playChime('chat');
+                const incomingMsgId = parseInt(latestMsg.id, 10);
+                if (this.lastSeenMessageId > 0 && incomingMsgId > this.lastSeenMessageId) {
+                    // Update tracker FIRST to ensure no alert/sound loops
+                    this.lastSeenMessageId = incomingMsgId;
+                    try {
+                        localStorage.setItem('akuada_last_msg_id', incomingMsgId);
+                        sessionStorage.setItem('akuada_last_msg_id', incomingMsgId);
+                    } catch (e) {}
 
-                    const chatUrl = (role === 'admin') ? '/admin/chat?key=' + encodeURIComponent(latestMsg.conversation_key)
-                                : ((role === 'vendor') ? '/vendor/chat?key=' + encodeURIComponent(latestMsg.conversation_key)
-                                : '/customer/chat?key=' + encodeURIComponent(latestMsg.conversation_key));
+                    try {
+                        AkuAdaAudio.playChime('chat');
 
-                    const senderTitle = 'Pesan Baru dari ' + (latestMsg.sender_company_name || latestMsg.sender_name);
-                    const snippet = (latestMsg.message || '').replace(/<[^>]*>?/gm, '');
+                        const chatUrl = (role === 'admin') ? '/admin/chat?key=' + encodeURIComponent(latestMsg.conversation_key)
+                                    : ((role === 'vendor') ? '/vendor/chat?key=' + encodeURIComponent(latestMsg.conversation_key)
+                                    : '/customer/chat?key=' + encodeURIComponent(latestMsg.conversation_key));
 
-                    AkuAdaNotify.showToast(senderTitle, snippet, chatUrl, 'chat');
-                    AkuAdaNotify.showDesktop(senderTitle, snippet, chatUrl);
+                        const senderTitle = 'Pesan Baru dari ' + (latestMsg.sender_company_name || latestMsg.sender_name);
+                        const snippet = (latestMsg.message || '').replace(/<[^>]*>?/gm, '');
 
-                    // If user is currently on chat page, trigger soft reload of messages!
-                    if (typeof window.loadMessages === 'function') {
-                        window.loadMessages(false);
+                        AkuAdaNotify.showToast(senderTitle, snippet, chatUrl, 'chat');
+                        AkuAdaNotify.showDesktop(senderTitle, snippet, chatUrl);
+
+                        // If user is currently on chat page, trigger soft reload of messages!
+                        if (typeof window.loadMessages === 'function') {
+                            window.loadMessages(false);
+                        }
+                    } catch (e) {
+                        console.warn('Chat notification error:', e);
                     }
+                } else {
+                    this.lastSeenMessageId = Math.max(this.lastSeenMessageId, incomingMsgId);
+                    try {
+                        localStorage.setItem('akuada_last_msg_id', this.lastSeenMessageId);
+                        sessionStorage.setItem('akuada_last_msg_id', this.lastSeenMessageId);
+                    } catch (e) {}
                 }
-                this.lastSeenMessageId = Math.max(this.lastSeenMessageId, latestMsg.id);
-                sessionStorage.setItem('akuada_last_msg_id', this.lastSeenMessageId);
             }
 
             // 3. Handle New Order / PO Creation
             if (latestOrder && latestOrder.id) {
-                if (this.lastSeenOrderId > 0 && latestOrder.id > this.lastSeenOrderId) {
-                    AkuAdaAudio.playChime('order');
+                const incomingOrderId = parseInt(latestOrder.id, 10);
+                if (this.lastSeenOrderId > 0 && incomingOrderId > this.lastSeenOrderId) {
+                    // Advance tracker FIRST so that any UI issue never causes repeated audio/toasts
+                    this.lastSeenOrderId = incomingOrderId;
+                    try {
+                        localStorage.setItem('akuada_last_order_id', incomingOrderId);
+                        sessionStorage.setItem('akuada_last_order_id', incomingOrderId);
+                    } catch (e) {}
 
-                    let orderUrl = '/';
-                    let orderTitle = 'Pesanan Purchase Order (PO) Baru!';
-                    let orderDesc = 'PO #' + (latestOrder.po_number || latestOrder.order_number) + ' diterbitkan sebesar Rp ' + (latestOrder.total_amount || 0).toLocaleString('id-ID');
+                    try {
+                        AkuAdaAudio.playChime('order');
 
-                    if (role === 'admin') {
-                        orderUrl = '/admin/transactions';
-                        orderTitle = '📢 PO Baru Masuk #' + (latestOrder.po_number || latestOrder.order_number);
-                        orderDesc = (latestOrder.buyer_name || 'Buyer') + ' menerbitkan PO ke ' + (latestOrder.vendor_name || 'Vendor');
-                    } else if (role === 'vendor') {
-                        orderUrl = '/vendor/orders/' + latestOrder.id;
-                        orderTitle = '🚚 PO Masuk Baru untuk Perusahaan Anda!';
-                        orderDesc = 'PO #' + (latestOrder.po_number || latestOrder.order_number) + ' siap diproses & disiapkan gudang.';
-                    } else if (role === 'customer') {
-                        orderUrl = '/customer/orders/' + latestOrder.id;
-                        orderTitle = '✅ PO Berhasil Diterbitkan #' + (latestOrder.po_number || latestOrder.order_number);
+                        let orderUrl = '/';
+                        let orderTitle = 'Pesanan Purchase Order (PO) Baru!';
+                        let orderDesc = 'PO #' + (latestOrder.po_number || latestOrder.order_number) + ' diterbitkan sebesar Rp ' + (latestOrder.total_amount || 0).toLocaleString('id-ID');
+
+                        if (role === 'admin') {
+                            orderUrl = '/admin/transactions';
+                            orderTitle = '📢 PO Baru Masuk #' + (latestOrder.po_number || latestOrder.order_number);
+                            orderDesc = (latestOrder.buyer_name || 'Buyer') + ' menerbitkan PO ke ' + (latestOrder.vendor_name || 'Vendor');
+                        } else if (role === 'vendor') {
+                            orderUrl = '/vendor/orders/' + latestOrder.id;
+                            orderTitle = '🚚 PO Masuk Baru untuk Perusahaan Anda!';
+                            orderDesc = 'PO #' + (latestOrder.po_number || latestOrder.order_number) + ' siap diproses & disiapkan gudang.';
+                        } else if (role === 'customer') {
+                            orderUrl = '/customer/orders/' + latestOrder.id;
+                            orderTitle = '✅ PO Berhasil Diterbitkan #' + (latestOrder.po_number || latestOrder.order_number);
+                        }
+
+                        AkuAdaNotify.showToast(orderTitle, orderDesc, orderUrl, 'order');
+                        AkuAdaNotify.showDesktop(orderTitle, orderDesc, orderUrl);
+
+                        // Safely show reload banner
+                        self.showPageReloadBanner(orderTitle, orderUrl);
+                    } catch (e) {
+                        console.warn('Order notification error:', e);
                     }
-
-                    AkuAdaNotify.showToast(orderTitle, orderDesc, orderUrl, 'order');
-                    AkuAdaNotify.showDesktop(orderTitle, orderDesc, orderUrl);
-
-                    // If currently on orders/transactions page, show live-update banner
-                    self.showPageReloadBanner(orderTitle, orderUrl);
+                } else {
+                    this.lastSeenOrderId = Math.max(this.lastSeenOrderId, incomingOrderId);
+                    try {
+                        localStorage.setItem('akuada_last_order_id', this.lastSeenOrderId);
+                        sessionStorage.setItem('akuada_last_order_id', this.lastSeenOrderId);
+                    } catch (e) {}
                 }
-                this.lastSeenOrderId = Math.max(this.lastSeenOrderId, latestOrder.id);
-                sessionStorage.setItem('akuada_last_order_id', this.lastSeenOrderId);
             }
 
             this.isFirstRun = false;
@@ -348,4 +388,3 @@
     }
 
 })(window);
-

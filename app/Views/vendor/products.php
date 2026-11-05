@@ -107,7 +107,7 @@
                                         <span>Edit</span>
                                     </a>
                                     <?php if (($p['status'] ?? 'active') === 'active'): ?>
-                                        <a href="<?= base_url('vendor/products/delete/' . $p['id']) ?>" onclick="return confirm('Nonaktifkan barang ini dari katalog?');" class="p-1.5 rounded-lg hover:bg-rose-50 text-rose-600 transition border border-rose-200" title="Nonaktifkan">
+                                        <a href="<?= base_url('vendor/products/delete/' . $p['id']) ?>" data-confirm="Nonaktifkan barang ini dari katalog?" class="p-1.5 rounded-lg hover:bg-rose-50 text-rose-600 transition border border-rose-200" title="Nonaktifkan">
                                             <span class="material-symbols-outlined text-[16px]">visibility_off</span>
                                         </a>
                                     <?php endif; ?>

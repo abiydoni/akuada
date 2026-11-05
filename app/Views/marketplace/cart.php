@@ -60,6 +60,7 @@
                             <!-- Qty Modifier & Subtotal -->
                             <div class="flex sm:flex-col items-end justify-between w-full sm:w-auto gap-3">
                                 <form action="<?= base_url('cart/update') ?>" method="POST" class="flex items-center border border-slate-300 rounded-lg overflow-hidden">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="product_id" value="<?= $productId ?>">
                                     <input type="number" name="qty" value="<?= $item['qty'] ?>" min="<?= $item['moq'] ?>" 
                                            class="w-16 text-center text-xs font-bold text-slate-800 border-none focus:ring-0 py-1" onchange="this.form.submit()">

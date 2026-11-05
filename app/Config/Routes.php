@@ -76,9 +76,14 @@ $routes->group('admin', function ($routes) {
     $routes->post('debts/confirm-buyer', 'AdminController::confirmBuyerPayment');
     $routes->post('debts/reject-buyer', 'AdminController::rejectBuyerPayment');
     $routes->post('debts/pay-vendor', 'AdminController::payVendorDebt');
+    $routes->post('orders/confirm-buyer-payment', 'AdminController::confirmBuyerPaymentDirect');
+    $routes->post('orders/reject-buyer-payment', 'AdminController::rejectBuyerPaymentDirect');
+    $routes->post('orders/payout-vendor-direct', 'AdminController::payoutVendorDirect');
     $routes->get('orders/bast/(:num)', 'AdminController::bast/$1');
     $routes->get('orders/tax-invoice/(:num)', 'AdminController::taxInvoice/$1');
     $routes->get('chat', 'AdminController::chatCenter');
+    $routes->get('buyer-withdrawals', 'AdminController::buyerWithdrawals');
+    $routes->post('buyer-withdrawals/process', 'AdminController::processBuyerWithdrawal');
 
     // 9 & 10. RFQs & RFQ Items
     $routes->get('rfqs', 'AdminController::rfqs');
@@ -141,6 +146,8 @@ $routes->group('vendor', function ($routes) {
     $routes->post('company-profile/update', 'VendorController::updateCompanyProfile');
     $routes->get('settlements', 'VendorController::settlements');
     $routes->post('settlements/update-bank', 'VendorController::updateBankAccount');
+    $routes->post('orders/request-payout', 'VendorController::requestPayout');
+    $routes->post('settlements/request-payout', 'VendorController::requestPayout');
 });
 
 // 7. Dashboard Customer (Corporate Buyer / Perusahaan)
@@ -161,12 +168,16 @@ $routes->group('customer', function ($routes) {
     $routes->get('rfqs', 'CustomerController::rfqs');
     $routes->get('rfqs/accept/(:num)', 'CustomerController::acceptQuote/$1');
     $routes->get('tax-invoices', 'CustomerController::taxInvoices');
+    $routes->get('cashback', 'CustomerController::cashback');
+    $routes->post('cashback/withdraw', 'CustomerController::requestWithdrawal');
     $routes->get('credit-limit', 'CustomerController::creditLimit');
     $routes->post('credit-limit/request', 'CustomerController::requestLimitIncrease');
     $routes->get('company-profile', 'CustomerController::companyProfile');
     $routes->post('company-profile/update', 'CustomerController::updateCompanyProfile');
     $routes->get('payables', 'CustomerController::payables');
     $routes->post('payables/pay', 'CustomerController::payDebt');
+    $routes->post('orders/pay', 'CustomerController::payOrderDirect');
+    $routes->post('orders/simulate-pay', 'CustomerController::simulatePayOrder');
 });
 
 // 8. Live Chat & Messaging API

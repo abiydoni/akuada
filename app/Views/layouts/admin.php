@@ -111,7 +111,23 @@ $appName = get_system_setting('app_name', 'AkuAda');
                             <span class="material-symbols-outlined text-[18px]">store</span> Verifikasi Mitra Vendor
                         </a>
                         <a href="<?= base_url('admin/buyers') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'admin/buyers') ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
-                            <span class="material-symbols-outlined text-[18px]">corporate_fare</span> Buyer & Limit TOP
+                            <span class="material-symbols-outlined text-[18px]">corporate_fare</span> Buyer & Saldo Cashback
+                        </a>
+                        <a href="<?= base_url('admin/buyer-withdrawals') ?>" class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'admin/buyer-withdrawals') ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
+                            <div class="flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-[18px]">savings</span>
+                                <span>Pencairan Cashback Buyer</span>
+                            </div>
+                            <?php 
+                                try {
+                                    $pendingWdCount = (new \App\Models\BuyerWithdrawalModel())->where('status', 'pending')->countAllResults();
+                                    if ($pendingWdCount > 0): 
+                            ?>
+                                <span class="px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[10px] font-extrabold"><?= $pendingWdCount ?></span>
+                            <?php 
+                                    endif;
+                                } catch (\Throwable $e) {}
+                            ?>
                         </a>
                         <a href="<?= base_url('admin/products') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'admin/products') ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">inventory_2</span> Katalog & Master Barang

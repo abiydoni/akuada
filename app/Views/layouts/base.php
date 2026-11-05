@@ -74,8 +74,8 @@
     
     <!-- Centralized AkuAda Design System Stylesheet -->
     <link rel="stylesheet" href="<?= base_url('css/akuada-theme.css') ?>">
-    <script src="<?= base_url('js/akuada-swal.js') ?>"></script>
-    <script src="<?= base_url('js/akuada-realtime.js') ?>"></script>
+    <script src="<?= base_url('js/akuada-swal.js?v=' . filemtime(FCPATH . 'js/akuada-swal.js')) ?>"></script>
+    <script src="<?= base_url('js/akuada-realtime.js?v=' . filemtime(FCPATH . 'js/akuada-realtime.js')) ?>"></script>
 </head>
 <body class="h-full flex flex-col font-sans antialiased text-slate-800 bg-slate-50 selection:bg-pink-500 selection:text-white">
 
@@ -121,6 +121,12 @@
             <?php endif; ?>
             <?php if (session()->getFlashdata('error')): ?>
                 AkuAdaAlert.error('Perhatian!', '<?= addslashes(session()->getFlashdata('error')) ?>');
+            <?php endif; ?>
+            <?php if (session()->getFlashdata('warning')): ?>
+                AkuAdaAlert.warning('Peringatan', '<?= addslashes(session()->getFlashdata('warning')) ?>');
+            <?php endif; ?>
+            <?php if (session()->getFlashdata('info')): ?>
+                AkuAdaAlert.toast('info', '<?= addslashes(session()->getFlashdata('info')) ?>');
             <?php endif; ?>
             <?php if (session()->getFlashdata('toast')): ?>
                 AkuAdaAlert.toast('success', '<?= addslashes(session()->getFlashdata('toast')) ?>');

@@ -88,9 +88,13 @@ class VendorController extends BaseController
         $returns = $returnModel->getReturnsByOrder((int)$id);
         $latestReturn = !empty($returns) ? $returns[0] : null;
 
+        $companyModel = new CompanyModel();
+        $company = $companyModel->find($order['vendor_company_id']);
+
         return view('vendor/order_detail', [
             'title'        => 'Detail Pesanan PO #' . ($order['po_number'] ?? $order['order_number']) . ' - Vendor AkuAda',
             'order'        => $order,
+            'company'      => $company,
             'review'       => $review,
             'returns'      => $returns,
             'latestReturn' => $latestReturn,
@@ -800,5 +804,45 @@ class VendorController extends BaseController
             'buyers'  => [],
             'orders'  => $orders,
         ]);
+    }
+
+    public function requestPayout()
+    {
+        $vendorId = $this->getVendorCompanyId();
+        $orderId = (int)$this->request->getPost('order_id');
+
+        $orderModel = new OrderModel();
+        $order = $orderModel->find($orderId);
+
+        if (!$order || (int)$order['vendor_company_id'] !== $vendorId) {
+            session()->setFlashdata('error', 'Pesanan tidak ditemukan atau Anda tidak memiliki hak akses.');
+            return redirect()->back();
+        }
+
+        if (($order['vendor_payout_status'] ?? 'unpaid') === 'paid') {
+            session()->setFlashdata('info', 'Dana untuk pesanan ini telah dicairkan oleh AkuAda.');
+            return redirect()->back();
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $fee = (float)($order['total_vendor_fee'] ?? 0);
+        $net = (float)($order['vendor_net_payout'] ?? ($order['subtotal'] - $fee)) + (float)($order['ppn_amount'] ?? 0);
+
+        $orderModel->update($orderId, [
+            'vendor_payout_status' => 'pending_payout',
+            'updated_at'           => $now,
+        ]);
+
+        $logModel = new \App\Models\OrderStatusLogModel();
+        $logModel->logStatus(
+            $orderId,
+            $order['order_status'],
+            'Pengajuan Pencairan Dana Settlement Vendor',
+            'Vendor mengajukan permohonan pencairan dana penjualan senilai ' . format_rupiah($net) . ' ke rekening perusahaan. Menunggu transfer oleh Tim Finance AkuAda.',
+            session('user_name') ?? 'Mitra Vendor'
+        );
+
+        session()->setFlashdata('success', 'Pengajuan pencairan dana sebesar ' . format_rupiah($net) . ' berhasil dikirimkan ke Tim Finance AkuAda!');
+        return redirect()->back();
     }
 }

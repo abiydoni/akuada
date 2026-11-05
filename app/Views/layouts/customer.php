@@ -47,20 +47,52 @@ $appName         = get_system_setting('app_name', 'AkuAda');
         <aside class="w-full md:w-64 flex-shrink-0">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 space-y-6 sticky top-24">
                 
-                <!-- TOP Credit Plafon Status Card -->
-                <div class="p-3.5 rounded-xl bg-gradient-to-br from-purple-50 via-pink-50/50 to-white border border-purple-200">
+                <!-- Buyer Cashback Balance Card -->
+                <div class="p-3.5 rounded-xl bg-gradient-to-br from-purple-50 via-pink-50/50 to-white border border-purple-200 shadow-2xs">
                     <div class="flex items-center justify-between text-xs mb-1">
-                        <span class="font-bold text-purple-900">Plafon Kredit TOP</span>
-                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-200/60 text-purple-800">Tempo Aktif</span>
+                        <span class="font-bold text-purple-900 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[15px] text-pink-600">savings</span>
+                            Saldo Cashback
+                        </span>
+                        <span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-pink-100 text-pink-700 border border-pink-200">
+                            <?= esc(get_buyer_cashback_rate()) ?>% Lunas
+                        </span>
                     </div>
-                    <p class="text-sm font-extrabold text-slate-800"><?= format_rupiah($creditRemaining) ?></p>
-                    <p class="text-[10px] text-slate-500 mb-2">Sisa dari <?= format_rupiah($creditLimit) ?></p>
+                    <p class="text-base font-black font-mono text-purple-950 mt-1">
+                        <?= format_rupiah($buyerInfo['cashback_balance'] ?? 0) ?>
+                    </p>
+                    <p class="text-[10px] text-slate-500 mt-0.5 mb-2 leading-tight">Akumulasi reward transaksi PO lunas</p>
+                    <div class="pt-2 border-t border-purple-100 flex items-center justify-between text-[11px]">
+                        <span class="text-slate-400 text-[10px]">Bisa ditarik ke bank</span>
+                        <a href="<?= base_url('customer/cashback') ?>" class="font-bold text-pink-600 hover:text-pink-700 hover:underline flex items-center gap-0.5">
+                            Tarik Saldo &rarr;
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Monthly Credit Quota (Batas Nota Belum Lunas) -->
+                <?php
+                    $bCompanyId = session('company_id');
+                    $activeUnpaidNotes = $bCompanyId ? get_buyer_unpaid_notes_count((int)$bCompanyId) : 0;
+                    $monthlyNotesLimit = get_max_unpaid_notes_limit();
+                    $hasNotesQuota = ($activeUnpaidNotes < $monthlyNotesLimit);
+                ?>
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs space-y-1.5">
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="font-bold text-slate-700 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px] text-purple-600">receipt_long</span>
+                            Batas Kredit Nota
+                        </span>
+                        <span class="text-[10px] font-bold px-1.5 py-0.2 rounded font-mono <?= $hasNotesQuota ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800' ?>">
+                            <?= $activeUnpaidNotes ?> / <?= $monthlyNotesLimit ?> Nota
+                        </span>
+                    </div>
                     <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                        <div class="bg-gradient-to-r from-purple-600 to-pink-500 h-1.5 rounded-full" style="width: <?= min(100, $percentage) ?>%"></div>
+                        <div class="<?= $hasNotesQuota ? 'bg-purple-600' : 'bg-rose-600' ?> h-1.5 rounded-full" style="width: <?= min(100, round(($activeUnpaidNotes / $monthlyNotesLimit) * 100)) ?>%"></div>
                     </div>
-                    <div class="flex justify-between items-center text-[10px] text-slate-500 mt-1 font-medium">
-                        <span>Terpakai <?= $percentage ?>%</span>
-                        <a href="<?= base_url('customer/credit-limit') ?>" class="text-purple-700 hover:underline">Naikkan Limit</a>
+                    <div class="flex justify-between items-center text-[10px] text-slate-500 font-medium pt-0.5">
+                        <span><?= $hasNotesQuota ? 'Sisa ' . ($monthlyNotesLimit - $activeUnpaidNotes) . ' nota bulan ini' : 'Batas 3 nota tercapai' ?></span>
+                        <a href="<?= base_url('customer/payables') ?>" class="text-purple-700 hover:underline">Bayar Tagihan</a>
                     </div>
                 </div>
 
@@ -85,6 +117,15 @@ $appName         = get_system_setting('app_name', 'AkuAda');
                         </a>
                         <a href="<?= base_url('customer/payables') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'customer/payables') ? 'bg-pink-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">payments</span> Tagihan & Bayar Hutang TOP
+                        </a>
+                        <a href="<?= base_url('customer/cashback') ?>" class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'customer/cashback') ? 'bg-pink-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
+                            <div class="flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-[18px]">savings</span>
+                                <span>Saldo Cashback & Tarik Dana</span>
+                            </div>
+                            <?php if (!empty($buyerInfo['cashback_balance']) && $buyerInfo['cashback_balance'] > 0): ?>
+                                <span class="px-1.5 py-0.2 rounded-full bg-emerald-500 text-white text-[9px] font-mono font-black">ADA SALDO</span>
+                            <?php endif; ?>
                         </a>
 
                         <a href="<?= base_url('customer/rfqs') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'customer/rfqs') ? 'bg-pink-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">

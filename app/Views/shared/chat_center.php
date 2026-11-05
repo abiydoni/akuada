@@ -575,14 +575,22 @@ if (!$activeThread && !empty($threads)) {
                 loadMessages(false);
                 setTimeout(scrollMessagesToBottom, 150);
             } else {
-                alert(data.message || 'Gagal mengirim pesan.');
+                if (window.AkuAdaAlert) {
+                    AkuAdaAlert.toast('error', data.message || 'Gagal mengirim pesan.');
+                } else {
+                    alert(data.message || 'Gagal mengirim pesan.');
+                }
             }
         })
         .catch(err => {
             if (sendBtn) sendBtn.disabled = false;
             if (indicator) indicator.classList.add('hidden');
             console.error('Send message error:', err);
-            alert('Terjadi kesalahan saat mengirim pesan.');
+            if (window.AkuAdaAlert) {
+                AkuAdaAlert.toast('error', 'Terjadi kesalahan saat mengirim pesan.');
+            } else {
+                alert('Terjadi kesalahan saat mengirim pesan.');
+            }
         });
     }
 
@@ -653,7 +661,11 @@ if (!$activeThread && !empty($threads)) {
         const message = document.getElementById('modalMessageInput').value.trim();
 
         if (!recipientVal || !message) {
-            alert('Silakan pilih pihak tujuan dan masukkan pesan pertama.');
+            if (window.AkuAdaAlert) {
+                AkuAdaAlert.toast('warning', 'Silakan pilih pihak tujuan dan masukkan pesan pertama.');
+            } else {
+                alert('Silakan pilih pihak tujuan dan masukkan pesan pertama.');
+            }
             return;
         }
 
@@ -694,12 +706,20 @@ if (!$activeThread && !empty($threads)) {
                 // Redirect or reload with new key
                 window.location.href = '<?= current_url() ?>?key=' + encodeURIComponent(convKey);
             } else {
-                alert(data.message || 'Gagal memulai chat.');
+                if (window.AkuAdaAlert) {
+                    AkuAdaAlert.toast('error', data.message || 'Gagal memulai chat.');
+                } else {
+                    alert(data.message || 'Gagal memulai chat.');
+                }
             }
         })
         .catch(err => {
             console.error('Start chat error:', err);
-            alert('Terjadi kesalahan saat memulai chat.');
+            if (window.AkuAdaAlert) {
+                AkuAdaAlert.toast('error', 'Terjadi kesalahan saat memulai chat.');
+            } else {
+                alert('Terjadi kesalahan saat memulai chat.');
+            }
         });
     }
 </script>

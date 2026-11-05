@@ -618,20 +618,118 @@ class CustomerController extends BaseController
         ]);
     }
 
-    public function creditLimit()
+    public function cashback()
     {
         $buyerId = $this->getBuyerCompanyId();
         $companyModel = new CompanyModel();
         $company = $companyModel->find($buyerId);
 
-        $rawReq = get_system_setting('credit_req_company_' . $buyerId, '');
-        $pendingRequest = $rawReq ? json_decode((string)$rawReq, true) : null;
+        $withdrawalModel = new \App\Models\BuyerWithdrawalModel();
+        $withdrawals = $withdrawalModel->getWithdrawalsWithCompany($buyerId);
 
-        return view('customer/credit_limit', [
-            'title'          => 'Pengajuan Plafon Kredit TOP - AkuAda B2B',
-            'company'        => $company,
-            'pendingRequest' => $pendingRequest,
+        $mutationModel = new \App\Models\BuyerCashbackMutationModel();
+        $mutations = $mutationModel->getCompanyMutations($buyerId);
+
+        $cashbackBalance = (float)($company['cashback_balance'] ?? 0);
+        $totalEarned = 0;
+        $totalWithdrawn = 0;
+        $pendingWithdrawal = 0;
+
+        foreach ($mutations as $m) {
+            if ($m['type'] === 'credit') {
+                $totalEarned += (float)$m['amount'];
+            }
+        }
+        foreach ($withdrawals as $w) {
+            if ($w['status'] === 'completed') {
+                $totalWithdrawn += (float)$w['amount'];
+            } elseif ($w['status'] === 'pending') {
+                $pendingWithdrawal += (float)$w['amount'];
+            }
+        }
+
+        $cashbackRate = get_buyer_cashback_rate();
+
+        return view('customer/cashback', [
+            'title'             => 'Saldo Cashback & Penarikan Dana - AkuAda B2B',
+            'company'           => $company,
+            'cashbackBalance'   => $cashbackBalance,
+            'totalEarned'       => $totalEarned,
+            'totalWithdrawn'    => $totalWithdrawn,
+            'pendingWithdrawal' => $pendingWithdrawal,
+            'withdrawals'       => $withdrawals,
+            'mutations'         => $mutations,
+            'cashbackRate'      => $cashbackRate,
         ]);
+    }
+
+    public function requestWithdrawal()
+    {
+        $buyerId = $this->getBuyerCompanyId();
+        $companyModel = new CompanyModel();
+        $company = $companyModel->find($buyerId);
+
+        // Aturan Keras: Kecuali buyer yang tidak terdaftar, mereka tidak akan menerima apa-apa
+        if (!$company || (int)($company['is_verified'] ?? 0) !== 1) {
+            session()->setFlashdata('error', 'Fasilitas saldo cashback dan penarikan dana hanya tersedia untuk akun perusahaan pembeli resmi yang telah terdaftar dan diverifikasi oleh AkuAda.');
+            return redirect()->to('/customer/cashback');
+        }
+
+        $amount = (float)$this->request->getPost('amount');
+        $currentBalance = (float)($company['cashback_balance'] ?? 0);
+
+        if ($amount <= 0) {
+            session()->setFlashdata('error', 'Nominal penarikan harus lebih besar dari Rp 0.');
+            return redirect()->to('/customer/cashback');
+        }
+
+        if ($amount > $currentBalance) {
+            session()->setFlashdata('error', 'Nominal penarikan (' . format_rupiah($amount) . ') melebihi saldo cashback Anda saat ini (' . format_rupiah($currentBalance) . ').');
+            return redirect()->to('/customer/cashback');
+        }
+
+        $bankName = trim((string)$this->request->getPost('bank_name'));
+        $accountNumber = trim((string)$this->request->getPost('bank_account_number'));
+        $accountHolder = trim((string)$this->request->getPost('bank_account_holder'));
+        $notes = trim((string)$this->request->getPost('buyer_notes'));
+
+        if (empty($bankName) || empty($accountNumber) || empty($accountHolder)) {
+            session()->setFlashdata('error', 'Harap lengkapi informasi rekening bank tujuan pencairan.');
+            return redirect()->to('/customer/cashback');
+        }
+
+        // Simpan sebagai default bank company jika sebelumnya belum ada
+        if (empty($company['bank_name']) || empty($company['bank_account_number'])) {
+            $companyModel->update($buyerId, [
+                'bank_name'           => $bankName,
+                'bank_account_number' => $accountNumber,
+                'bank_account_holder' => $accountHolder,
+            ]);
+        }
+
+        $withdrawalNumber = 'WD-' . date('Ym') . '-' . sprintf('%04d', rand(100, 9999));
+        $withdrawalModel = new \App\Models\BuyerWithdrawalModel();
+        $withdrawalModel->insert([
+            'withdrawal_number'   => $withdrawalNumber,
+            'company_id'          => $buyerId,
+            'user_id'             => session('user_id'),
+            'amount'              => $amount,
+            'bank_name'           => $bankName,
+            'bank_account_number' => $accountNumber,
+            'bank_account_holder' => $accountHolder,
+            'status'              => 'pending',
+            'buyer_notes'         => $notes,
+            'created_at'          => date('Y-m-d H:i:s'),
+            'updated_at'          => date('Y-m-d H:i:s'),
+        ]);
+
+        session()->setFlashdata('success', 'Permintaan penarikan saldo cashback #' . $withdrawalNumber . ' sebesar ' . format_rupiah($amount) . ' berhasil diajukan! Finance AkuAda akan segera memproses transfer ke rekening ' . $bankName . ' (' . $accountNumber . ' a/n ' . $accountHolder . ').');
+        return redirect()->to('/customer/cashback');
+    }
+
+    public function creditLimit()
+    {
+        return redirect()->to('/customer/cashback');
     }
 
     public function requestLimitIncrease()
@@ -796,6 +894,118 @@ class CustomerController extends BaseController
 
         session()->setFlashdata('success', 'Konfirmasi pelunasan tagihan PO ' . ($order['po_number'] ?? $order['order_number']) . ' berhasil dikirimkan! Tim Finance AkuAda akan memverifikasi mutasi rekening koran untuk pengesahan status LUNAS & pemulihan plafon TOP.');
         return redirect()->to('/customer/payables');
+    }
+
+    public function payOrderDirect()
+    {
+        $orderId = (int)$this->request->getPost('order_id');
+        $paymentBank = $this->request->getPost('payment_bank') ?: 'Bank Mandiri (Escrow) AkuAda';
+        $paymentRef = trim((string)$this->request->getPost('payment_ref')) ?: ('TRF-' . date('YmdHis'));
+        $senderBank = trim((string)$this->request->getPost('buyer_sender_bank')) ?: 'Transfer Bank / Virtual Account';
+        $senderAccName = trim((string)$this->request->getPost('buyer_sender_account_name')) ?: (session('company_name') ?? 'Corporate Buyer');
+        $senderAccNo = trim((string)$this->request->getPost('buyer_sender_account_number')) ?: '-';
+        $paymentNotes = trim((string)$this->request->getPost('buyer_payment_notes'));
+
+        $orderModel = new OrderModel();
+        $order = $orderModel->find($orderId);
+
+        if (!$order) {
+            session()->setFlashdata('error', 'Tagihan PO tidak ditemukan.');
+            return redirect()->back();
+        }
+
+        $proofUrl = null;
+        $file = $this->request->getFile('payment_proof_file');
+        if ($file && $file->isValid() && !$file->hasMoved()) {
+            $ext = $file->getExtension();
+            $fileName = 'proof_' . $orderId . '_' . date('YmdHis') . '.' . $ext;
+            $uploadPath = FCPATH . 'uploads/payments';
+            if (!is_dir($uploadPath)) {
+                mkdir($uploadPath, 0777, true);
+            }
+            $file->move($uploadPath, $fileName);
+            $proofUrl = base_url('uploads/payments/' . $fileName);
+        } else {
+            $proofUrl = $this->request->getPost('payment_proof_url') ?: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80';
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $orderModel->update($orderId, [
+            'payment_status'              => 'pending_approval',
+            'buyer_paid_at'               => $now,
+            'buyer_payment_bank'          => $paymentBank,
+            'buyer_payment_ref'           => $paymentRef,
+            'buyer_sender_bank'           => $senderBank,
+            'buyer_sender_account_name'   => $senderAccName,
+            'buyer_sender_account_number' => $senderAccNo,
+            'buyer_payment_proof'         => $proofUrl,
+            'buyer_payment_amount'        => (float)$order['total_amount'],
+            'buyer_payment_notes'         => $paymentNotes,
+            'payment_rejection_reason'    => null,
+            'updated_at'                  => $now,
+        ]);
+
+        $logModel = new \App\Models\OrderStatusLogModel();
+        $logModel->logStatus(
+            $orderId,
+            $order['order_status'],
+            'Konfirmasi Pembayaran Dikirimkan Buyer',
+            'Pembeli mengonfirmasi pelunasan tagihan sebesar ' . format_rupiah($order['total_amount']) . ' ke ' . $paymentBank . ' dengan No. Ref: ' . $paymentRef . '. Menunggu verifikasi mutasi oleh Finance AkuAda.',
+            session('user_name') ?? 'Corporate Buyer'
+        );
+
+        session()->setFlashdata('success', 'Konfirmasi pembayaran PO #' . ($order['po_number'] ?? $order['order_number']) . ' berhasil dikirimkan! Tim Finance AkuAda akan segera memverifikasi mutasi rekening koran.');
+        return redirect()->to('/customer/orders/' . $orderId);
+    }
+
+    public function simulatePayOrder()
+    {
+        $orderId = (int)$this->request->getPost('order_id');
+        $orderModel = new OrderModel();
+        $order = $orderModel->find($orderId);
+
+        if (!$order) {
+            session()->setFlashdata('error', 'Pesanan tidak ditemukan.');
+            return redirect()->back();
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $paymentBank = 'Bank Virtual Account (Instant Payment)';
+        $paymentRef = 'VA-AUTOPAID-' . date('YmdHis');
+
+        $orderModel->update($orderId, [
+            'payment_status'              => 'paid',
+            'buyer_paid_at'               => $now,
+            'buyer_payment_bank'          => $paymentBank,
+            'buyer_payment_ref'           => $paymentRef,
+            'buyer_payment_amount'        => (float)$order['total_amount'],
+            'payment_rejection_reason'    => null,
+            'updated_at'                  => $now,
+        ]);
+
+        $companyModel = new CompanyModel();
+        $company = $companyModel->find($order['customer_company_id']);
+        if ($company && (float)$company['credit_used_top'] > 0) {
+            $newUsed = max(0, (float)$company['credit_used_top'] - (float)$order['total_amount']);
+            $companyModel->update($company['id'], ['credit_used_top' => $newUsed]);
+        }
+
+        \App\Models\CoaModel::syncOrdersToJournals();
+
+        $logModel = new \App\Models\OrderStatusLogModel();
+        $logModel->logStatus(
+            $orderId,
+            $order['order_status'],
+            'Pembayaran Tagihan Lunas (Virtual Account)',
+            'Tagihan PO sebesar ' . format_rupiah($order['total_amount']) . ' telah dibayar lunas otomatis via ' . $paymentBank . ' (Ref: ' . $paymentRef . ').',
+            session('user_name') ?? 'Corporate Buyer'
+        );
+
+        $cbAmount = process_buyer_order_cashback($orderId);
+        $cbMsg = ($cbAmount && $cbAmount > 0) ? ' & Cashback ' . format_rupiah($cbAmount) . ' berhasil dikreditkan ke saldo akun Anda!' : '';
+
+        session()->setFlashdata('success', 'Pembayaran tagihan PO sebesar ' . format_rupiah($order['total_amount']) . ' berhasil diselesaikan & LUNAS!' . $cbMsg);
+        return redirect()->to('/customer/orders/' . $orderId);
     }
 
     public function chatCenter()

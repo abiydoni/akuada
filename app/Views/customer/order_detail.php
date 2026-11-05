@@ -63,6 +63,188 @@
         </div>
     </div>
 
+    <!-- 0. KARTU TAGIHAN & PEMBAYARAN RESMI AKUADA (SIMPLE & EASY PAYMENT) -->
+    <?php
+        $payStatus = $order['payment_status'] ?? 'unpaid';
+        $b1Name = get_system_setting('inv_bank1_name', 'Bank Mandiri (Escrow)');
+        $b1No   = get_system_setting('inv_bank1_number', '122-00-1122334-5');
+        $b1Holder = get_system_setting('inv_bank1_holder', 'PT AkuAda Indonesia');
+
+        $b2Name = get_system_setting('inv_bank2_name', 'Bank BCA (Escrow)');
+        $b2No   = get_system_setting('inv_bank2_number', '535-088-9900');
+        $b2Holder = get_system_setting('inv_bank2_holder', 'PT AkuAda Indonesia');
+
+        $b3Name = get_system_setting('inv_bank3_name', 'Bank BNI Corporate VA');
+        $b3No   = get_system_setting('inv_bank3_number', '8809-1122-3344');
+        $b3Holder = get_system_setting('inv_bank3_holder', 'AkuAda - ' . ($order['po_number'] ?? 'PO'));
+    ?>
+
+    <?php if ($payStatus === 'paid'): ?>
+        <!-- State 1: SUDAH LUNAS -->
+        <div class="bg-gradient-to-r from-emerald-50 via-teal-50 to-white rounded-3xl border-2 border-emerald-300 p-6 shadow-md">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-md">
+                        <span class="material-symbols-outlined text-[28px]">verified</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-base font-extrabold text-emerald-950">Pembayaran Tagihan PO Lunas Terverifikasi</h3>
+                            <span class="px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-black uppercase">LUNAS</span>
+                        </div>
+                        <p class="text-xs text-emerald-800 mt-0.5">
+                            Total tagihan <strong><?= format_rupiah($order['total_amount']) ?></strong> telah lunas diterima oleh AkuAda via <strong><?= esc($order['buyer_payment_bank'] ?? 'Transfer Bank') ?></strong> (Ref: <span class="font-mono"><?= esc($order['buyer_payment_ref'] ?? '-') ?></span>) pada <?= !empty($order['buyer_paid_at']) ? date('d M Y, H:i', strtotime($order['buyer_paid_at'])) . ' WIB' : 'hari ini' ?>.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a href="<?= base_url('customer/orders/invoice/' . $order['id']) ?>" target="_blank" class="px-4 py-2 rounded-xl bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold text-xs flex items-center gap-1.5 shadow-sm">
+                        <span class="material-symbols-outlined text-[16px]">receipt</span>
+                        <span>Lihat Faktur Lunas</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    <?php elseif ($payStatus === 'pending_approval'): ?>
+        <!-- State 2: MENUNGGU VERIFIKASI -->
+        <div class="bg-gradient-to-r from-blue-50 via-indigo-50 to-white rounded-3xl border-2 border-blue-300 p-6 shadow-md">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-md">
+                        <span class="material-symbols-outlined text-[28px] animate-spin">sync</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-base font-extrabold text-blue-950">Pembayaran Sedang Diverifikasi Tim Finance</h3>
+                            <span class="px-2.5 py-0.5 rounded-full bg-blue-200 text-blue-900 text-[10px] font-black uppercase animate-pulse">Menunggu Verifikasi</span>
+                        </div>
+                        <p class="text-xs text-blue-800 mt-0.5">
+                            Konfirmasi pembayaran sebesar <strong><?= format_rupiah($order['total_amount']) ?></strong> ke <strong><?= esc($order['buyer_payment_bank'] ?? 'Rekening AkuAda') ?></strong> telah diterima. Tim Finance AkuAda sedang memverifikasi mutasi rekening koran.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <?php if (!empty($order['buyer_payment_proof'])): ?>
+                        <a href="<?= esc($order['buyer_payment_proof']) ?>" target="_blank" class="px-3.5 py-2 rounded-xl bg-white hover:bg-blue-50 text-blue-800 border border-blue-300 font-bold text-xs flex items-center gap-1 shadow-sm">
+                            <span class="material-symbols-outlined text-[16px]">image</span>
+                            <span>Lihat Bukti Transfer</span>
+                        </a>
+                    <?php endif; ?>
+                    <button type="button" onclick="openDirectPaymentModal()" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm">
+                        <span class="material-symbols-outlined text-[16px]">edit</span>
+                        <span>Upload Ulang Bukti</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    <?php else: ?>
+        <!-- State 3: BELUM BAYAR (UNPAID / OVERDUE) - TAMPILKAN INSTRUKSI TRANSFER SANGAT JELAS -->
+        <div class="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-7 text-white shadow-xl space-y-5">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-white/10">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-0.5 rounded-full bg-pink-500 text-white text-[10px] font-black uppercase tracking-wider">Instruksi Pembayaran</span>
+                        <span class="text-xs text-purple-200">Jatuh Tempo: <strong class="font-mono text-white"><?= !empty($order['due_date']) ? date('d M Y', strtotime($order['due_date'])) : '30 Hari Setelah BAST' ?></strong></span>
+                    </div>
+                    <h3 class="text-lg font-black tracking-tight text-white">Pembayaran Tagihan Purchase Order (PO) ke AkuAda</h3>
+                    <p class="text-xs text-purple-200">
+                        Silakan lakukan pembayaran sesuai total tagihan di bawah ke rekening escrow resmi AkuAda:
+                    </p>
+                </div>
+
+                <!-- Total Amount Box -->
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 text-left md:text-right min-w-[220px]">
+                    <span class="text-[10px] uppercase font-bold text-purple-200 tracking-wider block">Total Tagihan Bersih PO</span>
+                    <div class="flex items-center md:justify-end gap-2 mt-0.5">
+                        <span class="text-2xl font-black font-mono text-white"><?= format_rupiah($order['total_amount']) ?></span>
+                        <button type="button" onclick="copyText('<?= (float)$order['total_amount'] ?>', 'Nominal transfer')" class="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition" title="Salin Nominal">
+                            <span class="material-symbols-outlined text-[16px]">content_copy</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rekening Bank Resmi AkuAda Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <!-- Mandiri -->
+                <div class="bg-white/10 rounded-2xl p-4 border border-white/15 flex flex-col justify-between space-y-2 hover:bg-white/15 transition">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <strong class="font-bold text-white"><?= esc($b1Name) ?></strong>
+                            <span class="px-2 py-0.5 rounded bg-blue-500/40 text-blue-200 font-mono text-[9px] font-bold">Escrow</span>
+                        </div>
+                        <span class="text-[11px] text-purple-200 block mt-1"><?= esc($b1Holder) ?></span>
+                    </div>
+                    <div class="flex items-center justify-between pt-2 border-t border-white/10">
+                        <span class="font-mono font-bold text-base text-yellow-300"><?= esc($b1No) ?></span>
+                        <button type="button" onclick="copyText('<?= esc($b1No) ?>', 'No. Rekening Mandiri')" class="px-2 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">content_copy</span> Salin
+                        </button>
+                    </div>
+                </div>
+
+                <!-- BCA -->
+                <div class="bg-white/10 rounded-2xl p-4 border border-white/15 flex flex-col justify-between space-y-2 hover:bg-white/15 transition">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <strong class="font-bold text-white"><?= esc($b2Name) ?></strong>
+                            <span class="px-2 py-0.5 rounded bg-blue-500/40 text-blue-200 font-mono text-[9px] font-bold">Escrow</span>
+                        </div>
+                        <span class="text-[11px] text-purple-200 block mt-1"><?= esc($b2Holder) ?></span>
+                    </div>
+                    <div class="flex items-center justify-between pt-2 border-t border-white/10">
+                        <span class="font-mono font-bold text-base text-yellow-300"><?= esc($b2No) ?></span>
+                        <button type="button" onclick="copyText('<?= esc($b2No) ?>', 'No. Rekening BCA')" class="px-2 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">content_copy</span> Salin
+                        </button>
+                    </div>
+                </div>
+
+                <!-- BNI Corporate VA -->
+                <div class="bg-white/10 rounded-2xl p-4 border border-white/15 flex flex-col justify-between space-y-2 hover:bg-white/15 transition">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <strong class="font-bold text-white"><?= esc($b3Name) ?></strong>
+                            <span class="px-2 py-0.5 rounded bg-pink-500/40 text-pink-200 font-mono text-[9px] font-bold">Virtual Account</span>
+                        </div>
+                        <span class="text-[11px] text-purple-200 block mt-1">Otomatis Terverifikasi</span>
+                    </div>
+                    <div class="flex items-center justify-between pt-2 border-t border-white/10">
+                        <span class="font-mono font-bold text-base text-yellow-300"><?= esc($b3No) ?></span>
+                        <button type="button" onclick="copyText('<?= esc($b3No) ?>', 'Virtual Account')" class="px-2 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">content_copy</span> Salin
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons: Konfirmasi Bayar & Bayar Cepat Instan -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                <span class="text-xs text-purple-200">
+                    💡 Setelah transfer, klik tombol di bawah untuk mengirimkan konfirmasi:
+                </span>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <!-- Quick Simulate Instant VA Button -->
+                    <form action="<?= base_url('customer/orders/simulate-pay') ?>" method="POST" data-confirm="Simulasikan pembayaran lunas otomatis untuk PO ini?"><?= csrf_field() ?>
+                        <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                        <button type="submit" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition flex items-center gap-1.5 shadow-md shadow-emerald-600/30">
+                            <span class="material-symbols-outlined text-[18px]">bolt</span>
+                            <span>Bayar Cepat (Simulasi Lunas)</span>
+                        </button>
+                    </form>
+
+                    <!-- Open Upload Proof Modal -->
+                    <button type="button" onclick="openDirectPaymentModal()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-extrabold text-xs transition flex items-center gap-1.5 shadow-md shadow-purple-600/30">
+                        <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                        <span>Konfirmasi Sudah Transfer</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <!-- 1. Real-Time Order Progress Stepper (Timeline Tahapan Pemesanan) -->
     <div class="bg-white rounded-3xl border border-purple-200 shadow-md p-6 sm:p-8 space-y-4">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -771,20 +953,116 @@
         document.getElementById('ratingLabel').innerText = starLabels[currentSelectedRating] || (currentSelectedRating + ' Bintang');
     }
 
-    function updateStarUI(rating) {
-        const buttons = document.querySelectorAll('.star-btn');
-        buttons.forEach((btn, index) => {
-            const starIcon = btn.querySelector('.material-symbols-outlined');
-            if (index < rating) {
-                starIcon.classList.add('text-amber-400');
-                starIcon.classList.remove('text-slate-300');
-            } else {
-                starIcon.classList.remove('text-amber-400');
-                starIcon.classList.add('text-slate-300');
-            }
-        });
+    function copyText(text, label) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(() => {
+                if (typeof AkuAdaAlert !== 'undefined' && AkuAdaAlert.toast) {
+                    AkuAdaAlert.toast('success', label + ' berhasil disalin ke clipboard!');
+                }
+            });
+        }
+    }
+
+    function openDirectPaymentModal() {
+        const modal = document.getElementById('directPaymentModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+    }
+
+    function closeDirectPaymentModal() {
+        const modal = document.getElementById('directPaymentModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
     }
 </script>
+
+<!-- Modal Konfirmasi Pembayaran Langsung dari Detail PO -->
+<div id="directPaymentModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-purple-200 animate-in fade-in zoom-in duration-150">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-md">
+                    <span class="material-symbols-outlined text-[22px]">payments</span>
+                </div>
+                <div>
+                    <h3 class="text-base font-extrabold text-slate-900">Konfirmasi Pembayaran PO ke AkuAda</h3>
+                    <p class="text-xs text-slate-500">Nomor PO: <span class="font-mono font-bold text-purple-700"><?= esc($order['po_number'] ?? $order['order_number']) ?></span></p>
+                </div>
+            </div>
+            <button type="button" onclick="closeDirectPaymentModal()" class="text-slate-400 hover:text-slate-600">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+
+        <form action="<?= base_url('customer/orders/pay') ?>" method="POST" enctype="multipart/form-data" class="space-y-4"><?= csrf_field() ?>
+            <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+
+            <!-- Summary Box -->
+            <div class="p-3.5 rounded-2xl bg-purple-50/70 border border-purple-100 flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] text-purple-700 font-bold block uppercase tracking-wider">Total yang Harus Dibayar:</span>
+                    <strong class="text-lg font-black font-mono text-purple-950"><?= format_rupiah($order['total_amount']) ?></strong>
+                </div>
+                <span class="px-2.5 py-1 rounded-lg bg-white border border-purple-200 text-purple-800 text-[11px] font-mono font-bold">
+                    <?= esc($order['invoice_number'] ?? 'INV-AKUADA') ?>
+                </span>
+            </div>
+
+            <!-- Rekening Tujuan Transfer -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Rekening Tujuan Resmi AkuAda: <span class="text-rose-500">*</span></label>
+                <select name="payment_bank" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:border-purple-600">
+                    <option value="<?= esc($b1Name . ' - ' . $b1No . ' a/n ' . $b1Holder) ?>"><?= esc($b1Name . ' (' . $b1No . ')') ?></option>
+                    <option value="<?= esc($b2Name . ' - ' . $b2No . ' a/n ' . $b2Holder) ?>"><?= esc($b2Name . ' (' . $b2No . ')') ?></option>
+                    <option value="<?= esc($b3Name . ' - ' . $b3No . ' a/n ' . $b3Holder) ?>"><?= esc($b3Name . ' (' . $b3No . ')') ?></option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Bank Pengirim:</label>
+                    <select name="buyer_sender_bank" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:border-purple-600">
+                        <option value="Bank BCA">Bank Central Asia (BCA)</option>
+                        <option value="Bank Mandiri">Bank Mandiri</option>
+                        <option value="Bank BNI">Bank Negara Indonesia (BNI)</option>
+                        <option value="Bank BRI">Bank Rakyat Indonesia (BRI)</option>
+                        <option value="Bank Lainnya / Giro">Bank Lainnya / Giro / VA</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">No. Referensi / ID Transaksi:</label>
+                    <input type="text" name="payment_ref" value="TRF-<?= date('Ymd') ?>-<?= rand(100, 999) ?>" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono">
+                </div>
+            </div>
+
+            <!-- Upload File Bukti (Opsional) -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Unggah Struk / Bukti Transfer (Opsional):</label>
+                <input type="file" name="payment_proof_file" accept="image/*,.pdf" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:bg-purple-100 file:text-purple-800 file:font-bold">
+                <p class="text-[10px] text-slate-400 mt-1">Tidak wajib — jika tanpa bukti struk, Admin Finance AkuAda akan langsung mencocokkan mutasi rekening bank berdasarkan nominal transfer.</p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Catatan (Opsional):</label>
+                <input type="text" name="buyer_payment_notes" placeholder="Contoh: Transfer pelunasan via BI-FAST" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs">
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+                <button type="button" onclick="closeDirectPaymentModal()" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-xs">
+                    Batal
+                </button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-purple-600/20">
+                    <span class="material-symbols-outlined text-[18px]">send</span>
+                    <span>Kirim Konfirmasi Pembayaran</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <style>
     .font-fill {

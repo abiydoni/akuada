@@ -99,7 +99,7 @@
                                         <span class="material-symbols-outlined text-[17px]">edit</span>
                                     </button>
                                     <a href="<?= base_url('admin/categories/delete/' . $cat['id']) ?>" 
-                                       onclick="return confirm('Apakah Anda yakin ingin menghapus kategori <?= esc($cat['name']) ?>?');" 
+                                       data-confirm="Apakah Anda yakin ingin menghapus kategori <?= esc($cat['name']) ?>?" 
                                        class="p-1.5 hover:bg-rose-50 text-rose-600 rounded-lg transition border border-rose-200" title="Hapus Kategori">
                                         <span class="material-symbols-outlined text-[17px]">delete</span>
                                     </a>

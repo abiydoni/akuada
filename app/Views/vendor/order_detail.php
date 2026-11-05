@@ -43,6 +43,92 @@
         <?= render_order_progress_stepper($order['order_status']) ?>
     </div>
 
+    <!-- KARTU PENCAIRAN DANA VENDOR DARI AKUADA (SIMPLE SETTLEMENT) -->
+    <?php
+        $fee = (float)($order['total_vendor_fee'] ?? 0);
+        $netDpp = (float)($order['vendor_net_payout'] ?? ($order['subtotal'] - $fee));
+        $totalReceive = $netDpp + (float)($order['ppn_amount'] ?? 0);
+        $vPayoutStatus = $order['vendor_payout_status'] ?? 'unpaid';
+        $canRequest = in_array($order['order_status'], ['delivered', 'bast_signed', 'completed']);
+    ?>
+    <div class="bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-7 text-white shadow-xl space-y-5">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-white/10">
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-0.5 rounded-full bg-blue-500 text-white text-[10px] font-black uppercase tracking-wider">Settlement & Pembayaran</span>
+                    <span class="text-xs text-blue-200">Faktur Tagihan: <strong class="font-mono text-white"><?= esc($order['vendor_invoice_number'] ?? ('VINV/' . date('Ym') . '/' . $order['id'])) ?></strong></span>
+                </div>
+                <h3 class="text-lg font-black tracking-tight text-white">Hak Bersih Penjualan & Pencairan Dana dari AkuAda</h3>
+                <p class="text-xs text-blue-200">
+                    AkuAda menjamin pembayaran hak bersih hasil penjualan Anda langsung ke rekening bank resmi perusahaan vendor.
+                </p>
+            </div>
+
+            <!-- Total Hak Bersih Box -->
+            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 text-left md:text-right min-w-[240px]">
+                <span class="text-[10px] uppercase font-bold text-blue-200 tracking-wider block">Dana Bersih yang Diterima Vendor</span>
+                <span class="text-2xl font-black font-mono text-emerald-300 block mt-0.5"><?= format_rupiah($totalReceive) ?></span>
+                <span class="text-[10px] text-blue-200 block mt-0.5">(DPP: <?= format_rupiah($order['subtotal']) ?> - Fee: <?= format_rupiah($fee) ?> + PPN)</span>
+            </div>
+        </div>
+
+        <!-- Rincian Rekening & Status Payout -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div class="p-4 rounded-2xl bg-white/10 border border-white/15 space-y-2">
+                <span class="text-[10px] uppercase font-bold text-blue-200 block tracking-wider">Rekening Tujuan Pencairan:</span>
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-blue-300">account_balance</span>
+                    <strong class="text-white text-sm"><?= esc($company['bank_name'] ?? 'Bank BCA Corporate') ?></strong>
+                </div>
+                <p class="text-blue-100 font-mono text-base font-bold text-yellow-300"><?= esc($company['bank_account_number'] ?? '8800-1122-3344') ?></p>
+                <p class="text-blue-200 text-[11px]">A/N: <?= esc($company['bank_account_holder'] ?? ($company['company_name'] ?? 'Mitra Vendor')) ?></p>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-white/10 border border-white/15 flex flex-col justify-between space-y-2">
+                <div>
+                    <span class="text-[10px] uppercase font-bold text-blue-200 block tracking-wider">Status Pembayaran dari AkuAda:</span>
+                    <div class="mt-2">
+                        <?php if ($vPayoutStatus === 'paid'): ?>
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500 text-white font-black text-xs shadow-sm">
+                                <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                                <span>LUNAS DICAIRKAN</span>
+                            </span>
+                            <p class="text-[11px] text-emerald-200 mt-2">
+                                Dana telah ditransfer oleh AkuAda pada <?= !empty($order['vendor_paid_at']) ? date('d M Y, H:i', strtotime($order['vendor_paid_at'])) : '-' ?> WIB (No. Ref: <span class="font-mono"><?= esc($order['vendor_payout_ref'] ?? '-') ?></span>).
+                            </p>
+                        <?php elseif ($vPayoutStatus === 'pending_payout'): ?>
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400 text-slate-950 font-black text-xs animate-pulse shadow-sm">
+                                <span class="material-symbols-outlined text-[16px]">hourglass_top</span>
+                                <span>PENGAJUAN SEDANG DIPROSES</span>
+                            </span>
+                            <p class="text-[11px] text-amber-200 mt-2">
+                                Permohonan pencairan dana telah diterima. Tim Finance AkuAda sedang memproses transfer ke rekening Anda.
+                            </p>
+                        <?php else: ?>
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/80 text-white font-bold text-xs">
+                                <span class="material-symbols-outlined text-[16px]">schedule</span>
+                                <span>MENUNGGU PENCAIRAN</span>
+                            </span>
+                            <p class="text-[11px] text-blue-200 mt-2">
+                                <?= $canRequest ? 'Barang telah diterima pembeli. Anda dapat langsung mengajukan pencairan dana ke rekening Anda.' : 'Pencairan dana dapat diajukan setelah barang pesanan tiba di lokasi pembeli & BAST disahkan.' ?>
+                            </p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <?php if ($vPayoutStatus !== 'paid' && $vPayoutStatus !== 'pending_payout' && $canRequest): ?>
+                    <form action="<?= base_url('vendor/orders/request-payout') ?>" method="POST" data-confirm="Ajukan pencairan dana sebesar <?= format_rupiah($totalReceive) ?> ke rekening bank perusahaan Anda?"><?= csrf_field() ?>
+                        <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                        <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/30">
+                            <span class="material-symbols-outlined text-[18px]">payments</span>
+                            <span>⚡ Ajukan Pencairan Dana ke Rekening Saya</span>
+                        </button>
+                    </form>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
     <!-- Klaim Retur / Barang Rusak dari Buyer (Jika Ada) -->
     <?php if (!empty($latestReturn)): ?>
         <div class="p-6 rounded-3xl bg-rose-50 border-2 border-rose-300 shadow-md space-y-4 text-xs">

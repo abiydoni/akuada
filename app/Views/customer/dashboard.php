@@ -33,21 +33,27 @@
         $usedPercent = $limit > 0 ? min(100, round(($used / $limit) * 100)) : 0;
     ?>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Card 1: Plafon Kredit -->
+        <!-- Card 1: Saldo Cashback Buyer -->
         <div class="bg-gradient-to-br from-purple-50/80 via-white to-pink-50/50 rounded-2xl p-5 border-2 border-purple-300 shadow-sm flex flex-col justify-between hover:shadow-md transition">
             <div class="flex items-center justify-between gap-2 mb-3">
-                <span class="text-xs text-purple-950 font-bold">Sisa Plafon Kredit TOP</span>
-                <div class="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <span class="material-symbols-outlined text-xl">account_balance</span>
+                <span class="text-xs text-purple-950 font-bold flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[16px] text-pink-600">savings</span>
+                    Saldo Cashback Aktif
+                </span>
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <span class="material-symbols-outlined text-xl">account_balance_wallet</span>
                 </div>
             </div>
             <div class="space-y-1.5">
-                <div class="text-xl font-black text-purple-900 font-mono tracking-tight break-words"><?= format_rupiah($remaining) ?></div>
-                <div class="text-[11px] text-slate-500 font-medium">
-                    Total Plafon: <strong class="text-slate-800"><?= format_rupiah($limit) ?></strong>
+                <div class="text-xl font-black text-purple-900 font-mono tracking-tight break-words">
+                    <?= format_rupiah($company['cashback_balance'] ?? 0) ?>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                    <span class="text-purple-700 font-bold">+<?= esc(get_buyer_cashback_rate()) ?>% Tiap PO Lunas</span>
+                    <a href="<?= base_url('customer/cashback') ?>" class="text-pink-600 font-bold hover:underline">Tarik Dana &rarr;</a>
                 </div>
                 <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                    <div class="bg-gradient-to-r from-purple-500 to-pink-500 h-1.5 rounded-full" style="width: <?= $usedPercent ?>%"></div>
+                    <div class="bg-gradient-to-r from-purple-500 to-pink-500 h-1.5 rounded-full" style="width: 100%"></div>
                 </div>
             </div>
         </div>

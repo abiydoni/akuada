@@ -46,8 +46,8 @@
                         <strong class="font-mono text-slate-800"><?= esc($company['nib'] ?? '-') ?></strong>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-slate-500">Fasilitas Plafon TOP:</span>
-                        <strong class="text-purple-700 font-bold"><?= format_rupiah($company['credit_limit_top'] ?? 0) ?></strong>
+                        <span class="text-slate-500">Saldo Cashback Buyer:</span>
+                        <strong class="text-pink-600 font-bold font-mono"><?= format_rupiah($company['cashback_balance'] ?? 0) ?></strong>
                     </div>
                 </div>
             </div>

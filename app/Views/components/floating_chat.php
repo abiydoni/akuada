@@ -393,7 +393,11 @@ $fullChatUrl = ($currentUserRole === 'customer') ? base_url('customer/chat') : (
                 updateGuestBadgeUI();
                 fetchFloatingMessages(false);
             } else {
-                alert(data.message || 'Gagal mengirim pesan.');
+                if (window.AkuAdaAlert) {
+                    AkuAdaAlert.toast('error', data.message || 'Gagal mengirim pesan.');
+                } else {
+                    alert(data.message || 'Gagal mengirim pesan.');
+                }
             }
         })
         .catch(err => {

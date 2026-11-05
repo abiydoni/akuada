@@ -292,6 +292,163 @@
         </div>
     </div>
 
+    <!-- 5.5. PANEL KEUANGAN & PEMBAYARAN CEPAT SUPERADMIN (FINANCE ACTION HUB) -->
+    <?php
+        $fee = (float)($order['total_vendor_fee'] ?? 0);
+        $netDpp = (float)($order['vendor_net_payout'] ?? ($order['subtotal'] - $fee));
+        $vendorReceive = $netDpp + (float)($order['ppn_amount'] ?? 0);
+        $vPayoutPaid = (($order['vendor_payout_status'] ?? 'unpaid') === 'paid');
+        $bPaid = ($order['payment_status'] === 'paid');
+    ?>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+        
+        <!-- KARTU 1: ALUR PEMBAYARAN BUYER KE AKUADA -->
+        <div class="bg-white rounded-3xl border-2 <?= $bPaid ? 'border-emerald-300' : ($order['payment_status'] === 'pending_approval' ? 'border-blue-400' : 'border-purple-300') ?> shadow-md p-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl <?= $bPaid ? 'bg-emerald-600' : 'bg-purple-600' ?> text-white flex items-center justify-center shadow-sm">
+                        <span class="material-symbols-outlined text-[20px]">payments</span>
+                    </div>
+                    <div>
+                        <strong class="text-sm font-black text-slate-900 block">1. Pembayaran Buyer ke AkuAda</strong>
+                        <span class="text-[11px] text-slate-500">Penerimaan kas dari <?= esc($order['buyer_name']) ?></span>
+                    </div>
+                </div>
+                <?= badge_payment_status($order['payment_status']) ?>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-500">Nominal Tagihan PO:</span>
+                    <strong class="font-mono font-black text-base text-slate-900"><?= format_rupiah($order['total_amount']) ?></strong>
+                </div>
+                <div class="flex justify-between items-center text-[11px]">
+                    <span class="text-slate-500">Metode & Rekening Tujuan:</span>
+                    <span class="font-semibold text-slate-800"><?= esc($order['buyer_payment_bank'] ?? 'Bank Virtual Account') ?></span>
+                </div>
+                <?php if (!empty($order['buyer_payment_ref'])): ?>
+                    <div class="flex justify-between items-center text-[11px]">
+                        <span class="text-slate-500">No. Referensi / Mutasi:</span>
+                        <span class="font-mono text-purple-700 font-bold"><?= esc($order['buyer_payment_ref']) ?></span>
+                    </div>
+                <?php endif; ?>
+                <?php if (!empty($order['buyer_paid_at'])): ?>
+                    <div class="flex justify-between items-center text-[11px]">
+                        <span class="text-slate-500">Waktu Bayar:</span>
+                        <span class="text-slate-700"><?= date('d M Y, H:i', strtotime($order['buyer_paid_at'])) ?> WIB</span>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Bukti Bayar Preview jika ada -->
+            <?php if (!empty($order['buyer_payment_proof'])): ?>
+                <div class="p-3 rounded-2xl bg-blue-50/60 border border-blue-200 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-blue-600 text-[20px]">attachment</span>
+                        <span class="text-slate-700 font-bold text-[11px]">Bukti Transfer Pengirim:</span>
+                    </div>
+                    <a href="<?= esc($order['buyer_payment_proof']) ?>" target="_blank" class="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs">
+                        <span class="material-symbols-outlined text-[14px]">visibility</span> Lihat Struk
+                    </a>
+                </div>
+            <?php endif; ?>
+
+            <!-- Action Buttons Buyer Payment -->
+            <?php if (!$bPaid): ?>
+                <div class="pt-2 flex flex-col sm:flex-row gap-2">
+                    <form action="<?= base_url('admin/orders/confirm-buyer-payment') ?>" method="POST" class="flex-1" data-confirm="Sahkan pembayaran buyer sebesar <?= format_rupiah($order['total_amount']) ?> LUNAS?"><?= csrf_field() ?>
+                        <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                        <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20">
+                            <span class="material-symbols-outlined text-[18px]">verified</span>
+                            <span>✓ Sahkan Pembayaran Buyer (Lunas)</span>
+                        </button>
+                    </form>
+
+                    <?php if ($order['payment_status'] === 'pending_approval'): ?>
+                        <form action="<?= base_url('admin/orders/reject-buyer-payment') ?>" method="POST" data-confirm="Tolak bukti pembayaran ini?"><?= csrf_field() ?>
+                            <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                            <button type="submit" class="py-2.5 px-3 rounded-xl bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 font-bold text-xs transition flex items-center justify-center gap-1">
+                                <span class="material-symbols-outlined text-[16px]">close</span>
+                                <span>Tolak</span>
+                            </button>
+                        </form>
+                    <?php endif; ?>
+                </div>
+            <?php else: ?>
+                <div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 font-bold text-center flex items-center justify-center gap-1.5">
+                    <span class="material-symbols-outlined text-emerald-600 text-[18px]">check_circle</span>
+                    <span>Pembayaran Buyer Telah Sah & Lunas</span>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- KARTU 2: ALUR PENCAIRAN AKUADA KE VENDOR -->
+        <div class="bg-white rounded-3xl border-2 <?= $vPayoutPaid ? 'border-emerald-300' : 'border-blue-400' ?> shadow-md p-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl <?= $vPayoutPaid ? 'bg-emerald-600' : 'bg-blue-600' ?> text-white flex items-center justify-center shadow-sm">
+                        <span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+                    </div>
+                    <div>
+                        <strong class="text-sm font-black text-slate-900 block">2. Pencairan AkuAda ke Vendor</strong>
+                        <span class="text-[11px] text-slate-500">Penyaluran dana ke <?= esc($order['vendor_name']) ?></span>
+                    </div>
+                </div>
+                <?php if ($vPayoutPaid): ?>
+                    <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase border border-emerald-300">LUNAS DICAIRKAN</span>
+                <?php elseif (($order['vendor_payout_status'] ?? '') === 'pending_payout'): ?>
+                    <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black uppercase border border-amber-300 animate-pulse">VENDOR MENGAJUKAN</span>
+                <?php else: ?>
+                    <span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold uppercase border border-slate-300">BELUM DICAIRKAN</span>
+                <?php endif; ?>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-500">Hak Bersih Vendor (+PPN):</span>
+                    <strong class="font-mono font-black text-base text-emerald-700"><?= format_rupiah($vendorReceive) ?></strong>
+                </div>
+                <div class="flex justify-between items-center text-[11px] text-slate-400">
+                    <span>Rincian Perhitungan:</span>
+                    <span>DPP <?= format_rupiah($order['subtotal']) ?> - Fee <?= format_rupiah($fee) ?> + PPN</span>
+                </div>
+                <div class="pt-2 border-t border-slate-200 space-y-0.5 text-[11px]">
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Rekening Tujuan Vendor:</span>
+                        <strong class="text-slate-800"><?= esc($vendorCompany['bank_name'] ?? 'BCA') ?> - <?= esc($vendorCompany['bank_account_number'] ?? '-') ?></strong>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Atas Nama Rekening:</span>
+                        <span class="text-slate-700 font-semibold"><?= esc($vendorCompany['bank_account_holder'] ?? ($vendorCompany['company_name'] ?? 'Mitra Vendor')) ?></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Button Payout Vendor -->
+            <?php if (!$vPayoutPaid): ?>
+                <div class="pt-2">
+                    <form action="<?= base_url('admin/orders/payout-vendor-direct') ?>" method="POST" data-confirm="Cairkan dana hak bersih vendor sebesar <?= format_rupiah($vendorReceive) ?> ke rekening <?= esc($vendorCompany['bank_name'] ?? 'Bank') ?>?"><?= csrf_field() ?>
+                        <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                        <input type="hidden" name="payout_bank" value="<?= esc($vendorCompany['bank_name'] ?? 'Bank BCA') ?>">
+                        <input type="hidden" name="payout_account" value="<?= esc($vendorCompany['bank_account_number'] ?? '-') ?>">
+                        <input type="hidden" name="payout_holder" value="<?= esc($vendorCompany['bank_account_holder'] ?? ($vendorCompany['company_name'] ?? 'Vendor')) ?>">
+
+                        <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs transition flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/20">
+                            <span class="material-symbols-outlined text-[18px]">payments</span>
+                            <span>⚡ Cairkan Dana ke Rekening Vendor (<?= format_rupiah($vendorReceive) ?>)</span>
+                        </button>
+                    </form>
+                </div>
+            <?php else: ?>
+                <div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 font-bold text-center flex items-center justify-center gap-1.5">
+                    <span class="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
+                    <span>Dana Telah Berhasil Ditransfer ke Vendor (Ref: <?= esc($order['vendor_payout_ref'] ?? '-') ?>)</span>
+                </div>
+            <?php endif; ?>
+        </div>
+
+    </div>
+
     <!-- 6. Intervensi Superadmin & Audit Trail -->
     <div class="space-y-6 text-xs">
         <div class="space-y-6">

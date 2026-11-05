@@ -165,7 +165,7 @@
                                     </button>
 
                                     <a href="<?= base_url('admin/users/toggle/' . $u['id']) ?>" 
-                                       onclick="return confirm('Ubah status akun <?= esc($u['name']) ?>?');"
+                                       data-confirm="Ubah status akun <?= esc($u['name']) ?>?"
                                        class="p-1.5 hover:bg-slate-100 <?= $u['status'] === 'active' ? 'text-amber-600 hover:bg-amber-50 border border-amber-200' : 'text-emerald-600 hover:bg-emerald-50 border border-emerald-200' ?> rounded-lg transition" 
                                        title="<?= $u['status'] === 'active' ? 'Tangguhkan Akun' : 'Aktifkan Akun' ?>">
                                         <span class="material-symbols-outlined text-[17px]"><?= $u['status'] === 'active' ? 'block' : 'check_circle' ?></span>
@@ -173,7 +173,7 @@
 
                                     <?php if ((int)$u['id'] !== 1 && (int)$u['id'] !== (int)session('user_id')): ?>
                                         <a href="<?= base_url('admin/users/delete/' . $u['id']) ?>" 
-                                           onclick="return confirm('Apakah Anda yakin ingin MENGHAPUS PERMANEN akun <?= esc(addslashes($u['name'])) ?> (<?= esc($u['email']) ?>)?');"
+                                           data-confirm="Apakah Anda yakin ingin MENGHAPUS PERMANEN akun <?= esc(addslashes($u['name'])) ?> (<?= esc($u['email']) ?>)?"
                                            class="p-1.5 hover:bg-rose-50 text-rose-600 rounded-lg transition border border-rose-200" 
                                            title="Hapus Akun Pengguna">
                                             <span class="material-symbols-outlined text-[17px]">delete</span>

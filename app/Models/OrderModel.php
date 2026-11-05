@@ -11,6 +11,7 @@ class OrderModel extends Model
     protected $allowedFields = [
         'order_number', 'po_number', 'customer_company_id', 'vendor_company_id',
         'subtotal', 'ppn_amount', 'total_vendor_fee', 'vendor_net_payout', 'shipping_amount', 'total_amount',
+        'cashback_percent', 'cashback_amount', 'is_cashback_awarded',
         'payment_method', 'payment_status', 'order_status',
         'tax_invoice_required', 'customer_notes', 'shipping_address',
         'bast_number', 'invoice_number', 'vendor_invoice_number', 'tax_invoice_number', 'due_date',
