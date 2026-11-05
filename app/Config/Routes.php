@@ -38,7 +38,7 @@ $routes->group('auth', function ($routes) {
 });
 
 // 5. Dashboard Admin (Platform Superadmin)
-$routes->group('admin', function ($routes) {
+$routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->get('/', 'AdminController::dashboard');
     $routes->get('dashboard', 'AdminController::dashboard');
     
@@ -49,9 +49,11 @@ $routes->group('admin', function ($routes) {
     $routes->post('vendors/update-fee', 'AdminController::updateVendorFee');
     $routes->get('vendors/toggle/(:num)', 'AdminController::toggleVendorVerification/$1');
     $routes->get('buyers', 'AdminController::buyers');
+    $routes->get('buyers/toggle/(:num)', 'AdminController::toggleBuyerVerification/$1');
     $routes->get('buyers/create', 'AdminController::createBuyer');
     $routes->post('buyers/store', 'AdminController::storeBuyer');
     $routes->post('buyers/limit', 'AdminController::updateBuyerLimit');
+    $routes->post('buyers/update-cashback', 'AdminController::updateBuyerCashbackRate');
 
     // 3. Categories Management
     $routes->get('categories', 'AdminController::categories');
@@ -121,7 +123,7 @@ $routes->group('admin', function ($routes) {
 });
 
 // 6. Dashboard Vendor (Mitra Supplier B2B)
-$routes->group('vendor', function ($routes) {
+$routes->group('vendor', ['filter' => 'auth'], function ($routes) {
     $routes->get('/', 'VendorController::dashboard');
     $routes->get('dashboard', 'VendorController::dashboard');
     $routes->get('orders', 'VendorController::orders');
@@ -135,6 +137,8 @@ $routes->group('vendor', function ($routes) {
     $routes->post('orders/return-respond', 'VendorController::respondReturn');
     $routes->get('chat', 'VendorController::chatCenter');
     $routes->get('products', 'VendorController::products');
+    $routes->get('products/template-csv', 'VendorController::downloadTemplateCsv');
+    $routes->post('products/import-csv', 'VendorController::importCsv');
     $routes->get('products/new', 'VendorController::newProduct');
     $routes->post('products/store', 'VendorController::storeProduct');
     $routes->get('products/edit/(:num)', 'VendorController::editProduct/$1');
@@ -151,7 +155,7 @@ $routes->group('vendor', function ($routes) {
 });
 
 // 7. Dashboard Customer (Corporate Buyer / Perusahaan)
-$routes->group('customer', function ($routes) {
+$routes->group('customer', ['filter' => 'auth'], function ($routes) {
     $routes->get('/', 'CustomerController::dashboard');
     $routes->get('dashboard', 'CustomerController::dashboard');
     $routes->get('orders', 'CustomerController::orders');

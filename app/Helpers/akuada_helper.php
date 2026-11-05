@@ -293,10 +293,17 @@ if (!function_exists('get_active_buyer_credit_info')) {
 
 if (!function_exists('get_buyer_cashback_rate')) {
     /**
-     * Ambil persentase cashback saldo pembeli dari setting admin (default 1%)
+     * Ambil persentase cashback saldo pembeli (bisa berbeda-beda per-buyer, fallback ke setting admin)
      */
-    function get_buyer_cashback_rate(): float
+    function get_buyer_cashback_rate(?int $buyerCompanyId = null): float
     {
+        if ($buyerCompanyId) {
+            $companyModel = new \App\Models\CompanyModel();
+            $company = $companyModel->find($buyerCompanyId);
+            if ($company && isset($company['cashback_rate']) && $company['cashback_rate'] !== null && $company['cashback_rate'] !== '') {
+                return (float)$company['cashback_rate'];
+            }
+        }
         return (float)get_system_setting('buyer_cashback_percent', 1.0);
     }
 }
@@ -363,7 +370,7 @@ if (!function_exists('process_buyer_order_cashback')) {
             return 0.0;
         }
 
-        $cbPercent = get_buyer_cashback_rate();
+        $cbPercent = get_buyer_cashback_rate((int)$buyer['id']);
         $totalAmount = (float)$order['total_amount'];
         $cbAmount = round(($totalAmount * $cbPercent) / 100, 2);
 
@@ -689,76 +696,22 @@ if (!function_exists('terbilang_rupiah')) {
 
 if (!function_exists('ensure_role_session')) {
     /**
-     * Auto-bypass session into the active buyer/vendor account from database
+     * Mengambil ID Perusahaan (company_id) aktif dari sesi login resmi.
+     * Tidak ada auto-bypass / login otomatis: mengembalikan company_id dari sesi atau 0 jika belum login.
      */
     function ensure_role_session(string $role): int
     {
         $companyType = ($role === 'vendor') ? 'vendor' : 'buyer';
         $companyModel = new \App\Models\CompanyModel();
-        $userModel = new \App\Models\UserModel();
 
-        // Jika sudah aktif di role yang sama dan company_id valid dengan tipe tersebut, langsung kembalikan
-        if (session('user_role') === $role && session('company_id')) {
+        if (session('is_logged_in') && session('user_role') === $role && session('company_id')) {
             $existing = $companyModel->find(session('company_id'));
             if ($existing && $existing['type'] === $companyType) {
                 return (int)$existing['id'];
             }
         }
 
-        // Ambil data company untuk tipe ini (jika masih 1 data / data pertama untuk bypass)
-        $companies = $companyModel->where('type', $companyType)->orderBy('id', 'ASC')->findAll();
-        $company = $companies[0] ?? null;
-
-        $foundUser = null;
-        if ($company) {
-            $foundUser = $userModel->where('company_id', $company['id'])->where('role', $role)->first();
-        }
-        if (!$foundUser) {
-            $foundUser = $userModel->where('role', $role)->orderBy('id', 'ASC')->first();
-        }
-
-        $user = $foundUser ? $userModel->getUserWithCompany($foundUser['id']) : null;
-
-        if (!$user && $company) {
-            $user = [
-                'id'               => 0,
-                'name'             => ($company['pic_name'] ?: $company['company_name']),
-                'email'            => $company['email'],
-                'role'             => $role,
-                'avatar'           => null,
-                'company_id'       => $company['id'],
-                'company_name'     => $company['company_name'],
-                'legal_type'       => $company['legal_type'],
-                'npwp'             => $company['npwp'],
-                'nib'              => $company['nib'],
-                'commission_rate'  => $company['commission_rate'],
-                'credit_limit_top' => $company['credit_limit_top'],
-                'credit_used_top'  => $company['credit_used_top'],
-            ];
-        }
-
-        if ($user && !empty($user['company_id'])) {
-            session()->set([
-                'is_logged_in'     => true,
-                'role'             => $user['role'],
-                'user_id'          => $user['id'],
-                'user_name'        => $user['name'],
-                'user_email'       => $user['email'],
-                'user_role'        => $user['role'],
-                'user_avatar'      => $user['avatar'] ?? null,
-                'company_id'       => $user['company_id'],
-                'company_name'     => $user['company_name'],
-                'company_legal'    => $user['legal_type'] ?? 'PT',
-                'company_npwp'     => $user['npwp'] ?? null,
-                'company_nib'      => $user['nib'] ?? null,
-                'commission_rate'  => (float)($user['commission_rate'] ?? 2.50),
-                'credit_limit_top' => (float)($user['credit_limit_top'] ?? 0),
-                'credit_used_top'  => (float)($user['credit_used_top'] ?? 0),
-            ]);
-            return (int)$user['company_id'];
-        }
-
-        return (int)(session('company_id') ?? 1);
+        return (int)(session('company_id') ?? 0);
     }
 }
 
@@ -938,9 +891,19 @@ if (!function_exists('calculate_aging_summary')) {
         }
         unset($b);
 
+        // Sembunyikan vendor ataupun buyer yang nilainya kosong / Rp 0
+        $byEntity = array_filter($byEntity, function ($entity) {
+            return (float)($entity['total'] ?? 0) > 0.0;
+        });
+
+        // Urutkan entitas berdasarkan total hutang/piutang terbesar
+        usort($byEntity, function ($a, $b) {
+            return ($b['total'] ?? 0) <=> ($a['total'] ?? 0);
+        });
+
         return [
             'buckets'           => $buckets,
-            'by_entity'         => array_values($byEntity),
+            'by_entity'         => $byEntity,
             'total_outstanding' => $totalOutstanding,
             'total_count'       => $totalCount,
         ];
@@ -962,6 +925,11 @@ if (!function_exists('render_aging_table')) {
         $rows = $aging['by_entity'] ?? [];
         $buckets = $aging['buckets'] ?? [];
         $grandTotal = (float)($aging['total_outstanding'] ?? 0);
+
+        // Saring: jika nilainya kosong atau Rp 0, sembunyikan dari daftar vendor ataupun buyer
+        $rows = array_values(array_filter($rows, function ($r) {
+            return (float)($r['total'] ?? 0) > 0.0;
+        }));
 
         $dotClass = match ($accentColor) {
             'blue'  => 'bg-blue-600',
@@ -989,9 +957,9 @@ if (!function_exists('render_aging_table')) {
         $html .= '        <tr>';
         $html .= '          <th class="px-4 py-3.5">' . esc($companyColLabel) . '</th>';
         $html .= '          <th class="px-4 py-3.5 text-right bg-emerald-950/60">Current<span class="block text-[9px] font-normal text-emerald-300 normal-case">Belum Jatuh Tempo</span></th>';
-        $html .= '          <th class="px-4 py-3.5 text-right bg-amber-950/60">30 Hari<span class="block text-[9px] font-normal text-amber-300 normal-case">1 â€“ 30 Hari</span></th>';
-        $html .= '          <th class="px-4 py-3.5 text-right bg-orange-950/60">60 Hari<span class="block text-[9px] font-normal text-orange-300 normal-case">31 â€“ 60 Hari</span></th>';
-        $html .= '          <th class="px-4 py-3.5 text-right bg-rose-950/60">90 Hari<span class="block text-[9px] font-normal text-rose-300 normal-case">61 â€“ 90 Hari</span></th>';
+        $html .= '          <th class="px-4 py-3.5 text-right bg-amber-950/60">30 Hari<span class="block text-[9px] font-normal text-amber-300 normal-case">1 – 30 Hari</span></th>';
+        $html .= '          <th class="px-4 py-3.5 text-right bg-orange-950/60">60 Hari<span class="block text-[9px] font-normal text-orange-300 normal-case">31 – 60 Hari</span></th>';
+        $html .= '          <th class="px-4 py-3.5 text-right bg-rose-950/60">90 Hari<span class="block text-[9px] font-normal text-rose-300 normal-case">61 – 90 Hari</span></th>';
         $html .= '          <th class="px-4 py-3.5 text-right bg-red-950/80">120 Hari<span class="block text-[9px] font-normal text-red-300 normal-case">&gt; 90 / 120 Hari</span></th>';
         $html .= '          <th class="px-4 py-3.5 text-right bg-slate-800">Total</th>';
         $html .= '        </tr>';
@@ -999,7 +967,7 @@ if (!function_exists('render_aging_table')) {
         $html .= '      <tbody class="divide-y divide-slate-100 bg-white">';
 
         if (empty($rows)) {
-            $html .= '        <tr><td colspan="7" class="px-6 py-8 text-center text-slate-400">Tidak ada saldo aktif pada periode ini.</td></tr>';
+            $html .= '        <tr><td colspan="7" class="px-6 py-8 text-center text-slate-400 font-medium">Tidak ada saldo aktif pada periode ini (seluruh tagihan telah lunas / saldo Rp 0).</td></tr>';
         } else {
             foreach ($rows as $r) {
                 $html .= '        <tr class="hover:bg-slate-50/80 transition-colors">';

@@ -30,12 +30,16 @@ $appName         = get_system_setting('app_name', 'AkuAda');
                     <span class="material-symbols-outlined text-[15px]">storefront</span> Katalog Marketplace
                 </a>
                 
-                <div class="flex items-center gap-2 border-l border-slate-700 pl-4">
+                <div class="flex items-center gap-2.5 border-l border-slate-700 pl-4">
                     <img src="<?= esc(session('user_avatar') ?? 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=128&q=80') ?>" class="w-8 h-8 rounded-full border border-pink-400 object-cover">
                     <div class="text-left hidden sm:block">
                         <span class="block text-xs font-bold text-white"><?= esc(session('user_name') ?? 'Procurement Manager') ?></span>
-                        <span class="block text-[10px] text-pink-300"><?= esc($buyerInfo['company_name']) ?></span>
+                        <span class="block text-[10px] text-pink-300"><?= esc($buyerInfo['company_name'] ?? session('company_name')) ?></span>
                     </div>
+                    <a href="<?= base_url('auth/logout') ?>" data-confirm="Apakah Anda yakin ingin keluar dari sesi akun Anda saat ini?" class="ml-1 px-2.5 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold transition flex items-center gap-1" title="Keluar dari Portal Buyer">
+                        <span class="material-symbols-outlined text-[15px]">logout</span>
+                        <span class="hidden md:inline">Keluar</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -55,7 +59,7 @@ $appName         = get_system_setting('app_name', 'AkuAda');
                             Saldo Cashback
                         </span>
                         <span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-pink-100 text-pink-700 border border-pink-200">
-                            <?= esc(get_buyer_cashback_rate()) ?>% Lunas
+                            <?= esc(get_buyer_cashback_rate((int)($buyerInfo['id'] ?? 0))) ?>% Lunas
                         </span>
                     </div>
                     <p class="text-base font-black font-mono text-purple-950 mt-1">

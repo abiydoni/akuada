@@ -648,7 +648,7 @@ class CustomerController extends BaseController
             }
         }
 
-        $cashbackRate = get_buyer_cashback_rate();
+        $cashbackRate = get_buyer_cashback_rate($buyerCompanyId);
 
         return view('customer/cashback', [
             'title'             => 'Saldo Cashback & Penarikan Dana - AkuAda B2B',

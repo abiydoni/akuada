@@ -12,10 +12,20 @@
             <h1 class="text-xl font-extrabold text-slate-900 mt-1">Katalog Barang Pengadaan B2B Saya</h1>
             <p class="text-xs text-slate-500 mt-0.5">Kelola harga grosir bertingkat (Tier Pricing), stok gudang, MOQ, dan sertifikasi TKDN barang Anda.</p>
         </div>
-        <a href="<?= base_url('vendor/products/new') ?>" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition flex items-center gap-2 self-start sm:self-auto">
-            <span class="material-symbols-outlined text-[18px]">add_box</span>
-            <span>+ Tambah Barang Pengadaan Baru</span>
-        </a>
+        <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+            <a href="<?= base_url('vendor/products/template-csv') ?>" class="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-300 shadow-xs transition flex items-center gap-1.5" title="Unduh template format CSV">
+                <span class="material-symbols-outlined text-[18px] text-emerald-600">file_download</span>
+                <span>Unduh Template CSV</span>
+            </a>
+            <button type="button" onclick="openImportModal()" class="px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs border border-emerald-300 shadow-xs transition flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[18px]">upload_file</span>
+                <span>Import CSV</span>
+            </button>
+            <a href="<?= base_url('vendor/products/new') ?>" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">add_box</span>
+                <span>+ Tambah Barang Baru</span>
+            </a>
+        </div>
     </div>
 
     <!-- Products Table -->
@@ -120,5 +130,74 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Import CSV Barang -->
+<div id="importModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden text-xs animate-in fade-in zoom-in-95 duration-150">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-emerald-50 to-blue-50">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-emerald-600 text-2xl">upload_file</span>
+                <div>
+                    <h3 class="font-extrabold text-slate-900 text-sm">Import Master Barang via CSV</h3>
+                    <p class="text-[11px] text-slate-500">Unggah banyak barang sekaligus ke katalog pengadaan B2B Anda.</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeImportModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+
+        <form action="<?= base_url('vendor/products/import-csv') ?>" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
+            <?= csrf_field() ?>
+
+            <div class="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-emerald-950 space-y-2">
+                <div class="font-bold flex items-center justify-between">
+                    <span class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-emerald-600 text-[18px]">description</span>
+                        Petunjuk Pengisian CSV:
+                    </span>
+                    <a href="<?= base_url('vendor/products/template-csv') ?>" class="text-[11px] text-emerald-700 hover:text-emerald-900 font-extrabold underline flex items-center gap-0.5">
+                        <span class="material-symbols-outlined text-[14px]">download</span> Unduh Contoh Template
+                    </a>
+                </div>
+                <ul class="text-[11px] text-slate-600 space-y-1 list-disc list-inside">
+                    <li>Gunakan file berekstensi <strong>.csv</strong> (Mendukung pemisah koma <code>,</code> maupun titik-koma <code>;</code> dari Excel).</li>
+                    <li>Kolom wajib: <strong>nama_barang</strong> dan <strong>harga_b2b</strong>.</li>
+                    <li>Jika kolom <strong>kategori</strong> tidak cocok persis, sistem otomatis memetakan ke kategori yang paling mendekati.</li>
+                    <li>Kolom <strong>sku</strong> akan dibuatkan otomatis bila dikosongkan.</li>
+                </ul>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Pilih File CSV Produk: <span class="text-rose-500">*</span></label>
+                <div class="border-2 border-dashed border-slate-300 rounded-2xl p-4 text-center hover:border-emerald-500 transition-colors bg-slate-50/50">
+                    <input type="file" name="csv_file" accept=".csv,text/csv,text/plain" required id="csvInput"
+                           class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer">
+                    <p class="text-[11px] text-slate-400 mt-2">Maksimal ukuran file: 5 MB.</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button type="button" onclick="closeImportModal()" class="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 font-semibold text-xs">
+                    Batal
+                </button>
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px]">cloud_upload</span>
+                    <span>Proses Import Barang</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openImportModal() {
+    document.getElementById('importModal').classList.remove('hidden');
+}
+
+function closeImportModal() {
+    document.getElementById('importModal').classList.add('hidden');
+}
+</script>
 
 <?= $this->endSection() ?>

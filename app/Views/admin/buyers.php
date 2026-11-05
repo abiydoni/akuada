@@ -45,9 +45,9 @@
                     <tr>
                         <th class="px-4 py-3.5">Perusahaan Pembeli & Legalitas</th>
                         <th class="px-4 py-3.5">Kontak PIC Procurement</th>
-                        <th class="px-4 py-3.5 text-right w-48">Batas Nota Belum Lunas</th>
-                        <th class="px-4 py-3.5 text-right w-44">Saldo Cashback</th>
-                        <th class="px-4 py-3.5 text-center w-36">Aksi Plafon</th>
+                        <th class="px-4 py-3.5 text-right w-44">Batas Nota Belum Lunas</th>
+                        <th class="px-4 py-3.5 text-right w-48">Cashback & Persentase</th>
+                        <th class="px-4 py-3.5 text-center w-40">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
@@ -97,6 +97,18 @@
                                             NPWP: <?= esc($b['npwp'] ?? '-') ?> | NIB: <?= esc($b['nib'] ?? '-') ?>
                                         </div>
 
+                                        <?php
+                                            $docCount = (!empty($b['npwp_file']) ? 1 : 0) + (!empty($b['nib_file']) ? 1 : 0) + (!empty($b['deed_file']) ? 1 : 0) + (!empty($b['id_card_file']) ? 1 : 0) + (!empty($b['sppkp_file']) ? 1 : 0);
+                                        ?>
+                                        <div class="pt-1 flex flex-wrap items-center gap-1">
+                                            <button type="button" 
+                                                    onclick="openDocsModal('<?= esc($b['company_name']) ?>', <?= $b['is_verified'] ? 'true' : 'false' ?>, '<?= base_url('admin/buyers/toggle/' . $b['id']) ?>', '<?= esc($b['npwp_file'] ?? '') ?>', '<?= esc($b['nib_file'] ?? '') ?>', '<?= esc($b['deed_file'] ?? '') ?>', '<?= esc($b['id_card_file'] ?? '') ?>', '<?= esc($b['sppkp_file'] ?? '') ?>', '<?= esc($b['business_field'] ?? '-') ?>', '<?= esc($b['city'] ?? '-') ?>', '<?= esc($b['province'] ?? '-') ?>', '<?= esc(addslashes($b['address'] ?? '-')) ?>')"
+                                                    class="px-2 py-0.5 rounded-lg <?= $docCount > 0 ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-500' ?> text-[10px] font-bold inline-flex items-center gap-1 transition">
+                                                <span class="material-symbols-outlined text-[13px]">folder_open</span>
+                                                <span>Berkas Legalitas (<?= $docCount ?> Dokumen)</span>
+                                            </button>
+                                        </div>
+
                                         <?php if ($hasPendingIncrease): ?>
                                             <div class="mt-1.5 p-2 rounded-xl bg-amber-100 border border-amber-300 text-amber-900">
                                                 <span class="font-extrabold text-[10px] uppercase block flex items-center gap-1">
@@ -136,26 +148,54 @@
                                 </div>
                             </td>
 
-                            <!-- Saldo Cashback -->
+                            <!-- Saldo Cashback & Persentase Rate -->
+                            <?php
+                                $buyerRate = get_buyer_cashback_rate((int)$b['id']);
+                                $isCustomRate = !empty($b['cashback_rate']) && (float)$b['cashback_rate'] > 0;
+                            ?>
                             <td class="px-4 py-3.5 align-top text-right font-mono">
                                 <div class="font-black text-purple-900 text-sm"><?= format_rupiah($b['cashback_balance'] ?? 0) ?></div>
-                                <div class="text-[10px] text-purple-700 font-semibold mt-0.5">Saldo Cashback Aktif</div>
+                                <div class="flex items-center justify-end gap-1 mt-1 font-sans">
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full <?= $isCustomRate ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-700' ?> text-[10px] font-bold">
+                                        <span class="material-symbols-outlined text-[12px] text-purple-600">redeem</span>
+                                        <?= esc(number_format($buyerRate, 2)) ?>%
+                                        <?php if ($isCustomRate): ?>
+                                            <span class="text-[9px] text-purple-600 font-semibold">(Khusus)</span>
+                                        <?php else: ?>
+                                            <span class="text-[9px] text-slate-500 font-normal">(Default)</span>
+                                        <?php endif; ?>
+                                    </span>
+                                </div>
                             </td>
 
                             <!-- Action -->
-                            <td class="px-4 py-3.5 align-top text-center">
+                            <td class="px-4 py-3.5 align-top text-center space-y-1.5">
+                                <?php if (!$b['is_verified']): ?>
+                                    <a href="<?= base_url('admin/buyers/toggle/' . $b['id']) ?>" 
+                                       data-confirm="Sahkan dan verifikasi legalitas perusahaan <?= esc($b['company_name']) ?>?" 
+                                       class="w-full px-2.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition inline-flex items-center justify-center gap-1 shadow-xs">
+                                        <span class="material-symbols-outlined text-[15px]">verified</span>
+                                        <span>Verifikasi Legalitas</span>
+                                    </a>
+                                <?php endif; ?>
                                 <?php if ($hasPendingIncrease): ?>
                                     <button type="button" 
                                             onclick="openLimitModal(<?= $b['id'] ?>, '<?= esc($b['company_name']) ?>', <?= (float)($reqData['requested_limit'] ?? $limit) ?>)"
-                                            class="w-full px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition inline-flex items-center justify-center gap-1 shadow-sm mb-1.5">
+                                            class="w-full px-2.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition inline-flex items-center justify-center gap-1 shadow-sm">
                                         <span class="material-symbols-outlined text-[15px]">verified</span>
                                         <span>Setujui Limit</span>
                                     </button>
                                 <?php endif; ?>
                                 <button type="button" 
+                                        onclick="openCashbackModal(<?= $b['id'] ?>, '<?= esc($b['company_name']) ?>', '<?= esc($b['cashback_rate'] ?? '') ?>', <?= esc(get_buyer_cashback_rate()) ?>)"
+                                        class="w-full px-2.5 py-1.5 rounded-xl text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 transition inline-flex items-center justify-center gap-1 border border-purple-200 shadow-xs">
+                                    <span class="material-symbols-outlined text-[15px]">percent</span>
+                                    <span>Atur Cashback</span>
+                                </button>
+                                <button type="button" 
                                         onclick="openLimitModal(<?= $b['id'] ?>, '<?= esc($b['company_name']) ?>', <?= $limit ?>)"
-                                        class="w-full px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 transition inline-flex items-center justify-center gap-1 border border-purple-200 shadow-sm">
-                                    <span class="material-symbols-outlined text-[15px]">edit_note</span>
+                                        class="w-full px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 transition inline-flex items-center justify-center gap-1 border border-slate-300 shadow-xs">
+                                    <span class="material-symbols-outlined text-[15px]">tune</span>
                                     <span>Ubah Plafon</span>
                                 </button>
                             </td>
@@ -181,6 +221,7 @@
         </div>
 
         <form action="<?= base_url('admin/buyers/limit') ?>" method="POST" class="p-6 space-y-4">
+            <?= csrf_field() ?>
             <input type="hidden" name="company_id" id="modal_buyer_id">
             
             <div>
@@ -210,6 +251,169 @@
     </div>
 </div>
 
+<!-- Modal Ubah Persentase Cashback Buyer -->
+<div id="cashbackModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden text-xs animate-in fade-in zoom-in-95 duration-150">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-purple-50 to-pink-50">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-purple-600">savings</span>
+                <h3 class="font-bold text-slate-900 text-sm">Pengaturan Persentase Cashback Buyer</h3>
+            </div>
+            <button type="button" onclick="closeCashbackModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+
+        <form action="<?= base_url('admin/buyers/update-cashback') ?>" method="POST" class="p-6 space-y-4">
+            <?= csrf_field() ?>
+            <input type="hidden" name="company_id" id="modal_cashback_buyer_id">
+            
+            <div>
+                <span class="text-slate-400 text-[11px] block">Perusahaan Pembeli:</span>
+                <strong id="modal_cashback_buyer_name" class="text-slate-900 text-sm font-bold block pt-0.5"></strong>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Persentase Fee Cashback (%):</label>
+                <div class="relative">
+                    <input type="number" name="cashback_rate" id="modal_cashback_rate_value" step="0.01" min="0" max="100" placeholder="Biarkan kosong untuk ikut default sistem"
+                           class="w-full pr-10 pl-4 py-2.5 rounded-xl border border-purple-300 focus:border-purple-600 font-mono font-bold text-base text-purple-900">
+                    <span class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 font-bold">%</span>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
+                    Setiap transaksi belanja yang lunas oleh buyer ini akan mendapatkan cashback saldo sebesar persentase ini. Default sistem saat ini: <strong id="modal_cashback_default_hint" class="text-purple-700 font-bold">1.0%</strong>. Kosongkan nilai jika ingin mengikuti setting global sistem.
+                </p>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button type="button" onclick="closeCashbackModal()" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 font-semibold">
+                    Batal
+                </button>
+                <button type="submit" class="btn-akuada-primary px-5 py-2 text-xs">
+                    Simpan Cashback
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Berkas Legalitas & Kepatuhan Buyer -->
+<div id="docsModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden text-xs animate-in fade-in zoom-in-95 duration-150">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-purple-600 text-2xl">verified_user</span>
+                <div>
+                    <h3 class="font-extrabold text-slate-900 text-sm">Berkas Legalitas & Kepatuhan Usaha Buyer</h3>
+                    <p class="text-[11px] text-slate-500" id="docsModalCompanyName">-</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeDocsModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+
+        <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+            <!-- Profil Singkat -->
+            <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-2 gap-2 text-[11px]">
+                <div>
+                    <span class="text-slate-400 block text-[10px]">Bidang / Sektor Usaha:</span>
+                    <strong class="text-slate-800" id="docsModalSector">-</strong>
+                </div>
+                <div>
+                    <span class="text-slate-400 block text-[10px]">Kota & Provinsi Domisili:</span>
+                    <strong class="text-slate-800" id="docsModalLocation">-</strong>
+                </div>
+                <div class="col-span-2">
+                    <span class="text-slate-400 block text-[10px]">Alamat Gudang / Kantor:</span>
+                    <span class="text-slate-700" id="docsModalAddress">-</span>
+                </div>
+            </div>
+
+            <!-- List 5 Dokumen -->
+            <div class="space-y-2.5">
+                <h4 class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-purple-600 text-[16px]">folder</span>
+                    <span>Kelengkapan Berkas Dokumen Diunggah:</span>
+                </h4>
+
+                <!-- 1. NPWP -->
+                <div class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-3 hover:bg-slate-50/70 transition">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-purple-600 text-xl">credit_card</span>
+                        <div>
+                            <div class="font-bold text-slate-900">1. Kartu NPWP Perusahaan / SKT Pajak</div>
+                            <span class="text-[10px] text-slate-400">Validasi e-Faktur Pajak PPN & identitas wajib pajak</span>
+                        </div>
+                    </div>
+                    <div id="docsNpwpBtn"></div>
+                </div>
+
+                <!-- 2. NIB -->
+                <div class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-3 hover:bg-slate-50/70 transition">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-blue-600 text-xl">license</span>
+                        <div>
+                            <div class="font-bold text-slate-900">2. Nomor Induk Berusaha (NIB OSS)</div>
+                            <span class="text-[10px] text-slate-400">Izin berusaha resmi Kementerian Investasi/BKPM</span>
+                        </div>
+                    </div>
+                    <div id="docsNibBtn"></div>
+                </div>
+
+                <!-- 3. Akta -->
+                <div class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-3 hover:bg-slate-50/70 transition">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-amber-600 text-xl">gavel</span>
+                        <div>
+                            <div class="font-bold text-slate-900">3. Akta Pendirian / SK Kemenkumham</div>
+                            <span class="text-[10px] text-slate-400">Bukti keabsahan badan hukum & susunan direksi</span>
+                        </div>
+                    </div>
+                    <div id="docsDeedBtn"></div>
+                </div>
+
+                <!-- 4. KTP PIC -->
+                <div class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-3 hover:bg-slate-50/70 transition">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-emerald-600 text-xl">badge</span>
+                        <div>
+                            <div class="font-bold text-slate-900">4. Foto / Scan KTP PIC Pengadaan</div>
+                            <span class="text-[10px] text-slate-400">Verifikasi identitas penanggung jawab pemesanan</span>
+                        </div>
+                    </div>
+                    <div id="docsIdCardBtn"></div>
+                </div>
+
+                <!-- 5. SPPKP -->
+                <div class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-3 hover:bg-slate-50/70 transition">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-slate-500 text-xl">receipt_long</span>
+                        <div>
+                            <div class="font-bold text-slate-900">5. Surat Pengukuhan PKP (SPPKP)</div>
+                            <span class="text-[10px] text-slate-400">Khusus pengkreditan Faktur Pajak PPN Masukan</span>
+                        </div>
+                    </div>
+                    <div id="docsSppkpBtn"></div>
+                </div>
+            </div>
+
+            <!-- Footer Action in Modal -->
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+                <span id="docsModalStatusBadge"></span>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="closeDocsModal()" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 font-semibold">
+                        Tutup
+                    </button>
+                    <a id="docsModalToggleLink" href="#" data-confirm="Ubah status verifikasi legalitas perusahaan ini?" class="px-4 py-2 rounded-xl font-bold text-white transition">
+                        -
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function openLimitModal(companyId, companyName, currentLimit) {
     document.getElementById('modal_buyer_id').value = companyId;
@@ -220,6 +424,70 @@ function openLimitModal(companyId, companyName, currentLimit) {
 
 function closeLimitModal() {
     document.getElementById('limitModal').classList.add('hidden');
+}
+
+function openCashbackModal(companyId, companyName, currentRate, defaultRate) {
+    document.getElementById('modal_cashback_buyer_id').value = companyId;
+    document.getElementById('modal_cashback_buyer_name').textContent = companyName;
+    document.getElementById('modal_cashback_rate_value').value = currentRate !== '' ? currentRate : '';
+    document.getElementById('modal_cashback_default_hint').textContent = defaultRate + '%';
+    document.getElementById('cashbackModal').classList.remove('hidden');
+}
+
+function closeCashbackModal() {
+    document.getElementById('cashbackModal').classList.add('hidden');
+}
+
+function renderDocBtn(filePath, label) {
+    if (filePath && filePath.trim() !== '') {
+        const fullUrl = '<?= base_url() ?>/' + filePath.replace(/^\//, '');
+        return `<a href="${fullUrl}" target="_blank" class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-[11px] inline-flex items-center gap-1 shadow-xs transition">
+            <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+            <span>Lihat ${label}</span>
+        </a>`;
+    }
+    return `<span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-400 font-medium text-[10px] inline-flex items-center gap-1">
+        <span class="material-symbols-outlined text-[13px]">cancel</span> Belum Diunggah
+    </span>`;
+}
+
+function openDocsModal(companyName, isVerified, toggleUrl, npwpFile, nibFile, deedFile, idCardFile, sppkpFile, sector, city, province, address) {
+    document.getElementById('docsModalCompanyName').textContent = companyName;
+    document.getElementById('docsModalSector').textContent = sector || '-';
+    document.getElementById('docsModalLocation').textContent = (city || '-') + ', ' + (province || '-');
+    document.getElementById('docsModalAddress').textContent = address || '-';
+
+    document.getElementById('docsNpwpBtn').innerHTML = renderDocBtn(npwpFile, 'NPWP');
+    document.getElementById('docsNibBtn').innerHTML = renderDocBtn(nibFile, 'NIB');
+    document.getElementById('docsDeedBtn').innerHTML = renderDocBtn(deedFile, 'Akta');
+    document.getElementById('docsIdCardBtn').innerHTML = renderDocBtn(idCardFile, 'KTP');
+    document.getElementById('docsSppkpBtn').innerHTML = renderDocBtn(sppkpFile, 'SPPKP');
+
+    const toggleBtn = document.getElementById('docsModalToggleLink');
+    toggleBtn.href = toggleUrl;
+
+    const statusBadge = document.getElementById('docsModalStatusBadge');
+    if (isVerified) {
+        statusBadge.innerHTML = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold border border-emerald-200">
+            <span class="material-symbols-outlined text-[14px]">verified</span> Legalitas Terverifikasi
+        </span>`;
+        toggleBtn.textContent = 'Cabut Verifikasi';
+        toggleBtn.className = 'px-4 py-2 rounded-xl font-bold text-white bg-rose-600 hover:bg-rose-700 transition';
+        toggleBtn.setAttribute('data-confirm', 'Apakah Anda yakin ingin menonaktifkan status verifikasi ' + companyName + '?');
+    } else {
+        statusBadge.innerHTML = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold border border-amber-200">
+            <span class="material-symbols-outlined text-[14px]">hourglass_empty</span> Menunggu Verifikasi Dokumen
+        </span>`;
+        toggleBtn.textContent = 'Sahkan & Verifikasi Legalitas';
+        toggleBtn.className = 'px-4 py-2 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition shadow-md shadow-emerald-600/20';
+        toggleBtn.setAttribute('data-confirm', 'Apakah seluruh dokumen legalitas ' + companyName + ' sudah valid dan siap disahkan?');
+    }
+
+    document.getElementById('docsModal').classList.remove('hidden');
+}
+
+function closeDocsModal() {
+    document.getElementById('docsModal').classList.add('hidden');
 }
 </script>
 

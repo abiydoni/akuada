@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id" class="h-full bg-slate-50">
+<html lang="id" class="min-h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -77,38 +77,7 @@
     <script src="<?= base_url('js/akuada-swal.js?v=' . filemtime(FCPATH . 'js/akuada-swal.js')) ?>"></script>
     <script src="<?= base_url('js/akuada-realtime.js?v=' . filemtime(FCPATH . 'js/akuada-realtime.js')) ?>"></script>
 </head>
-<body class="h-full flex flex-col font-sans antialiased text-slate-800 bg-slate-50 selection:bg-pink-500 selection:text-white">
-
-    <!-- Role Switcher Quick Bar (Uniform across all pages) -->
-    <div class="bg-gradient-to-r from-slate-900 via-purple-950 to-slate-900 text-white text-xs py-1.5 px-4 border-b border-purple-800/40 z-50">
-        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-pink-500/20 text-pink-300 font-semibold border border-pink-500/40">
-                    <span class="material-symbols-outlined text-[13px]">tune</span> Role Simulator B2B
-                </span>
-                <span class="text-slate-300 hidden sm:inline">Pindah mode dashboard secara instan:</span>
-            </div>
-            <div class="flex items-center gap-1.5 flex-wrap">
-                <a href="<?= base_url('/') ?>" class="px-2.5 py-1 rounded transition text-xs font-medium <?= current_url() == base_url('/') ? 'bg-purple-600 text-white shadow' : 'bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700' ?> flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[14px]">storefront</span> Marketplace
-                </a>
-                <a href="<?= base_url('auth/switch-role/admin') ?>" class="px-2.5 py-1 rounded transition text-xs font-medium <?= session('user_role') === 'admin' && str_contains(current_url(), 'admin') ? 'bg-purple-600 text-white shadow' : 'bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700' ?> flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[14px]">admin_panel_settings</span> Admin
-                </a>
-                <a href="<?= base_url('auth/switch-role/vendor') ?>" class="px-2.5 py-1 rounded transition text-xs font-medium <?= session('user_role') === 'vendor' && str_contains(current_url(), 'vendor') ? 'bg-blue-600 text-white shadow' : 'bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700' ?> flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[14px]">store</span> Vendor (Supplier)
-                </a>
-                <a href="<?= base_url('auth/switch-role/customer') ?>" class="px-2.5 py-1 rounded transition text-xs font-medium <?= session('user_role') === 'customer' && str_contains(current_url(), 'customer') ? 'bg-pink-600 text-white shadow' : 'bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700' ?> flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[14px]">corporate_fare</span> Buyer (Customer PT)
-                </a>
-                <div class="h-4 w-px bg-slate-700 mx-1 hidden sm:block"></div>
-                <div class="text-[11px] text-slate-400 flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[14px] text-emerald-400">verified</span>
-                    <span>Aktif: <strong class="text-white"><?= esc(session('user_name') ?? 'Guest / Buyer') ?></strong></span>
-                </div>
-            </div>
-        </div>
-    </div>
+<body class="min-h-screen flex flex-col font-sans antialiased text-slate-800 bg-slate-50 selection:bg-pink-500 selection:text-white">
 
     <!-- Main View Content -->
     <?= $this->renderSection('content') ?>
@@ -117,7 +86,15 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             <?php if (session()->getFlashdata('success')): ?>
-                AkuAdaAlert.success('Berhasil!', '<?= addslashes(session()->getFlashdata('success')) ?>');
+                <?php 
+                    $successMsg = (string)session()->getFlashdata('success');
+                    $isLong = mb_strlen($successMsg) > 120;
+                ?>
+                <?php if ($isLong): ?>
+                    AkuAdaAlert.success('Berhasil!', '<?= addslashes($successMsg) ?>');
+                <?php else: ?>
+                    AkuAdaAlert.toast('success', '<?= addslashes($successMsg) ?>');
+                <?php endif; ?>
             <?php endif; ?>
             <?php if (session()->getFlashdata('error')): ?>
                 AkuAdaAlert.error('Perhatian!', '<?= addslashes(session()->getFlashdata('error')) ?>');

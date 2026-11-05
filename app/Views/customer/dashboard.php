@@ -7,7 +7,15 @@
     <!-- Welcome Header Card -->
     <div class="bg-gradient-to-r from-pink-900 via-purple-900 to-slate-900 rounded-2xl p-6 text-white shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div class="space-y-1 max-w-3xl">
-            <span class="px-2.5 py-0.5 rounded-full bg-pink-500/30 text-pink-200 text-[11px] font-bold border border-pink-400/30 uppercase tracking-wider">Akun Corporate Buyer Terverifikasi</span>
+            <?php if (!empty($company['is_verified'])): ?>
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200 text-[11px] font-bold border border-emerald-400/30 uppercase tracking-wider inline-flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Akun Corporate Buyer Terverifikasi
+                </span>
+            <?php else: ?>
+                <span class="px-2.5 py-0.5 rounded-full bg-amber-500/30 text-amber-200 text-[11px] font-bold border border-amber-400/30 uppercase tracking-wider inline-flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span> Menunggu Verifikasi Dokumen Legalitas
+                </span>
+            <?php endif; ?>
             <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight break-words"><?= esc($company['company_name'] ?? 'PT Mega Solusi Digital Tbk') ?></h1>
             <p class="text-xs text-purple-200 leading-relaxed">
                 Portal Pengadaan Operasional, Pembelian Grosir B2B, dan Fasilitas Plafon Kredit Tempo (Term of Payment / TOP).
@@ -49,7 +57,7 @@
                     <?= format_rupiah($company['cashback_balance'] ?? 0) ?>
                 </div>
                 <div class="flex items-center justify-between text-[11px] text-slate-500 font-medium">
-                    <span class="text-purple-700 font-bold">+<?= esc(get_buyer_cashback_rate()) ?>% Tiap PO Lunas</span>
+                    <span class="text-purple-700 font-bold">+<?= esc(get_buyer_cashback_rate((int)($company['id'] ?? 0))) ?>% Tiap PO Lunas</span>
                     <a href="<?= base_url('customer/cashback') ?>" class="text-pink-600 font-bold hover:underline">Tarik Dana &rarr;</a>
                 </div>
                 <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -94,15 +102,28 @@
         <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:shadow-md transition">
             <div class="flex items-center justify-between gap-2 mb-3">
                 <span class="text-xs text-slate-500 font-semibold">Status Legalitas Perusahaan</span>
-                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                    <span class="material-symbols-outlined text-xl">verified_user</span>
-                </div>
+                <?php if (!empty($company['is_verified'])): ?>
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-xl">verified_user</span>
+                    </div>
+                <?php else: ?>
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-xl">hourglass_top</span>
+                    </div>
+                <?php endif; ?>
             </div>
             <div class="space-y-1">
-                <div class="text-base font-black text-slate-900">PKP Terverifikasi</div>
-                <div class="text-[11px] text-emerald-600 font-medium">
-                    NPWP & NIB Badan Valid
-                </div>
+                <?php if (!empty($company['is_verified'])): ?>
+                    <div class="text-base font-black text-slate-900">Legalitas Terverifikasi</div>
+                    <div class="text-[11px] text-emerald-600 font-medium">
+                        NPWP, NIB & Berkas Badan Sah
+                    </div>
+                <?php else: ?>
+                    <div class="text-base font-black text-amber-700">Menunggu Verifikasi</div>
+                    <div class="text-[11px] text-amber-600 font-medium">
+                        Dokumen Ditinjau Tim Compliance
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

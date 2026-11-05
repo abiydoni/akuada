@@ -119,9 +119,6 @@ class CoaModel extends Model
         } else {
             self::syncBankCoaNamesWithSettings($db);
         }
-
-        // 5. Sync orders & operational sample journals
-        self::syncOrdersToJournals($db);
     }
 
     public static function syncBankCoaNamesWithSettings($db): void
@@ -162,29 +159,29 @@ class CoaModel extends Model
 
         $accounts = [
             // 1xx-xxx: ASSET (AKTIVA)
-            ['110-001', 'Kas Kecil Operasional (Petty Cash)', 'ASSET', 'Kas & Setara Kas', 'DEBIT', 'NERACA', 1, 'Kas Tunai Kantor', 'PETTY-CASH-01', 25000000.00, 1, 'Kas tunai operasional harian kantor pusat'],
-            ['111-001', 'Kas Bank - ' . $b1Name, 'ASSET', 'Kas & Setara Kas', 'DEBIT', 'NERACA', 1, $b1Name, $b1Num, 450000000.00, 1, 'Rekening penampungan utama (Escrow) transaksi B2B'],
-            ['111-002', 'Kas Bank - ' . $b2Name, 'ASSET', 'Kas & Setara Kas', 'DEBIT', 'NERACA', 1, $b2Name, $b2Num, 275000000.00, 1, 'Rekening operasional & penerimaan pembayaran kedua'],
-            ['111-003', 'Kas Bank - ' . $b3Name, 'ASSET', 'Kas & Setara Kas', 'DEBIT', 'NERACA', 1, $b3Name, $b3Num, 120000000.00, 1, 'Rekening Corporate Virtual Account BNI'],
+            ['110-001', 'Kas Kecil Operasional (Petty Cash)', 'ASSET', 'Kas & Setara Kas', 'DEBIT', 'NERACA', 1, 'Kas Tunai Kantor', 'PETTY-CASH-01', 0.00, 1, 'Kas tunai operasional harian kantor pusat'],
+            ['111-001', 'Kas Bank - ' . $b1Name, 'ASSET', 'Kas & Setara Kas', 'DEBIT', 'NERACA', 1, $b1Name, $b1Num, 0.00, 1, 'Rekening penampungan utama (Escrow) transaksi B2B'],
+            ['111-002', 'Kas Bank - ' . $b2Name, 'ASSET', 'Kas & Setara Kas', 'DEBIT', 'NERACA', 1, $b2Name, $b2Num, 0.00, 1, 'Rekening operasional & penerimaan pembayaran kedua'],
+            ['111-003', 'Kas Bank - ' . $b3Name, 'ASSET', 'Kas & Setara Kas', 'DEBIT', 'NERACA', 1, $b3Name, $b3Num, 0.00, 1, 'Rekening Corporate Virtual Account BNI'],
             ['112-001', 'Piutang Usaha - Corporate Buyer (AR)', 'ASSET', 'Piutang Usaha', 'DEBIT', 'NERACA', 0, null, null, 0.00, 1, 'Tagihan piutang TOP atas PO pelanggan korporat'],
             ['112-002', 'Cadangan Kerugian Piutang', 'ASSET', 'Piutang Usaha', 'CREDIT', 'NERACA', 0, null, null, 0.00, 0, 'Penyisihan piutang ragu-ragu'],
             ['113-001', 'Uang Muka Kepada Mitra Vendor', 'ASSET', 'Aset Lancar Lainnya', 'DEBIT', 'NERACA', 0, null, null, 0.00, 0, 'Deposit / DP pengadaan barang ke supplier'],
             ['114-001', 'PPN Masukan (Input VAT)', 'ASSET', 'Pajak Dibayar Dimuka', 'DEBIT', 'NERACA', 0, null, null, 0.00, 1, 'Faktur pajak masukan dari mitra vendor pengadaan'],
             ['114-002', 'PPh Pasal 22/23 Dibayar Dimuka', 'ASSET', 'Pajak Dibayar Dimuka', 'DEBIT', 'NERACA', 0, null, null, 0.00, 0, 'Kredit pajak penghasilan dipotong pihak ketiga'],
-            ['121-001', 'Peralatan & Infrastruktur Server IT', 'ASSET', 'Aset Tetap', 'DEBIT', 'NERACA', 0, null, null, 180000000.00, 0, 'Inventaris server, lisensi sistem, dan perangkat kerja'],
-            ['121-002', 'Inventaris & Furnitur Kantor', 'ASSET', 'Aset Tetap', 'DEBIT', 'NERACA', 0, null, null, 65000000.00, 0, 'Peralatan dan furnitur kantor pusat AkuAda'],
-            ['122-001', 'Akumulasi Penyusutan Aset Tetap', 'ASSET', 'Aset Tetap', 'CREDIT', 'NERACA', 0, null, null, 35000000.00, 0, 'Akumulasi depresiasi peralatan & inventaris'],
+            ['121-001', 'Peralatan & Infrastruktur Server IT', 'ASSET', 'Aset Tetap', 'DEBIT', 'NERACA', 0, null, null, 0.00, 0, 'Inventaris server, lisensi sistem, dan perangkat kerja'],
+            ['121-002', 'Inventaris & Furnitur Kantor', 'ASSET', 'Aset Tetap', 'DEBIT', 'NERACA', 0, null, null, 0.00, 0, 'Peralatan dan furnitur kantor pusat AkuAda'],
+            ['122-001', 'Akumulasi Penyusutan Aset Tetap', 'ASSET', 'Aset Tetap', 'CREDIT', 'NERACA', 0, null, null, 0.00, 0, 'Akumulasi depresiasi peralatan & inventaris'],
 
             // 2xx-xxx: LIABILITY (KEWAJIBAN / HUTANG)
             ['210-001', 'Hutang Usaha - Settlement Mitra Vendor (AP)', 'LIABILITY', 'Kewajiban Jangka Pendek', 'CREDIT', 'NERACA', 0, null, null, 0.00, 1, 'Kewajiban pembayaran dana bersih (net payout) ke mitra vendor'],
-            ['210-002', 'Biaya yang Masih Harus Dibayar (Accrued Expense)', 'LIABILITY', 'Kewajiban Jangka Pendek', 'CREDIT', 'NERACA', 0, null, null, 15000000.00, 0, 'Beban operasional akrual akhir bulan'],
+            ['210-002', 'Biaya yang Masih Harus Dibayar (Accrued Expense)', 'LIABILITY', 'Kewajiban Jangka Pendek', 'CREDIT', 'NERACA', 0, null, null, 0.00, 0, 'Beban operasional akrual akhir bulan'],
             ['211-001', 'PPN Keluaran (Output VAT)', 'LIABILITY', 'Hutang Pajak', 'CREDIT', 'NERACA', 0, null, null, 0.00, 1, 'Kewajiban PPN e-Faktur atas penjualan ke Corporate Buyer'],
             ['212-001', 'Hutang PPh Pasal 21/22/23', 'LIABILITY', 'Hutang Pajak', 'CREDIT', 'NERACA', 0, null, null, 0.00, 0, 'Hutang pajak penghasilan potongan'],
             ['220-001', 'Kewajiban Pembiayaan Jangka Panjang', 'LIABILITY', 'Kewajiban Jangka Panjang', 'CREDIT', 'NERACA', 0, null, null, 0.00, 0, 'Fasilitas pendanaan modal kerja jangka panjang'],
 
             // 3xx-xxx: EQUITY (MODAL / EKUITAS)
-            ['310-001', 'Modal Disetor Perusahaan (Paid-in Capital)', 'EQUITY', 'Ekuitas Pemegang Saham', 'CREDIT', 'NERACA', 0, null, null, 850000000.00, 1, 'Modal dasar dan disetor penuh pemegang saham AkuAda'],
-            ['320-001', 'Saldo Laba Ditahan (Retained Earnings)', 'EQUITY', 'Ekuitas Pemegang Saham', 'CREDIT', 'NERACA', 0, null, null, 215000000.00, 1, 'Akumulasi laba bersih periode sebelumnya'],
+            ['310-001', 'Modal Disetor Perusahaan (Paid-in Capital)', 'EQUITY', 'Ekuitas Pemegang Saham', 'CREDIT', 'NERACA', 0, null, null, 0.00, 1, 'Modal dasar dan disetor penuh pemegang saham AkuAda'],
+            ['320-001', 'Saldo Laba Ditahan (Retained Earnings)', 'EQUITY', 'Ekuitas Pemegang Saham', 'CREDIT', 'NERACA', 0, null, null, 0.00, 1, 'Akumulasi laba bersih periode sebelumnya'],
             ['330-001', 'Dividen / Prive', 'EQUITY', 'Ekuitas Pemegang Saham', 'DEBIT', 'NERACA', 0, null, null, 0.00, 0, 'Pembagian dividen kepada pemegang saham'],
 
             // 4xx-xxx: REVENUE (PENDAPATAN USAHA)
@@ -519,59 +516,6 @@ class CoaModel extends Model
                     ],
                 ]);
             }
-        }
-
-        // Seed 2 realistic operational expense journals once so R/L and Cash Book have OPEX examples too
-        $opexJrn = $db->table('acc_journals')->where('journal_number', 'JRN/OPEX/0001')->get()->getRowArray();
-        if (!$opexJrn && isset($coaMap['611-001'], $coaMap['610-001'], $coaMap['111-002'], $coaMap['710-001'])) {
-            $db->table('acc_journals')->insert([
-                'journal_number'   => 'JRN/OPEX/0001',
-                'journal_date'     => date('Y-m-05'),
-                'journal_type'     => 'CASH_OUT',
-                'reference_type'   => 'opex',
-                'reference_id'     => 1,
-                'reference_number' => 'VCH/OPEX/' . date('Ym') . '/01',
-                'description'      => 'Pembayaran Biaya Cloud Server, Integrasi e-Faktur & Operasional Tim Bulanan',
-                'total_debit'      => 18500000.00,
-                'total_credit'     => 18500000.00,
-                'status'           => 'POSTED',
-                'created_by'       => 'Finance Controller',
-                'created_at'       => $now,
-                'updated_at'       => $now,
-            ]);
-            $opJid = (int)$db->insertID();
-            $db->table('acc_journal_items')->insertBatch([
-                [
-                    'journal_id'       => $opJid,
-                    'coa_id'           => $coaMap['610-001'],
-                    'account_code'     => '610-001',
-                    'line_description' => 'Gaji & Tunjangan Tim Operasional E-Procurement',
-                    'debit'            => 15000000.00,
-                    'credit'           => 0.00,
-                    'created_at'       => $now,
-                    'updated_at'       => $now,
-                ],
-                [
-                    'journal_id'       => $opJid,
-                    'coa_id'           => $coaMap['611-001'],
-                    'account_code'     => '611-001',
-                    'line_description' => 'Langganan Dedicated Cloud Server & API e-Faktur DJP',
-                    'debit'            => 3500000.00,
-                    'credit'           => 0.00,
-                    'created_at'       => $now,
-                    'updated_at'       => $now,
-                ],
-                [
-                    'journal_id'       => $opJid,
-                    'coa_id'           => $coaMap['111-002'],
-                    'account_code'     => '111-002',
-                    'line_description' => 'Pengeluaran Bank Operasional BCA',
-                    'debit'            => 0.00,
-                    'credit'           => 18500000.00,
-                    'created_at'       => $now,
-                    'updated_at'       => $now,
-                ],
-            ]);
         }
     }
 

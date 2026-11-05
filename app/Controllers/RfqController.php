@@ -26,6 +26,11 @@ class RfqController extends BaseController
 
     public function create()
     {
+        if (!session('is_logged_in') || session('user_role') !== 'customer') {
+            session()->setFlashdata('error', 'Silakan masuk dengan akun Corporate Buyer untuk membuat dan mengajukan RFQ.');
+            return redirect()->to('/auth/login');
+        }
+
         $companyModel = new CompanyModel();
         $productModel = new ProductModel();
 
@@ -41,6 +46,11 @@ class RfqController extends BaseController
 
     public function store()
     {
+        if (!session('is_logged_in') || session('user_role') !== 'customer') {
+            session()->setFlashdata('error', 'Silakan masuk dengan akun Corporate Buyer untuk membuat dan mengajukan RFQ.');
+            return redirect()->to('/auth/login');
+        }
+
         $title = $this->request->getPost('title');
         $vendorId = $this->request->getPost('vendor_company_id') ?: null;
         $notes = $this->request->getPost('notes');

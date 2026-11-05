@@ -13,75 +13,84 @@
     style.textContent = `
         /* Compact Modal Popup */
         .swal2-popup.swal2-compact-popup {
-            width: 360px !important;
+            width: 380px !important;
             max-width: 92vw !important;
-            padding: 16px 20px 18px 20px !important;
-            border-radius: 20px !important;
-            box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.2), 0 10px 15px -5px rgba(0, 0, 0, 0.08) !important;
-            border: 1px solid rgba(226, 232, 240, 0.8) !important;
+            padding: 22px 24px !important;
+            border-radius: 18px !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08) !important;
+            border: 1px solid rgba(226, 232, 240, 0.9) !important;
             font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
         }
 
-        /* Compact Icons */
+        /* Scaled Modal Icons: font-size 10px ensures all em-calculated child SVG/lines/masks scale down proportionally to 50px */
         .swal2-compact-popup .swal2-icon {
-            width: 44px !important;
-            height: 44px !important;
-            margin: 4px auto 8px auto !important;
-            border-width: 3px !important;
-        }
-        .swal2-compact-popup .swal2-icon.swal2-question {
-            color: #7c3aed !important;
-            border-color: #c4b5fd !important;
+            font-size: 10px !important;
+            margin: 6px auto 14px auto !important;
         }
         .swal2-compact-popup .swal2-icon.swal2-success {
-            color: #059669 !important;
-            border-color: #a7f3d0 !important;
+            border-color: #10b981 !important;
+            color: #10b981 !important;
+        }
+        .swal2-compact-popup .swal2-icon.swal2-success [class^='swal2-success-line'] {
+            background-color: #10b981 !important;
+        }
+        .swal2-compact-popup .swal2-icon.swal2-success .swal2-success-ring {
+            border-color: rgba(16, 185, 129, 0.3) !important;
         }
         .swal2-compact-popup .swal2-icon.swal2-error {
-            color: #e11d48 !important;
-            border-color: #fecdd3 !important;
+            border-color: #ef4444 !important;
+            color: #ef4444 !important;
+        }
+        .swal2-compact-popup .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+            background-color: #ef4444 !important;
         }
         .swal2-compact-popup .swal2-icon.swal2-warning {
-            color: #d97706 !important;
-            border-color: #fde68a !important;
+            border-color: #f59e0b !important;
+            color: #f59e0b !important;
         }
-        .swal2-compact-popup .swal2-icon .swal2-icon-content {
-            font-size: 24px !important;
+        .swal2-compact-popup .swal2-icon.swal2-info {
+            border-color: #3b82f6 !important;
+            color: #3b82f6 !important;
+        }
+        .swal2-compact-popup .swal2-icon.swal2-question {
+            border-color: #8b5cf6 !important;
+            color: #8b5cf6 !important;
         }
 
-        /* Compact Typography */
+        /* Typography */
         .swal2-compact-popup .swal2-title {
-            font-size: 14px !important;
-            font-weight: 800 !important;
+            font-size: 16px !important;
+            font-weight: 700 !important;
             color: #0f172a !important;
             padding: 0 !important;
-            margin: 2px 0 6px 0 !important;
-            line-height: 1.3 !important;
+            margin: 0 0 8px 0 !important;
+            line-height: 1.35 !important;
         }
         .swal2-compact-popup .swal2-html-container {
-            font-size: 11.5px !important;
-            line-height: 1.5 !important;
+            font-size: 13px !important;
+            line-height: 1.55 !important;
             color: #475569 !important;
-            margin: 4px 0 14px 0 !important;
+            margin: 0 0 18px 0 !important;
             padding: 0 !important;
         }
 
         /* Compact Buttons */
         .swal2-compact-popup .swal2-actions {
-            margin: 8px 0 0 0 !important;
-            gap: 8px !important;
+            margin: 0 !important;
+            gap: 10px !important;
             width: 100% !important;
             justify-content: center !important;
         }
         .swal2-compact-popup .swal2-confirm {
             background-color: #7c3aed !important;
             color: #ffffff !important;
-            font-size: 11px !important;
-            font-weight: 700 !important;
-            padding: 7px 16px !important;
-            border-radius: 12px !important;
+            font-size: 12.5px !important;
+            font-weight: 600 !important;
+            padding: 9px 22px !important;
+            border-radius: 10px !important;
             box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.25) !important;
             transition: all 0.15s ease !important;
+            margin: 0 !important;
         }
         .swal2-compact-popup .swal2-confirm:hover {
             background-color: #6d28d9 !important;
@@ -90,39 +99,41 @@
             background-color: #f1f5f9 !important;
             color: #475569 !important;
             border: 1px solid #cbd5e1 !important;
-            font-size: 11px !important;
-            font-weight: 700 !important;
-            padding: 7px 14px !important;
-            border-radius: 12px !important;
+            font-size: 12.5px !important;
+            font-weight: 600 !important;
+            padding: 9px 18px !important;
+            border-radius: 10px !important;
             transition: all 0.15s ease !important;
+            margin: 0 !important;
         }
         .swal2-compact-popup .swal2-cancel:hover {
             background-color: #e2e8f0 !important;
             color: #1e293b !important;
         }
 
-        /* Compact Toast */
-        .swal2-popup.swal2-compact-toast {
-            width: 320px !important;
-            max-width: 90vw !important;
-            padding: 8px 14px !important;
+        /* Compact Toast - maintain SweetAlert2 native icon math */
+        .swal2-popup.swal2-toast.swal2-compact-toast {
+            width: auto !important;
+            min-width: 280px !important;
+            max-width: 440px !important;
+            padding: 10px 16px !important;
             border-radius: 14px !important;
-            box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-            border: 1px solid rgba(226, 232, 240, 0.8) !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+            border: 1px solid rgba(226, 232, 240, 0.9) !important;
+            background: #ffffff !important;
         }
-        .swal2-compact-toast .swal2-icon {
-            width: 22px !important;
-            height: 22px !important;
-            margin-right: 8px !important;
-        }
-        .swal2-compact-toast .swal2-icon .swal2-icon-content {
-            font-size: 14px !important;
-        }
-        .swal2-compact-toast .swal2-title {
-            font-size: 11.5px !important;
-            font-weight: 700 !important;
+        .swal2-popup.swal2-toast.swal2-compact-toast .swal2-title {
+            font-size: 13px !important;
+            font-weight: 600 !important;
             color: #1e293b !important;
             margin: 0 !important;
+            padding: 0 !important;
+            line-height: 1.4 !important;
+        }
+        .swal2-popup.swal2-toast.swal2-compact-toast .swal2-html-container {
+            font-size: 12px !important;
+            color: #64748b !important;
+            margin: 2px 0 0 0 !important;
             padding: 0 !important;
         }
     `;
@@ -279,6 +290,29 @@
             }
         });
     }
+
+    // Global listener for logout actions (Automatic SweetAlert confirmation)
+    document.addEventListener('click', function(e) {
+        const logoutLink = e.target.closest('a[href*="auth/logout"], a[href$="/logout"], .btn-logout');
+        if (!logoutLink) return;
+        if (logoutLink.dataset.swalConfirmed === 'true') return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        AkuAdaAlert.confirm(
+            'Konfirmasi Keluar Akun',
+            'Apakah Anda yakin ingin keluar dari sesi akun Anda saat ini?',
+            function() {
+                logoutLink.dataset.swalConfirmed = 'true';
+                window.location.href = logoutLink.href;
+            },
+            null,
+            'Ya, Keluar',
+            'question'
+        );
+        return false;
+    }, true);
 
     // Global listener for forms with data-confirm
     document.addEventListener('submit', function(e) {

@@ -16,6 +16,8 @@ use App\Models\UserModel;
 use App\Models\OrderReviewModel;
 use App\Models\OrderMessageModel;
 use App\Models\OrderReturnModel;
+use App\Models\BuyerWithdrawalModel;
+use App\Models\BuyerCashbackMutationModel;
 
 class AdminController extends BaseController
 {
@@ -270,6 +272,24 @@ class AdminController extends BaseController
         return redirect()->back();
     }
 
+    public function toggleBuyerVerification($id)
+    {
+        $companyModel = new CompanyModel();
+        $buyer = $companyModel->find($id);
+        if ($buyer && $buyer['type'] === 'buyer') {
+            $newStatus = $buyer['is_verified'] ? 0 : 1;
+            $companyModel->update($id, [
+                'is_verified' => $newStatus,
+                'updated_at'  => date('Y-m-d H:i:s'),
+            ]);
+            $msg = $newStatus 
+                ? 'Status legalitas ' . $buyer['company_name'] . ' berhasil diverifikasi dan disahkan! Buyer kini resmi terverifikasi.' 
+                : 'Status verifikasi legalitas ' . $buyer['company_name'] . ' telah dinonaktifkan.';
+            session()->setFlashdata('success', $msg);
+        }
+        return redirect()->back();
+    }
+
     public function buyers()
     {
         $companyModel = new CompanyModel();
@@ -300,13 +320,24 @@ class AdminController extends BaseController
         $city = $this->request->getPost('city') ?? 'Jakarta Selatan';
         $province = $this->request->getPost('province') ?? 'DKI Jakarta';
         $phone = $this->request->getPost('phone');
+        $website = $this->request->getPost('website');
+        $businessField = $this->request->getPost('business_field') ?: 'Perdagangan Umum & Jasa';
         $email = $this->request->getPost('email');
         $picName = $this->request->getPost('pic_name');
         $picPhone = $this->request->getPost('pic_phone');
         $picEmail = $this->request->getPost('pic_email') ?: $email;
         $creditLimit = (float)$this->request->getPost('credit_limit_top');
+        $cashbackRateInput = $this->request->getPost('cashback_rate');
+        $cashbackRate = ($cashbackRateInput !== null && $cashbackRateInput !== '') ? (float)$cashbackRateInput : null;
         $password = $this->request->getPost('password') ?: get_system_setting('default_account_password', 'admin123');
         $position = $this->request->getPost('position') ?: 'Procurement Manager';
+
+        $slug = url_title($companyName, '-', true);
+        $npwpPath   = $this->saveUploadedFile('npwp_file', 'npwp', $slug);
+        $nibPath    = $this->saveUploadedFile('nib_file', 'nib', $slug);
+        $deedPath   = $this->saveUploadedFile('deed_file', 'akta', $slug);
+        $idCardPath = $this->saveUploadedFile('id_card_file', 'ktp', $slug);
+        $sppkpPath  = $this->saveUploadedFile('sppkp_file', 'sppkp', $slug);
 
         $now = date('Y-m-d H:i:s');
 
@@ -317,18 +348,27 @@ class AdminController extends BaseController
             'legal_type'       => $legalType,
             'npwp'             => $npwp,
             'nib'              => $nib,
+            'business_field'   => $businessField,
             'address'          => $address,
             'city'             => $city,
             'province'         => $province,
             'phone'            => $phone,
+            'website'          => $website,
             'email'            => $email,
             'pic_name'         => $picName,
             'pic_phone'        => $picPhone,
             'pic_email'        => $picEmail,
             'credit_limit_top' => $creditLimit,
             'credit_used_top'  => 0.00,
+            'cashback_rate'    => $cashbackRate,
+            'cashback_balance' => 0.00,
             'commission_rate'  => 0.00,
             'is_verified'      => 1,
+            'npwp_file'        => $npwpPath,
+            'nib_file'         => $nibPath,
+            'deed_file'        => $deedPath,
+            'id_card_file'     => $idCardPath,
+            'sppkp_file'       => $sppkpPath,
             'created_at'       => $now,
             'updated_at'       => $now,
         ]);
@@ -362,6 +402,154 @@ class AdminController extends BaseController
 
         session()->setFlashdata('success', 'Plafon Kredit TOP berhasil diperbarui menjadi ' . format_rupiah($newLimit));
         return redirect()->back();
+    }
+
+    public function updateBuyerCashbackRate()
+    {
+        $companyId = (int)$this->request->getPost('company_id');
+        $cashbackRateInput = $this->request->getPost('cashback_rate');
+
+        $companyModel = new CompanyModel();
+        $buyer = $companyModel->find($companyId);
+
+        if (!$buyer || $buyer['type'] !== 'buyer') {
+            session()->setFlashdata('error', 'Perusahaan buyer tidak ditemukan.');
+            return redirect()->back();
+        }
+
+        $rateValue = ($cashbackRateInput === '' || $cashbackRateInput === null) ? null : max(0.0, (float)$cashbackRateInput);
+
+        $companyModel->update($companyId, [
+            'cashback_rate' => $rateValue,
+            'updated_at'    => date('Y-m-d H:i:s'),
+        ]);
+
+        $displayRate = ($rateValue !== null) ? number_format($rateValue, 2) . '%' : 'Default Sistem (' . get_system_setting('buyer_cashback_rate', 1.0) . '%)';
+        session()->setFlashdata('success', 'Persentase cashback untuk ' . $buyer['company_name'] . ' berhasil diperbarui menjadi: ' . $displayRate);
+
+        return redirect()->back();
+    }
+
+    public function buyerWithdrawals()
+    {
+        $withdrawalModel = new BuyerWithdrawalModel();
+        $withdrawals = $withdrawalModel->getWithdrawalsWithCompany();
+
+        $companyModel = new CompanyModel();
+        $totalCashbackAllBuyers = (float)($companyModel->where('type', 'buyer')->selectSum('cashback_balance')->first()['cashback_balance'] ?? 0);
+
+        $pendingCount = 0;
+        $totalPending = 0.0;
+        $totalCompleted = 0.0;
+
+        foreach ($withdrawals as $w) {
+            if ($w['status'] === 'pending') {
+                $pendingCount++;
+                $totalPending += (float)$w['amount'];
+            } elseif ($w['status'] === 'completed') {
+                $totalCompleted += (float)$w['amount'];
+            }
+        }
+
+        return view('admin/buyer_withdrawals', [
+            'title'                  => 'Pencairan Saldo Cashback Buyer - Admin AkuAda',
+            'withdrawals'            => $withdrawals,
+            'pendingCount'           => $pendingCount,
+            'totalPending'           => $totalPending,
+            'totalCompleted'         => $totalCompleted,
+            'totalCashbackAllBuyers' => $totalCashbackAllBuyers,
+        ]);
+    }
+
+    public function processBuyerWithdrawal()
+    {
+        $withdrawalId = (int)$this->request->getPost('withdrawal_id');
+        $action = $this->request->getPost('action'); // 'approve' or 'reject'
+        $adminNotes = trim((string)$this->request->getPost('admin_notes'));
+        $transferProof = trim((string)$this->request->getPost('transfer_proof'));
+
+        $withdrawalModel = new BuyerWithdrawalModel();
+        $withdrawal = $withdrawalModel->find($withdrawalId);
+
+        if (!$withdrawal) {
+            session()->setFlashdata('error', 'Data pengajuan penarikan dana tidak ditemukan.');
+            return redirect()->to('/admin/buyer-withdrawals');
+        }
+
+        if ($withdrawal['status'] !== 'pending') {
+            session()->setFlashdata('warning', 'Pengajuan penarikan ini sudah diproses sebelumnya.');
+            return redirect()->to('/admin/buyer-withdrawals');
+        }
+
+        $companyModel = new CompanyModel();
+        $company = $companyModel->find($withdrawal['company_id']);
+
+        if (!$company) {
+            session()->setFlashdata('error', 'Perusahaan buyer tidak ditemukan.');
+            return redirect()->to('/admin/buyer-withdrawals');
+        }
+
+        $db = \Config\Database::connect();
+        $now = date('Y-m-d H:i:s');
+        $currentAdminName = session('user_name') ?: 'Finance Admin';
+
+        if ($action === 'approve') {
+            $amount = (float)$withdrawal['amount'];
+            $currentBalance = (float)($company['cashback_balance'] ?? 0);
+
+            if ($currentBalance < $amount) {
+                session()->setFlashdata('error', 'Gagal memproses penarikan: Saldo cashback buyer saat ini (' . format_rupiah($currentBalance) . ') kurang dari nominal penarikan (' . format_rupiah($amount) . ').');
+                return redirect()->to('/admin/buyer-withdrawals');
+            }
+
+            $db->transStart();
+
+            $newBalance = $currentBalance - $amount;
+            $companyModel->update($withdrawal['company_id'], [
+                'cashback_balance' => $newBalance,
+                'updated_at'       => $now,
+            ]);
+
+            $withdrawalModel->update($withdrawalId, [
+                'status'         => 'completed',
+                'admin_notes'    => $adminNotes ?: 'Transfer penarikan cashback telah berhasil diproses ke rekening buyer.',
+                'transfer_proof' => $transferProof ?: 'TRF-' . date('YmdHis'),
+                'processed_by'   => $currentAdminName,
+                'processed_at'   => $now,
+                'updated_at'     => $now,
+            ]);
+
+            $mutationModel = new BuyerCashbackMutationModel();
+            $mutationModel->recordMutation(
+                (int)$withdrawal['company_id'],
+                'debit',
+                $amount,
+                $newBalance,
+                'Penarikan cashback #' . $withdrawal['withdrawal_number'] . ' ke ' . $withdrawal['bank_name'] . ' ' . $withdrawal['bank_account_number'] . ' a/n ' . $withdrawal['bank_account_holder'] . ' (Ref: ' . ($transferProof ?: '-') . ')',
+                null,
+                $withdrawalId
+            );
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                session()->setFlashdata('error', 'Terjadi kesalahan sistem saat memproses transaksi penarikan.');
+            } else {
+                session()->setFlashdata('success', 'Pencairan cashback #' . $withdrawal['withdrawal_number'] . ' sebesar ' . format_rupiah($amount) . ' untuk ' . $company['company_name'] . ' berhasil disetujui! Saldo buyer telah otomatis terpotong.');
+            }
+        } elseif ($action === 'reject') {
+            $withdrawalModel->update($withdrawalId, [
+                'status'         => 'rejected',
+                'admin_notes'    => $adminNotes ?: 'Pengajuan penarikan dana ditolak oleh finance.',
+                'processed_by'   => $currentAdminName,
+                'processed_at'   => $now,
+                'updated_at'     => $now,
+            ]);
+
+            session()->setFlashdata('success', 'Pengajuan penarikan dana #' . $withdrawal['withdrawal_number'] . ' telah ditolak. Saldo buyer tetap utuh.');
+        }
+
+        return redirect()->to('/admin/buyer-withdrawals');
     }
 
     public function approveOverlimit()
@@ -1100,6 +1288,24 @@ class AdminController extends BaseController
             'companies' => $companies,
             'orders'    => $orders,
         ]);
+    }
+
+    private function saveUploadedFile(string $field, string $prefix, string $slug): ?string
+    {
+        $file = $this->request->getFile($field);
+        if ($file && $file->isValid() && !$file->hasMoved()) {
+            $allowedExts = ['pdf', 'jpg', 'jpeg', 'png'];
+            $ext = strtolower($file->getClientExtension());
+            if (in_array($ext, $allowedExts, true) && $file->getSizeByUnit('mb') <= 5) {
+                $targetDir = FCPATH . 'uploads/buyer_documents/';
+                if (!is_dir($targetDir)) mkdir($targetDir, 0755, true);
+                $safeSlug = preg_replace('/[^a-z0-9_-]/i', '_', substr($slug, 0, 25));
+                $filename = $prefix . '_' . $safeSlug . '_' . date('Ymd_His') . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                $file->move($targetDir, $filename);
+                return 'uploads/buyer_documents/' . $filename;
+            }
+        }
+        return null;
     }
 
     private function _unusedSettingsStub() {

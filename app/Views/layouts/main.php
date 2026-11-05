@@ -168,7 +168,7 @@ $ppnLabel      = format_tax_rate();
                                 <span class="material-symbols-outlined text-[16px]">request_quote</span> Permintaan RFQ
                             </a>
                             <div class="border-t border-slate-100 my-1"></div>
-                            <a href="<?= base_url('auth/logout') ?>" class="flex items-center gap-2 p-2 rounded hover:bg-rose-50 text-rose-600 font-medium">
+                            <a href="<?= base_url('auth/logout') ?>" data-confirm="Apakah Anda yakin ingin keluar dari sesi akun Anda saat ini?" class="flex items-center gap-2 p-2 rounded hover:bg-rose-50 text-rose-600 font-medium">
                                 <span class="material-symbols-outlined text-[16px]">logout</span> Keluar Akun
                             </a>
                         </div>

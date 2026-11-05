@@ -30,12 +30,16 @@ $appName = get_system_setting('app_name', 'AkuAda');
                     <span class="material-symbols-outlined text-[15px]">open_in_new</span> Lihat Marketplace
                 </a>
                 
-                <div class="flex items-center gap-2 border-l border-slate-700 pl-4">
+                <div class="flex items-center gap-2.5 border-l border-slate-700 pl-4">
                     <img src="<?= esc(session('user_avatar') ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=128&q=80') ?>" class="w-8 h-8 rounded-full border border-purple-400 object-cover">
                     <div class="text-left hidden sm:block">
                         <span class="block text-xs font-bold text-white"><?= esc(session('user_name') ?? 'Superadmin') ?></span>
                         <span class="block text-[10px] text-purple-300">Administrator Utama</span>
                     </div>
+                    <a href="<?= base_url('auth/logout') ?>" data-confirm="Apakah Anda yakin ingin keluar dari sesi akun Anda saat ini?" class="ml-1 px-2.5 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold transition flex items-center gap-1" title="Keluar dari Portal Admin">
+                        <span class="material-symbols-outlined text-[15px]">logout</span>
+                        <span class="hidden md:inline">Keluar</span>
+                    </a>
                 </div>
             </div>
         </div>

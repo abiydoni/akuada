@@ -15,7 +15,7 @@
         </div>
     </div>
 
-    <form action="<?= base_url('admin/buyers/store') ?>" method="POST" class="space-y-6 text-xs">
+    <form action="<?= base_url('admin/buyers/store') ?>" method="POST" enctype="multipart/form-data" class="space-y-6 text-xs">
         
         <!-- 1. Legalitas Perusahaan Buyer -->
         <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-4">
@@ -68,9 +68,64 @@
                 </div>
 
                 <div>
+                    <label class="block font-bold text-slate-700 mb-1">Sektor / Bidang Usaha:</label>
+                    <input type="text" name="business_field" placeholder="Contoh: Perhotelan / Manufaktur" 
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600">
+                </div>
+
+                <div>
                     <label class="block font-bold text-slate-700 mb-1">Nomor Telepon Kantor / Hotline:</label>
                     <input type="text" name="phone" placeholder="(021) 5290-8800" 
                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Website Perusahaan:</label>
+                    <input type="text" name="website" placeholder="https://perusahaan.co.id" 
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600">
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Berkas Dokumen Legalitas (Opsional) -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-purple-600">folder_open</span>
+                    <h2 class="text-sm font-bold text-slate-800">2. Berkas Dokumen Legalitas & Kepatuhan Usaha (PDF / Gambar maks 5MB)</h2>
+                </div>
+                <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">Opsional</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-3.5 rounded-xl border border-slate-200 space-y-1">
+                    <label class="block font-bold text-slate-700">Kartu NPWP Perusahaan / SKT Pajak:</label>
+                    <input type="file" name="npwp_file" accept=".pdf,.jpg,.jpeg,.png"
+                           class="w-full text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-purple-600 file:text-white">
+                </div>
+
+                <div class="p-3.5 rounded-xl border border-slate-200 space-y-1">
+                    <label class="block font-bold text-slate-700">Nomor Induk Berusaha (NIB OSS):</label>
+                    <input type="file" name="nib_file" accept=".pdf,.jpg,.jpeg,.png"
+                           class="w-full text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-blue-600 file:text-white">
+                </div>
+
+                <div class="p-3.5 rounded-xl border border-slate-200 space-y-1">
+                    <label class="block font-bold text-slate-700">Akta Pendirian / SK Kemenkumham:</label>
+                    <input type="file" name="deed_file" accept=".pdf,.jpg,.jpeg,.png"
+                           class="w-full text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-amber-600 file:text-white">
+                </div>
+
+                <div class="p-3.5 rounded-xl border border-slate-200 space-y-1">
+                    <label class="block font-bold text-slate-700">Foto / Scan KTP PIC Pengadaan:</label>
+                    <input type="file" name="id_card_file" accept=".pdf,.jpg,.jpeg,.png"
+                           class="w-full text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-emerald-600 file:text-white">
+                </div>
+
+                <div class="p-3.5 rounded-xl border border-slate-200 space-y-1 md:col-span-2">
+                    <label class="block font-bold text-slate-700">Surat Pengukuhan Pengusaha Kena Pajak (SPPKP - Khusus PKP):</label>
+                    <input type="file" name="sppkp_file" accept=".pdf,.jpg,.jpeg,.png"
+                           class="w-full text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-slate-700 file:text-white">
                 </div>
             </div>
         </div>
@@ -108,6 +163,20 @@
                         <li>Jatuh tempo dihitung resmi setelah Berita Acara Serah Terima (BAST) disahkan.</li>
                         <li>Faktur Pajak PPN <?= esc(format_tax_rate()) ?> resmi diterbitkan otomatis atas nama buyer.</li>
                     </ul>
+                </div>
+
+                <div class="p-4 bg-white rounded-xl border border-purple-300 shadow-sm space-y-2 md:col-span-2">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <label class="block font-extrabold text-slate-900">Persentase Fee Cashback Khusus Buyer (%):</label>
+                            <p class="text-[11px] text-slate-500">Persentase cashback saldo untuk setiap transaksi yang lunas. Kosongkan jika ingin mengikuti default sistem (<?= esc(get_buyer_cashback_rate()) ?>%). Tiap buyer dapat disetting persentase berbeda.</p>
+                        </div>
+                        <div class="flex items-center gap-1.5 w-36 flex-shrink-0">
+                            <input type="number" step="0.01" min="0" max="100" name="cashback_rate" placeholder="<?= esc(get_buyer_cashback_rate()) ?>"
+                                   class="w-full px-3 py-2 rounded-xl border border-purple-300 focus:border-purple-600 font-mono font-bold text-sm text-purple-900 text-right">
+                            <span class="font-bold text-slate-500 text-sm">%</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
