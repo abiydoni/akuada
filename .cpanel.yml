@@ -2,4 +2,7 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home2/appsbeem/akuada.appsbee.my.id
-    - /bin/cp -R * $DEPLOYPATH
+    - /bin/mkdir -p $DEPLOYPATH
+    - /bin/cp -R * $DEPLOYPATH/
+    - /bin/cp .htaccess $DEPLOYPATH/.htaccess 2>/dev/null || true
+    - /bin/chmod -R 777 $DEPLOYPATH/writable 2>/dev/null || true
