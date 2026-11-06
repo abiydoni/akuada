@@ -12,8 +12,16 @@
             <h1 class="text-xl font-extrabold text-slate-900 mt-1">Pengawasan Master Barang Pengadaan</h1>
             <p class="text-xs text-slate-500 mt-0.5">Daftar seluruh item barang yang didaftarkan oleh mitra vendor di platform AkuAda.</p>
         </div>
-        <div class="flex items-center gap-2">
-            <span class="px-3 py-1.5 rounded-xl bg-purple-50 text-purple-700 text-xs font-bold border border-purple-200">
+        <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+            <a href="<?= base_url('admin/products/template-csv') ?>" class="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-300 shadow-xs transition flex items-center gap-1.5" title="Unduh format template CSV Superadmin">
+                <span class="material-symbols-outlined text-[18px] text-emerald-600">download</span>
+                <span>Template CSV</span>
+            </a>
+            <button type="button" onclick="openImportAdminModal()" class="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[18px]">upload_file</span>
+                <span>Import CSV Barang</span>
+            </button>
+            <span class="px-3 py-2 rounded-xl bg-purple-50 text-purple-700 text-xs font-bold border border-purple-200">
                 Total: <?= count($products) ?> SKU
             </span>
         </div>
@@ -148,5 +156,70 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Import CSV Superadmin -->
+<div id="modalImportAdminCsv" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden text-xs animate-in fade-in zoom-in-95 duration-150">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-purple-50 via-indigo-50 to-emerald-50">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-emerald-600 text-xl">upload_file</span>
+                <div>
+                    <h3 class="font-extrabold text-slate-900 text-sm">Import Massal Master Barang (Superadmin)</h3>
+                    <p class="text-[11px] text-slate-500">Unggah file .csv sesuai kolom tabel database produk</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeImportAdminModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+
+        <form action="<?= base_url('admin/products/import-csv') ?>" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
+            <?= csrf_field() ?>
+
+            <div class="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-emerald-950 text-[11px] space-y-1.5">
+                <div class="flex items-center justify-between">
+                    <strong class="font-bold flex items-center gap-1 text-emerald-900">
+                        <span class="material-symbols-outlined text-[16px]">info</span> Petunjuk Format Kolom:
+                    </strong>
+                    <a href="<?= base_url('admin/products/template-csv') ?>" class="text-[11px] text-emerald-700 hover:text-emerald-900 font-extrabold underline flex items-center gap-0.5">
+                        <span class="material-symbols-outlined text-[15px]">download</span> Unduh Template CSV
+                    </a>
+                </div>
+                <p class="text-slate-600 leading-relaxed">
+                    Kolom CSV disesuaikan dengan database: <strong>vendor, kategori, nama_barang, sku, barcode, merk, satuan_uom, harga_b2b, stok, moq, berat_gram, lead_time_hari, tkdn_persen, kena_ppn, bisa_sample, deskripsi, spesifikasi, gambar_url</strong>.
+                </p>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Pilih File CSV (.csv): <span class="text-rose-500">*</span></label>
+                <div class="p-4 rounded-2xl border-2 border-dashed border-slate-300 hover:border-purple-400 transition bg-slate-50 text-center space-y-2">
+                    <span class="material-symbols-outlined text-3xl text-slate-400 block mx-auto">cloud_upload</span>
+                    <input type="file" name="csv_file" accept=".csv,.txt" required
+                           class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer">
+                    <p class="text-[10px] text-slate-400">File CSV encoding UTF-8, ukuran maks. 10MB</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button type="button" onclick="closeImportAdminModal()" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 font-semibold">
+                    Batal
+                </button>
+                <button type="submit" class="btn-akuada-primary px-5 py-2 text-xs flex items-center gap-1.5 shadow-md">
+                    <span class="material-symbols-outlined text-[17px]">publish</span>
+                    <span>Mulai Proses Import</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openImportAdminModal() {
+    document.getElementById('modalImportAdminCsv').classList.remove('hidden');
+}
+function closeImportAdminModal() {
+    document.getElementById('modalImportAdminCsv').classList.add('hidden');
+}
+</script>
 
 <?= $this->endSection() ?>

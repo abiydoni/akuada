@@ -63,6 +63,8 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
 
     // 4 & 5. Products & Product Price Tiers
     $routes->get('products', 'AdminController::products');
+    $routes->get('products/template-csv', 'AdminController::downloadTemplateCsv');
+    $routes->post('products/import-csv', 'AdminController::importCsv');
     $routes->get('products/toggle/(:num)', 'AdminController::toggleProductStatus/$1');
     $routes->get('products/delete/(:num)', 'AdminController::deleteProduct/$1');
 

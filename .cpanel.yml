@@ -6,3 +6,5 @@ deployment:
     - /bin/cp -R * $DEPLOYPATH/
     - /bin/cp .htaccess $DEPLOYPATH/.htaccess 2>/dev/null || true
     - /bin/chmod -R 777 $DEPLOYPATH/writable 2>/dev/null || true
+    - /bin/mkdir -p $DEPLOYPATH/public/uploads/buyer_documents
+    - /bin/chmod -R 777 $DEPLOYPATH/public/uploads 2>/dev/null || true

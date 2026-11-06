@@ -598,6 +598,312 @@ class AdminController extends BaseController
         ]);
     }
 
+    public function downloadTemplateCsv()
+    {
+        $companyModel = new CompanyModel();
+        $sampleVendors = $companyModel->where('type', 'vendor')->findAll(3);
+        $v1 = !empty($sampleVendors[0]['company_name']) ? $sampleVendors[0]['company_name'] : 'PT Mitra Pemasok Mandiri';
+        $v2 = !empty($sampleVendors[1]['company_name']) ? $sampleVendors[1]['company_name'] : 'CV Berkah Teknik Sentosa';
+        $v3 = !empty($sampleVendors[2]['company_name']) ? $sampleVendors[2]['company_name'] : $v1;
+
+        $headers = [
+            'vendor',
+            'kategori',
+            'nama_barang',
+            'sku',
+            'barcode',
+            'merk',
+            'satuan_uom',
+            'harga_b2b',
+            'stok',
+            'moq',
+            'berat_gram',
+            'lead_time_hari',
+            'tkdn_persen',
+            'kena_ppn',
+            'bisa_sample',
+            'deskripsi',
+            'spesifikasi',
+            'gambar_url'
+        ];
+
+        $sampleRows = [
+            [
+                $v1,
+                'Alat Tulis Kantor & Kertas',
+                'Kertas HVS PaperOne A4 80gr (Box isi 5 Rim)',
+                'SKU-PPO-A480',
+                '8992345678901',
+                'PaperOne',
+                'Box',
+                '245000',
+                '150',
+                '2',
+                '12500',
+                '2',
+                '85.5',
+                '1',
+                '1',
+                'Kertas HVS putih bersih ukuran A4 dengan gramatur 80 gsm premium untuk cetak dokumen resmi kantor.',
+                'Ukuran: 210 x 297 mm; Ketebalan: 80 gsm; Kemasan: 1 Box isi 5 Rim @ 500 lembar (Total 2.500 lembar); Sertifikasi PEFC & ISO 9001',
+                'https://images.unsplash.com/photo-1589330694653-dad6d3240e2b?auto=format&fit=crop&w=600&q=80'
+            ],
+            [
+                $v2,
+                'Komputer & IT Infrastructure',
+                'Keyboard Wireless Logitech MK270 Combo Mouse Silent',
+                'SKU-LOG-MK270',
+                '8999876543210',
+                'Logitech',
+                'Unit',
+                '360000',
+                '50',
+                '1',
+                '800',
+                '3',
+                '40.0',
+                '1',
+                '0',
+                'Paket keyboard dan mouse wireless 2.4 GHz dengan baterai tahan lama dan koneksi stabil hingga 10 meter.',
+                'Koneksi: USB Receiver 2.4GHz; Jangkauan: 10 meter; Baterai: 2x AAA (Keyboard), 1x AA (Mouse); Kompatibel: Windows 10/11 & macOS; Garansi resmi 1 tahun',
+                'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80'
+            ],
+            [
+                $v3,
+                'Perlengkapan K3 & Safety APD',
+                'Helm Safety Proyek SNI MSA V-Gard Fastrac Putih',
+                'SKU-MSA-VGARD-W',
+                '8991122334455',
+                'MSA',
+                'Pcs',
+                '125000',
+                '80',
+                '5',
+                '450',
+                '2',
+                '78.0',
+                '1',
+                '1',
+                'Helm keselamatan kerja standar SNI dan ANSI dengan suspensi putar Fastrac untuk perlindungan benturan di area industri dan konstruksi.',
+                'Material: Polietilen kepadatan tinggi (HDPE); Standar: SNI ISO 3873 & ANSI/ISEA Z89.1; Suspensi: 4 titik Fastrac putar; Warna: Putih',
+                'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=600&q=80'
+            ]
+        ];
+
+        $filename = 'template_import_produk_superadmin_' . date('Ymd_His') . '.csv';
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $out = fopen('php://output', 'w');
+        fputs($out, "\xEF\xBB\xBF"); // UTF-8 BOM
+        fputcsv($out, $headers);
+        foreach ($sampleRows as $row) {
+            fputcsv($out, $row);
+        }
+        fclose($out);
+        exit;
+    }
+
+    public function importCsv()
+    {
+        $file = $this->request->getFile('csv_file');
+
+        if (!$file || !$file->isValid()) {
+            session()->setFlashdata('error', 'File CSV tidak ditemukan atau gagal diunggah.');
+            return redirect()->to('/admin/products');
+        }
+
+        $extension = strtolower($file->getClientExtension());
+        if ($extension !== 'csv' && $extension !== 'txt') {
+            session()->setFlashdata('error', 'Format file harus berekstensi .csv');
+            return redirect()->to('/admin/products');
+        }
+
+        $tempPath = $file->getTempName();
+        $handle = fopen($tempPath, 'r');
+        if (!$handle) {
+            session()->setFlashdata('error', 'Gagal membaca file CSV yang diunggah.');
+            return redirect()->to('/admin/products');
+        }
+
+        // Auto-detect delimiter (, or ;)
+        $firstLine = fgets($handle);
+        $delimiter = (substr_count($firstLine, ';') > substr_count($firstLine, ',')) ? ';' : ',';
+        rewind($handle);
+
+        // Strip UTF-8 BOM if present
+        $bom = fread($handle, 3);
+        if ($bom !== "\xEF\xBB\xBF") {
+            rewind($handle);
+        }
+
+        $header = fgetcsv($handle, 0, $delimiter);
+        if (!$header) {
+            fclose($handle);
+            session()->setFlashdata('error', 'File CSV kosong atau tidak memiliki format header yang valid.');
+            return redirect()->to('/admin/products');
+        }
+
+        $headerMap = [];
+        foreach ($header as $colIdx => $colName) {
+            $cleanName = strtolower(trim(preg_replace('/[^a-zA-Z0-9_]/', '', str_replace([' ', '-'], '_', $colName))));
+            $headerMap[$cleanName] = $colIdx;
+        }
+
+        $companyModel = new CompanyModel();
+        $allVendors = $companyModel->where('type', 'vendor')->findAll();
+        $defaultVendor = !empty($allVendors) ? $allVendors[0] : null;
+
+        $categoryModel = new CategoryModel();
+        $allCategories = $categoryModel->findAll();
+        $defaultCategory = !empty($allCategories) ? $allCategories[0] : null;
+
+        $productModel = new ProductModel();
+        $now = date('Y-m-d H:i:s');
+        $importedCount = 0;
+        $skippedCount = 0;
+
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+            if (empty(array_filter($row, fn($v) => trim((string)$v) !== ''))) {
+                continue;
+            }
+
+            $getVal = function($key, $default = '') use ($headerMap, $row) {
+                if (isset($headerMap[$key]) && isset($row[$headerMap[$key]])) {
+                    return trim((string)$row[$headerMap[$key]]);
+                }
+                return $default;
+            };
+
+            $name = $getVal('nama_barang') ?: $getVal('name') ?: $getVal('nama');
+            if (empty($name)) {
+                $skippedCount++;
+                continue;
+            }
+
+            // Vendor Matching
+            $vendorIdentifier = $getVal('vendor') ?: $getVal('vendor_name') ?: $getVal('nama_vendor') ?: $getVal('vendor_id');
+            $matchedVendor = null;
+            if (!empty($vendorIdentifier)) {
+                if (is_numeric($vendorIdentifier)) {
+                    foreach ($allVendors as $v) {
+                        if ((int)$v['id'] === (int)$vendorIdentifier) {
+                            $matchedVendor = $v;
+                            break;
+                        }
+                    }
+                }
+                if (!$matchedVendor) {
+                    foreach ($allVendors as $v) {
+                        if (strcasecmp($v['company_name'], $vendorIdentifier) === 0 || stripos($v['company_name'], $vendorIdentifier) !== false || stripos($vendorIdentifier, $v['company_name']) !== false) {
+                            $matchedVendor = $v;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!$matchedVendor && $defaultVendor) {
+                $matchedVendor = $defaultVendor;
+            }
+
+            if (!$matchedVendor) {
+                $skippedCount++;
+                continue;
+            }
+
+            // Category Matching
+            $categoryName = $getVal('kategori') ?: $getVal('category');
+            $matchedCategoryId = null;
+            if (!empty($categoryName)) {
+                foreach ($allCategories as $cat) {
+                    if (strcasecmp($cat['name'], $categoryName) === 0 || stripos($cat['name'], $categoryName) !== false || stripos($categoryName, $cat['name']) !== false) {
+                        $matchedCategoryId = $cat['id'];
+                        break;
+                    }
+                }
+            }
+            if (!$matchedCategoryId && $defaultCategory) {
+                $matchedCategoryId = $defaultCategory['id'];
+            }
+
+            $rawPrice = $getVal('harga_b2b') ?: $getVal('price_regular') ?: $getVal('harga') ?: '0';
+            $cleanPrice = (float)str_replace(['Rp', 'rp', '.', ' '], '', str_replace(',', '.', $rawPrice));
+            if ($cleanPrice <= 0) {
+                $skippedCount++;
+                continue;
+            }
+
+            $sku = $getVal('sku') ?: 'SKU-' . strtoupper(substr(md5(uniqid($name, true)), 0, 8));
+            $barcode = $getVal('barcode');
+            $brand = $getVal('merk') ?: $getVal('brand');
+            $uom = $getVal('satuan_uom') ?: $getVal('uom') ?: 'Pcs';
+            $stock = max(0, (int)str_replace(['.', ','], '', $getVal('stok') ?: $getVal('stock') ?: '0'));
+            $moq = max(1, (int)str_replace(['.', ','], '', $getVal('moq') ?: '1'));
+            $weight = max(0, (int)str_replace(['.', ','], '', $getVal('berat_gram') ?: $getVal('weight') ?: '500'));
+            $leadTime = max(1, (int)str_replace(['.', ','], '', $getVal('lead_time_hari') ?: $getVal('lead_time') ?: '2'));
+            $tkdn = (float)str_replace(',', '.', $getVal('tkdn_persen') ?: $getVal('tkdn') ?: '0');
+            $isTaxable = in_array(strtolower($getVal('kena_ppn') ?: $getVal('is_taxable') ?: '1'), ['1', 'ya', 'yes', 'true']) ? 1 : 0;
+            $isSample = in_array(strtolower($getVal('bisa_sample') ?: $getVal('is_sample_available') ?: '1'), ['1', 'ya', 'yes', 'true']) ? 1 : 0;
+            $desc = $getVal('deskripsi') ?: $getVal('description') ?: ('Pengadaan ' . $name . ' berkualitas untuk kebutuhan korporat.');
+            $spec = $getVal('spesifikasi') ?: $getVal('spec_details') ?: '';
+            $imageUrl = $getVal('gambar_url') ?: $getVal('image_url') ?: 'https://images.unsplash.com/photo-1589330694653-dad6d3240e2b?auto=format&fit=crop&w=600&q=80';
+
+            $slug = url_title($name, '-', true) . '-' . rand(1000, 9999);
+            $contractFee = (float)($matchedVendor['commission_rate'] ?? get_default_vendor_fee_rate());
+
+            $productModel->insert([
+                'vendor_company_id'   => (int)$matchedVendor['id'],
+                'category_id'         => $matchedCategoryId,
+                'name'                => $name,
+                'slug'                => $slug,
+                'sku'                 => $sku,
+                'barcode'             => $barcode,
+                'brand'               => $brand,
+                'uom'                 => $uom,
+                'description'         => $desc,
+                'spec_details'        => $spec,
+                'price_regular'       => $cleanPrice,
+                'moq'                 => $moq,
+                'stock'               => $stock,
+                'weight_gram'         => $weight,
+                'lead_time_days'      => $leadTime,
+                'is_taxable'          => $isTaxable,
+                'ppn_percent'         => get_ppn_rate(),
+                'vendor_fee_percent'  => $contractFee,
+                'tkdn_percent'        => $tkdn,
+                'is_sample_available' => $isSample,
+                'image_url'           => $imageUrl,
+                'status'              => 'active',
+                'created_at'          => $now,
+                'updated_at'          => $now,
+            ]);
+
+            $importedCount++;
+        }
+
+        fclose($handle);
+        $db->transComplete();
+
+        if ($db->transStatus() === false) {
+            session()->setFlashdata('error', 'Terjadi kesalahan pada database saat memproses import barang.');
+        } else {
+            $msg = "Superadmin berhasil mengimpor $importedCount master barang ke katalog B2B!";
+            if ($skippedCount > 0) {
+                $msg .= " ($skippedCount baris dilewati karena format tidak sesuai/vendor tidak ditemukan)";
+            }
+            session()->setFlashdata('success', $msg);
+        }
+
+        return redirect()->to('/admin/products');
+    }
+
     public function toggleProductStatus($id)
     {
         $productModel = new ProductModel();

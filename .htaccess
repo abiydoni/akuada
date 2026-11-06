@@ -10,5 +10,5 @@ Options -Indexes
 
     # Arahkan semua request pengunjung ke folder public/
     RewriteCond %{REQUEST_URI} !^/public/
-    RewriteRule ^(.*)$ public/$1 [L]
+    RewriteRule ^(.*)$ public/$1 [L,QSA]
 </IfModule>

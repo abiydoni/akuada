@@ -448,6 +448,7 @@ class VendorController extends BaseController
             'lead_time_hari',
             'tkdn_persen',
             'kena_ppn',
+            'bisa_sample',
             'deskripsi',
             'spesifikasi',
             'gambar_url'
@@ -468,12 +469,13 @@ class VendorController extends BaseController
                 '2',
                 '85.5',
                 '1',
+                '1',
                 'Kertas HVS putih bersih ukuran A4 dengan gramatur 80 gsm premium untuk cetak dokumen resmi kantor.',
                 'Ukuran: 210 x 297 mm; Ketebalan: 80 gsm; Kemasan: 1 Box isi 5 Rim @ 500 lembar (Total 2.500 lembar); Sertifikasi PEFC & ISO 9001',
                 'https://images.unsplash.com/photo-1589330694653-dad6d3240e2b?auto=format&fit=crop&w=600&q=80'
             ],
             [
-                'Komputer & IT Infrastruktur',
+                'Komputer & IT Infrastructure',
                 'Keyboard Wireless Logitech MK270 Combo Mouse Silent',
                 'SKU-LOG-MK270',
                 '8999876543210',
@@ -486,12 +488,13 @@ class VendorController extends BaseController
                 '3',
                 '40.0',
                 '1',
+                '0',
                 'Paket keyboard dan mouse wireless 2.4 GHz dengan baterai tahan lama dan koneksi stabil hingga 10 meter.',
                 'Koneksi: USB Receiver 2.4GHz; Jangkauan: 10 meter; Baterai: 2x AAA (Keyboard), 1x AA (Mouse); Kompatibel: Windows 10/11 & macOS; Garansi resmi 1 tahun',
                 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80'
             ],
             [
-                'Perlengkapan K3, Safety & APD',
+                'Perlengkapan K3 & Safety APD',
                 'Helm Safety Proyek SNI MSA V-Gard Fastrac Putih',
                 'SKU-MSA-VGARD-W',
                 '8991122334455',
@@ -503,6 +506,7 @@ class VendorController extends BaseController
                 '450',
                 '2',
                 '78.0',
+                '1',
                 '1',
                 'Helm keselamatan kerja standar SNI dan ANSI dengan suspensi putar Fastrac untuk perlindungan benturan di area industri dan konstruksi.',
                 'Material: Polietilen kepadatan tinggi (HDPE); Standar: SNI ISO 3873 & ANSI/ISEA Z89.1; Suspensi: 4 titik Fastrac putar; Warna: Putih',
@@ -652,6 +656,7 @@ class VendorController extends BaseController
             $leadTime = max(1, (int)str_replace(['.', ','], '', $getVal('lead_time_hari') ?: $getVal('lead_time') ?: '2'));
             $tkdn = (float)str_replace(',', '.', $getVal('tkdn_persen') ?: $getVal('tkdn') ?: '0');
             $isTaxable = in_array(strtolower($getVal('kena_ppn') ?: $getVal('is_taxable') ?: '1'), ['1', 'ya', 'yes', 'true']) ? 1 : 0;
+            $isSample = in_array(strtolower($getVal('bisa_sample') ?: $getVal('is_sample_available') ?: '1'), ['1', 'ya', 'yes', 'true']) ? 1 : 0;
             $desc = $getVal('deskripsi') ?: $getVal('description') ?: ('Pengadaan ' . $name . ' berkualitas untuk kebutuhan korporat.');
             $spec = $getVal('spesifikasi') ?: $getVal('spec_details') ?: '';
             $imageUrl = $getVal('gambar_url') ?: $getVal('image_url') ?: 'https://images.unsplash.com/photo-1589330694653-dad6d3240e2b?auto=format&fit=crop&w=600&q=80';
@@ -678,7 +683,7 @@ class VendorController extends BaseController
                 'ppn_percent'         => get_ppn_rate(),
                 'vendor_fee_percent'  => $contractFee,
                 'tkdn_percent'        => $tkdn,
-                'is_sample_available' => 0,
+                'is_sample_available' => $isSample,
                 'image_url'           => $imageUrl,
                 'status'              => 'active',
                 'created_at'          => $now,

@@ -7,6 +7,15 @@
     <meta name="csrf-hash" content="<?= csrf_hash() ?>">
     <title><?= esc($title ?? 'AkuAda - B2B Marketplace & E-Procurement Perusahaan') ?></title>
     
+    <!-- Favicon & Brand Icons -->
+    <link rel="icon" type="image/svg+xml" href="<?= base_url('favicon.svg') ?>">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= base_url('favicon-32x32.png') ?>">
+    <link rel="icon" type="image/png" sizes="16x16" href="<?= base_url('favicon-16x16.png') ?>">
+    <link rel="apple-touch-icon" sizes="180x180" href="<?= base_url('apple-touch-icon.png') ?>">
+    <link rel="shortcut icon" href="<?= base_url('favicon.ico') ?>">
+    <link rel="manifest" href="<?= base_url('site.webmanifest') ?>">
+    <meta name="theme-color" content="#7c3aed">
+    
     <!-- Modern Typography: Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
