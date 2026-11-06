@@ -2,11 +2,13 @@
 
 <?= $this->section('content') ?>
 
-<div class="min-h-screen w-full py-10 lg:py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-950 via-[#130d24] to-slate-950 flex items-center justify-center relative overflow-x-hidden">
-    <!-- Ambient ambient glow decorations in background -->
-    <div class="absolute -top-32 -left-32 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="absolute top-1/2 -right-32 w-[30rem] h-[30rem] bg-pink-500/15 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="absolute -bottom-32 left-1/3 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+<div class="min-h-screen w-full py-10 lg:py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-950 via-[#130d24] to-slate-950 flex items-center justify-center relative">
+    <!-- Ambient ambient glow decorations in background (isolated inside overflow-hidden to prevent second scrollbar) -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-32 -left-32 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl"></div>
+        <div class="absolute top-1/2 -right-32 w-[30rem] h-[30rem] bg-pink-500/15 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-32 left-1/3 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl"></div>
+    </div>
 
     <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center relative z-10">
 

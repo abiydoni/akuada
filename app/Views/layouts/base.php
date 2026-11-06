@@ -77,7 +77,7 @@
     <script src="<?= base_url('js/akuada-swal.js?v=' . filemtime(FCPATH . 'js/akuada-swal.js')) ?>"></script>
     <script src="<?= base_url('js/akuada-realtime.js?v=' . filemtime(FCPATH . 'js/akuada-realtime.js')) ?>"></script>
 </head>
-<body class="min-h-screen flex flex-col font-sans antialiased text-slate-800 bg-slate-50 selection:bg-pink-500 selection:text-white">
+<body class="min-h-screen flex flex-col font-sans antialiased text-slate-800 bg-slate-50 selection:bg-pink-500 selection:text-white overflow-x-hidden">
 
     <!-- Main View Content -->
     <?= $this->renderSection('content') ?>

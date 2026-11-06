@@ -2,10 +2,12 @@
 
 <?= $this->section('content') ?>
 
-<div class="min-h-screen w-full py-10 sm:py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 flex justify-center items-start relative overflow-x-hidden">
-    <!-- Ambient glow decorations -->
-    <div class="absolute -top-32 -left-32 w-96 h-96 bg-purple-600/25 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl pointer-events-none"></div>
+<div class="min-h-screen w-full py-10 sm:py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 flex justify-center items-start relative">
+    <!-- Ambient glow decorations (isolated inside overflow-hidden to prevent second scrollbar) -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-32 -left-32 w-96 h-96 bg-purple-600/25 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+    </div>
 
     <div class="max-w-4xl w-full bg-white/95 backdrop-blur-xl p-6 sm:p-10 rounded-3xl border border-white/20 shadow-2xl relative z-10 space-y-8 my-6">
         

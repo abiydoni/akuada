@@ -1,17 +1,12 @@
-# CodeIgniter 4 Root Directory .htaccess for cPanel Deployment
-# Memastikan semua trafik diarahkan ke folder /public dan melindungi file sensitif
+# Disable directory browsing
+Options -Indexes
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Keamanan: Blokir akses langsung ke file konfigurasi & sistem
+    # Keamanan: Blokir akses langsung ke file sensitif & folder sistem
     RewriteRule ^(\.env|\.git|composer\.(json|lock)|spark|env|phpunit\.dist\.xml) - [F,L]
     RewriteRule ^(app|system|writable|tests)/ - [F,L]
-
-    # Jangan rewrite jika request sudah mengarah ke file/folder fisik di root yang sah
-    RewriteCond %{REQUEST_FILENAME} -f [OR]
-    RewriteCond %{REQUEST_FILENAME} -d
-    RewriteRule ^ - [L]
 
     # Arahkan semua request pengunjung ke folder public/
     RewriteCond %{REQUEST_URI} !^/public/
