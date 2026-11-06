@@ -31,8 +31,10 @@ $routes->get('rfq/(:num)', 'RfqController::detail/$1');
 $routes->group('auth', function ($routes) {
     $routes->get('login', 'AuthController::login');
     $routes->post('login/process', 'AuthController::processLogin');
+    $routes->get('login/process', static fn() => redirect()->to('/auth/login'));
     $routes->get('register', 'AuthController::register');
     $routes->post('register/process', 'AuthController::processRegister');
+    $routes->get('register/process', static fn() => redirect()->to('/auth/register'));
     $routes->get('logout', 'AuthController::logout');
     $routes->get('switch-role/(:segment)', 'AuthController::switchRole/$1');
 });

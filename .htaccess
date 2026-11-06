@@ -8,6 +8,11 @@ Options -Indexes
     RewriteRule ^(\.env|\.git|composer\.(json|lock)|spark|env|phpunit\.dist\.xml) - [F,L]
     RewriteRule ^(app|system|writable|tests)/ - [F,L]
 
+    # Force HTTPS (Menggunakan status 308 agar method POST tetap terjaga)
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=308]
+
     # Arahkan semua request pengunjung ke folder public/
     RewriteCond %{REQUEST_URI} !^/public/
     RewriteRule ^(.*)$ public/$1 [L,QSA]
