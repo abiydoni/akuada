@@ -13,8 +13,14 @@
         
         <!-- Header & Logo -->
         <div class="text-center space-y-2">
-            <a href="<?= base_url('/') ?>" class="inline-flex items-center gap-2.5">
-                <img src="<?= base_url('apple-touch-icon.png') ?>" alt="AkuAda" class="w-12 h-12 rounded-2xl object-contain shadow-lg shadow-purple-500/20">
+            <a href="<?= base_url('/') ?>" class="inline-flex items-center gap-3 group">
+                <img src="<?= base_url('apple-touch-icon.png') ?>" alt="AkuAda" class="w-12 h-12 rounded-2xl object-contain shadow-lg shadow-purple-500/20 group-hover:scale-105 transition-transform">
+                <div class="text-left">
+                    <span class="text-2xl font-black tracking-tight font-sans block leading-none">
+                        <span class="text-purple-700">Aku</span><span class="text-blue-600">Ada</span><span class="text-pink-500 font-black">.</span>
+                    </span>
+                    <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block pt-0.5">B2B E-Procurement Hub</span>
+                </div>
             </a>
             <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                 Pendaftaran Akun Perusahaan (Corporate Buyer)

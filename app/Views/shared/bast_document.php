@@ -53,11 +53,11 @@ $isBastSigned  = in_array($order['order_status'], ['bast_signed', 'completed'], 
         <div class="flex flex-col sm:flex-row justify-between items-start gap-4 pb-6 border-b-2 border-slate-900">
             <div class="space-y-1">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xl">
-                        <?= esc(strtoupper(substr($appName, 0, 1))) ?>
-                    </div>
+                    <img src="<?= base_url('apple-touch-icon.png') ?>" alt="AkuAda" class="w-10 h-10 rounded-xl object-contain shadow-sm">
                     <div>
-                        <span class="text-xl font-black text-slate-900 tracking-tight"><?= esc($appName) ?><span class="text-pink-600">.</span></span>
+                        <span class="text-xl font-black text-slate-900 tracking-tight font-sans">
+                            <span class="text-purple-700">Aku</span><span class="text-blue-600">Ada</span><span class="text-pink-600 font-black">.</span>
+                        </span>
                         <span class="block text-[10px] uppercase font-extrabold text-purple-700 tracking-wider"><?= esc($companyEntity) ?></span>
                     </div>
                 </div>

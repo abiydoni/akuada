@@ -10,12 +10,13 @@ $appName = get_system_setting('app_name', 'AkuAda');
     <header class="bg-slate-900 text-white border-b border-purple-900/60 sticky top-0 z-30 shadow-md print:hidden">
         <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <a href="<?= base_url('admin/dashboard') ?>" class="flex items-center gap-2 group">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 flex items-center justify-center text-white shadow-md">
-                        <span class="material-symbols-outlined text-xl">admin_panel_settings</span>
-                    </div>
-                    <div>
-                        <span class="text-lg font-extrabold text-white"><?= esc($appName) ?> <span class="text-purple-400 font-semibold text-xs tracking-wider uppercase px-2 py-0.5 rounded bg-purple-900/80 border border-purple-700/60 ml-1">Admin Platform</span></span>
+                <a href="<?= base_url('admin/dashboard') ?>" class="flex items-center gap-2.5 group">
+                    <img src="<?= base_url('apple-touch-icon.png') ?>" alt="AkuAda" class="w-9 h-9 rounded-xl object-contain shadow-md shadow-purple-500/20 group-hover:scale-105 transition-transform">
+                    <div class="flex items-center">
+                        <span class="text-lg font-black tracking-tight text-white font-sans">
+                            Aku<span class="text-purple-400">Ada</span><span class="text-pink-500 font-black">.</span>
+                        </span>
+                        <span class="text-purple-400 font-semibold text-xs tracking-wider uppercase px-2 py-0.5 rounded bg-purple-900/80 border border-purple-700/60 ml-2">Admin Platform</span>
                     </div>
                 </a>
             </div>

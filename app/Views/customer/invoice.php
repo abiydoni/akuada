@@ -139,11 +139,11 @@
             <!-- Left: Issuer Logo & Legal Info -->
             <div class="space-y-2">
                 <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-700 via-blue-600 to-pink-500 flex items-center justify-center text-white font-black text-2xl shadow-md shadow-purple-500/20">
-                        A
-                    </div>
+                    <img src="<?= base_url('apple-touch-icon.png') ?>" alt="AkuAda" class="w-12 h-12 rounded-2xl object-contain shadow-md shadow-purple-500/20">
                     <div>
-                        <span class="text-2xl font-black text-slate-900 tracking-tight">AkuAda<span class="text-pink-500">.</span></span>
+                        <span class="text-2xl font-black text-slate-900 tracking-tight font-sans">
+                            <span class="text-purple-700">Aku</span><span class="text-blue-600">Ada</span><span class="text-pink-500 font-black">.</span>
+                        </span>
                         <span class="block text-[11px] uppercase font-extrabold text-purple-700 tracking-widest"><?= esc($invIssuerSubtitle) ?></span>
                     </div>
                 </div>

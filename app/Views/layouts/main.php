@@ -239,11 +239,11 @@ $ppnLabel      = format_tax_rate();
     <!-- Main Footer Links -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-1 md:grid-cols-5 gap-8">
         <div class="md:col-span-2 space-y-4">
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 via-blue-600 to-pink-500 flex items-center justify-center text-white">
-                    <span class="material-symbols-outlined text-lg">domain</span>
-                </div>
-                <span class="text-xl font-extrabold text-white"><?= esc($appName) ?><span class="text-pink-500">.</span></span>
+            <div class="flex items-center gap-2.5">
+                <img src="<?= base_url('apple-touch-icon.png') ?>" alt="AkuAda" class="w-8 h-8 rounded-xl object-contain shadow-md">
+                <span class="text-xl font-extrabold text-white font-sans">
+                    <span class="text-purple-300">Aku</span><span class="text-blue-400">Ada</span><span class="text-pink-500 font-black">.</span>
+                </span>
             </div>
             <p class="text-slate-400 leading-relaxed text-xs">
                 <?= esc($appDesc) ?>

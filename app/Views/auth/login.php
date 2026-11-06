@@ -20,8 +20,8 @@
                 <a href="<?= base_url('/') ?>" class="inline-flex items-center gap-3 group">
                     <img src="<?= base_url('apple-touch-icon.png') ?>" alt="AkuAda" class="w-12 h-12 rounded-2xl object-contain shadow-xl shadow-purple-500/20 group-hover:scale-105 transition transform">
                     <div>
-                        <span class="text-2xl font-black tracking-tight text-white block leading-none">
-                            Aku<span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">Ada</span>
+                        <span class="text-2xl font-black tracking-tight text-white block leading-none font-sans">
+                            Aku<span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">Ada</span><span class="text-pink-500 font-black">.</span>
                         </span>
                         <span class="text-[10px] text-purple-300 font-bold uppercase tracking-wider block pt-0.5">B2B E-Procurement Hub</span>
                     </div>
