@@ -303,7 +303,7 @@
                 <span class="material-symbols-outlined text-blue-600 text-xl flex-shrink-0 mt-0.5">storefront</span>
                 <div>
                     <strong class="text-slate-900 block font-semibold">Pendaftaran Rekanan Mitra Supplier / Vendor:</strong>
-                    <span>Formulir di atas diperuntukkan khusus bagi pembeli korporat (Corporate Buyer). Pendaftaran rekanan vendor supplier diproses tersendiri oleh Admin AkuAda melalui Perjanjian Kerjasama (PKS). Hubungi kami via email <a href="mailto:vendor@akuada.co.id" class="text-blue-700 font-bold underline">vendor@akuada.co.id</a>.</span>
+                    <span>Formulir di atas diperuntukkan khusus bagi pembeli korporat (Corporate Buyer). Pendaftaran rekanan vendor supplier diproses tersendiri oleh Admin AkuAda melalui Perjanjian Kerjasama (PKS). Hubungi kami via email <a href="mailto:appsbeem@gmail.com" class="text-blue-700 font-bold underline">appsbeem@gmail.com</a>.</span>
                 </div>
             </div>
         </div>

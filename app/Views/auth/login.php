@@ -314,7 +314,7 @@
                     <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[10.5px] text-slate-500 flex items-start gap-2">
                         <span class="material-symbols-outlined text-blue-600 text-[16px] flex-shrink-0 mt-0.5">storefront</span>
                         <div>
-                            <strong>Ingin Jadi Rekanan Mitra Supplier / Vendor?</strong> Hubungi kami di <a href="mailto:vendor@akuada.co.id" class="text-blue-700 font-bold underline">vendor@akuada.co.id</a> untuk kurasi katalog & PKS resmi.
+                            <strong>Ingin Jadi Rekanan Mitra Supplier / Vendor?</strong> Hubungi kami di <a href="mailto:appsbeem@gmail.com" class="text-blue-700 font-bold underline">appsbeem@gmail.com</a> untuk kurasi katalog & PKS resmi.
                         </div>
                     </div>
                 </div>
