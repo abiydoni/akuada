@@ -45,11 +45,9 @@ $ppnLabel      = format_tax_rate();
 <div class="sticky top-0 z-40 bg-white/95 backdrop-blur shadow-sm border-b border-slate-200">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
         
-        <!-- Logo AkuAda (Dominant Purple, Blue, Pink) -->
+        <!-- Logo AkuAda (Official Brand Logo) -->
         <a href="<?= base_url('/') ?>" class="flex items-center gap-2.5 flex-shrink-0 group">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-700 via-blue-600 to-pink-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20 group-hover:scale-105 transition-transform">
-                <span class="material-symbols-outlined text-2xl font-bold">domain</span>
-            </div>
+            <img src="<?= base_url('apple-touch-icon.png') ?>" alt="AkuAda" class="w-10 h-10 rounded-xl object-contain shadow-md shadow-purple-500/10 group-hover:scale-105 transition-transform">
             <div>
                 <span class="text-2xl font-extrabold tracking-tight font-sans">
                     <?php if (strtolower($appName) === 'akuada'): ?>

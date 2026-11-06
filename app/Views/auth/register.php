@@ -14,9 +14,7 @@
         <!-- Header & Logo -->
         <div class="text-center space-y-2">
             <a href="<?= base_url('/') ?>" class="inline-flex items-center gap-2.5">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-700 via-blue-600 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-purple-500/30">
-                    <span class="material-symbols-outlined text-3xl">domain</span>
-                </div>
+                <img src="<?= base_url('apple-touch-icon.png') ?>" alt="AkuAda" class="w-12 h-12 rounded-2xl object-contain shadow-lg shadow-purple-500/20">
             </a>
             <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                 Pendaftaran Akun Perusahaan (Corporate Buyer)

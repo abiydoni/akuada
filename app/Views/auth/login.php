@@ -18,9 +18,7 @@
             <!-- Brand Badge & Logo -->
             <div class="space-y-3">
                 <a href="<?= base_url('/') ?>" class="inline-flex items-center gap-3 group">
-                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 via-blue-600 to-pink-500 flex items-center justify-center text-white shadow-xl shadow-purple-500/30 group-hover:scale-105 transition transform">
-                        <span class="material-symbols-outlined text-3xl">domain</span>
-                    </div>
+                    <img src="<?= base_url('apple-touch-icon.png') ?>" alt="AkuAda" class="w-12 h-12 rounded-2xl object-contain shadow-xl shadow-purple-500/20 group-hover:scale-105 transition transform">
                     <div>
                         <span class="text-2xl font-black tracking-tight text-white block leading-none">
                             Aku<span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">Ada</span>
