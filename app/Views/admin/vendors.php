@@ -91,15 +91,9 @@
 
                             <!-- Fee PKS -->
                             <td class="px-4 py-3.5 align-top text-center">
-                                <div class="inline-flex items-center gap-1.5">
-                                    <span class="px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-900 font-black text-xs border border-purple-200">
-                                        <?= number_format((float)($vendor['commission_rate'] ?? 2.5), 1) ?>%
-                                    </span>
-                                    <button type="button" onclick="openFeeModal(<?= $vendor['id'] ?>, '<?= esc($vendor['company_name']) ?>', <?= (float)($vendor['commission_rate'] ?? 2.5) ?>)" 
-                                            class="p-1 rounded-md hover:bg-purple-100 text-purple-700 transition" title="Ubah Fee Kesepakatan PKS">
-                                        <span class="material-symbols-outlined text-[16px]">edit</span>
-                                    </button>
-                                </div>
+                                <span class="px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-900 font-black text-xs border border-purple-200 inline-block">
+                                    <?= number_format((float)($vendor['commission_rate'] ?? 2.5), 1) ?>%
+                                </span>
                                 <span class="text-[10px] text-slate-400 block mt-0.5">Kontrak PKS</span>
                             </td>
 

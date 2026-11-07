@@ -178,25 +178,11 @@
                                         <span>Verifikasi Legalitas</span>
                                     </a>
                                 <?php endif; ?>
-                                <?php if ($hasPendingIncrease): ?>
-                                    <button type="button" 
-                                            onclick="openLimitModal(<?= $b['id'] ?>, '<?= esc($b['company_name']) ?>', <?= (float)($reqData['requested_limit'] ?? $limit) ?>)"
-                                            class="w-full px-2.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition inline-flex items-center justify-center gap-1 shadow-sm">
-                                        <span class="material-symbols-outlined text-[15px]">verified</span>
-                                        <span>Setujui Limit</span>
-                                    </button>
-                                <?php endif; ?>
                                 <button type="button" 
                                         onclick="openCashbackModal(<?= $b['id'] ?>, '<?= esc($b['company_name']) ?>', '<?= esc($b['cashback_rate'] ?? '') ?>', <?= esc(get_buyer_cashback_rate()) ?>)"
                                         class="w-full px-2.5 py-1.5 rounded-xl text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 transition inline-flex items-center justify-center gap-1 border border-purple-200 shadow-xs">
                                     <span class="material-symbols-outlined text-[15px]">percent</span>
                                     <span>Atur Cashback</span>
-                                </button>
-                                <button type="button" 
-                                        onclick="openLimitModal(<?= $b['id'] ?>, '<?= esc($b['company_name']) ?>', <?= $limit ?>)"
-                                        class="w-full px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 transition inline-flex items-center justify-center gap-1 border border-slate-300 shadow-xs">
-                                    <span class="material-symbols-outlined text-[15px]">tune</span>
-                                    <span>Ubah Plafon</span>
                                 </button>
                             </td>
                         </tr>
@@ -204,50 +190,6 @@
                 </tbody>
             </table>
         </div>
-    </div>
-</div>
-
-<!-- Modal Ubah Plafon Kredit Buyer -->
-<div id="limitModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden text-xs animate-in fade-in zoom-in-95 duration-150">
-        <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-purple-50 to-pink-50">
-            <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-purple-600">account_balance_wallet</span>
-                <h3 class="font-bold text-slate-900 text-sm">Alokasi Plafon Kredit TOP</h3>
-            </div>
-            <button type="button" onclick="closeLimitModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
-                <span class="material-symbols-outlined text-[18px]">close</span>
-            </button>
-        </div>
-
-        <form action="<?= base_url('admin/buyers/limit') ?>" method="POST" class="p-6 space-y-4">
-            <?= csrf_field() ?>
-            <input type="hidden" name="company_id" id="modal_buyer_id">
-            
-            <div>
-                <span class="text-slate-400 text-[11px] block">Perusahaan Pembeli:</span>
-                <strong id="modal_buyer_name" class="text-slate-900 text-sm font-bold block pt-0.5"></strong>
-            </div>
-
-            <div>
-                <label class="block font-bold text-slate-700 mb-1">Nominal Plafon Kredit (Rp):</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold">Rp</span>
-                    <input type="number" name="credit_limit_top" id="modal_limit_value" step="5000000" min="0" required
-                           class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-purple-300 focus:border-purple-600 font-mono font-bold text-base text-purple-900">
-                </div>
-                <p class="text-[10px] text-slate-400 mt-1">Gunakan kelipatan Rp 5.000.000 atau nominal sesuai analisis kelayakan kredit.</p>
-            </div>
-
-            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                <button type="button" onclick="closeLimitModal()" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 font-semibold">
-                    Batal
-                </button>
-                <button type="submit" class="btn-akuada-primary px-5 py-2 text-xs">
-                    Simpan Plafon Baru
-                </button>
-            </div>
-        </form>
     </div>
 </div>
 
@@ -415,17 +357,6 @@
 </div>
 
 <script>
-function openLimitModal(companyId, companyName, currentLimit) {
-    document.getElementById('modal_buyer_id').value = companyId;
-    document.getElementById('modal_buyer_name').textContent = companyName;
-    document.getElementById('modal_limit_value').value = currentLimit;
-    document.getElementById('limitModal').classList.remove('hidden');
-}
-
-function closeLimitModal() {
-    document.getElementById('limitModal').classList.add('hidden');
-}
-
 function openCashbackModal(companyId, companyName, currentRate, defaultRate) {
     document.getElementById('modal_cashback_buyer_id').value = companyId;
     document.getElementById('modal_cashback_buyer_name').textContent = companyName;

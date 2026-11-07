@@ -44,17 +44,12 @@
         <button type="button" onclick="switchSettingsTab('tab-vendor')" id="btn-tab-vendor"
                 class="settings-tab-btn px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 text-slate-600 hover:bg-slate-100">
             <span class="material-symbols-outlined text-[18px]">monetization_on</span>
-            <span>4. Fee Vendor & Settlement</span>
+            <span>4. Fee Vendor & Cashback</span>
         </button>
         <button type="button" onclick="switchSettingsTab('tab-invoice')" id="btn-tab-invoice"
                 class="settings-tab-btn px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 text-slate-600 hover:bg-slate-100">
             <span class="material-symbols-outlined text-[18px]">description</span>
-            <span>5. Invoice, Pembayaran & TTD</span>
-        </button>
-        <button type="button" onclick="switchSettingsTab('tab-design')" id="btn-tab-design"
-                class="settings-tab-btn px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 text-slate-600 hover:bg-slate-100">
-            <span class="material-symbols-outlined text-[18px]">palette</span>
-            <span>6. Design Tokens & Warna</span>
+            <span>5. Invoice, Bank & TTD</span>
         </button>
     </div>
 
@@ -76,7 +71,7 @@
                 <span class="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold">Profil Platform</span>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Nama Aplikasi / Brand Utama:</label>
                     <input type="text" name="app_name" value="<?= esc($val($gen, 'app_name', 'AkuAda')) ?>"
@@ -87,19 +82,14 @@
                     <input type="text" name="app_subtitle" value="<?= esc($val($gen, 'app_subtitle', 'B2B E-Procurement')) ?>"
                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600">
                 </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Estimasi Diskon Volume Maksimal:</label>
-                    <input type="text" name="max_volume_discount" value="<?= esc($val($gen, 'max_volume_discount', '18%')) ?>"
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600 font-mono font-bold text-emerald-700">
-                </div>
 
-                <div class="md:col-span-3">
+                <div class="md:col-span-2">
                     <label class="block font-bold text-slate-700 mb-1">Tagline Resmi Platform (Hero & Meta):</label>
                     <input type="text" name="app_tagline" value="<?= esc($val($gen, 'app_tagline', 'Solusi Terlengkap Pengadaan Operasional Perusahaan Anda')) ?>"
                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600">
                 </div>
 
-                <div class="md:col-span-3">
+                <div class="md:col-span-2">
                     <label class="block font-bold text-slate-700 mb-1">Deskripsi Singkat Platform (Footer):</label>
                     <textarea name="app_description" rows="2" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600"><?= esc($val($gen, 'app_description', 'AkuAda hadir memastikan setiap kebutuhan operasional perusahaan Anda terpenuhi dengan tepat, cepat, dan transparan. E-Procurement B2B terpercaya di Indonesia dengan fleksibilitas TOP, harga bertingkat grosir korporat, dan kelengkapan faktur pajak resmi.')) ?></textarea>
                 </div>
@@ -209,7 +199,7 @@
                         <span class="font-bold text-purple-900 text-xs whitespace-nowrap">Nota / PO</span>
                     </div>
                     <p class="text-[10px] text-purple-900 leading-relaxed">
-                        Batas kredit transaksi <strong>tidak lagi diatur dengan nominal Plafon Rupiah</strong>, melainkan <strong>berdasarkan jumlah nota yang belum terbayarkan dalam sebulan</strong>. Jika buyer telah mencapai jumlah nota belum lunas ini, fasilitas kredit tempo otomatis terkunci.
+                        Fasilitas transaksi kredit tempo <strong>diatur berdasarkan jumlah akumulasi nota yang belum lunas dalam satu bulan berjalan</strong> (bukan nominal rupiah plafon). Jika buyer mencapai batas nota belum terbayar ini, fasilitas kredit tempo otomatis terkunci sampai dilakukan pembayaran.
                     </p>
                 </div>
 
@@ -217,62 +207,41 @@
                     <label class="block font-bold text-slate-700 mb-1">Opsi Hari TOP yang Diizinkan:</label>
                     <input type="text" name="allowed_top_terms" value="<?= esc($val($pay, 'allowed_top_terms', '14,30,60,90')) ?>"
                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600 font-mono font-bold text-purple-900">
-                    <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma (contoh: 14,30,60,90). Otomatis muncul di halaman Checkout & Pengajuan Plafon.</p>
-                </div>
-
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Plafon Kredit Awal Buyer Baru (Rp):</label>
-                    <input type="number" name="default_credit_limit" value="<?= esc($val($pay, 'default_credit_limit', '100000000')) ?>" step="5000000"
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600 font-mono font-bold text-slate-900">
-                    <p class="text-[10px] text-slate-400 mt-1">Limit kredit awal saat pendaftaran corporate buyer baru.</p>
-                </div>
-
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Plafon Kredit Maksimal per PT (Rp):</label>
-                    <input type="number" name="max_credit_limit" value="<?= esc($val($pay, 'max_credit_limit', '500000000')) ?>" step="25000000"
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600 font-mono font-bold text-slate-900">
-                    <p class="text-[10px] text-slate-400 mt-1">Ditampilkan pada informasi fasilitas kredit maksimal di beranda & portal buyer.</p>
-                </div>
-
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Kelipatan Kenaikan Plafon Kredit (Rp):</label>
-                    <input type="number" name="credit_step_amount" value="<?= esc($val($pay, 'credit_step_amount', '25000000')) ?>" step="5000000"
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600 font-mono font-bold text-slate-900">
-                    <p class="text-[10px] text-slate-400 mt-1">Kelipatan nominal pada form pengajuan kenaikan limit kredit buyer.</p>
+                    <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma (contoh: 14,30,60,90). Otomatis muncul pada opsi tenor checkout.</p>
                 </div>
 
                 <div>
                     <label class="block font-bold text-emerald-800 mb-1">Biaya Logistik & Pengiriman Default (Rp):</label>
                     <input type="number" name="default_shipping_amount" value="<?= esc($val($pay, 'default_shipping_amount', '0')) ?>" min="0" step="5000"
                            class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-300 bg-emerald-50/40 focus:border-emerald-600 font-mono font-bold text-emerald-900">
-                    <p class="text-[10px] text-slate-400 mt-1">Biaya pengiriman standar pada PO & Invoice (isi 0 jika gratis pengiriman korporat).</p>
+                    <p class="text-[10px] text-slate-400 mt-1">Biaya pengiriman standar pada PO & Invoice (isi 0 jika gratis ongkir).</p>
                 </div>
 
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Cakupan Wilayah Pengiriman Korporat:</label>
                     <input type="text" name="free_shipping_region" value="<?= esc($val($pay, 'free_shipping_region', 'Jabodetabek & Nasional')) ?>"
                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600">
-                    <p class="text-[10px] text-slate-400 mt-1">Ditampilkan pada informasi logistik di halaman detail produk & keranjang.</p>
+                    <p class="text-[10px] text-slate-400 mt-1">Ditampilkan pada informasi pengiriman di katalog & keranjang.</p>
                 </div>
             </div>
         </div>
 
         <!-- =========================================================
-             TAB 4: PENGATURAN FEE VENDOR & SETTLEMENT
+             TAB 4: PENGATURAN FEE VENDOR & CASHBACK BUYER
              ========================================================= -->
         <div id="panel-tab-vendor" class="settings-tab-panel hidden bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-5 text-xs">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-emerald-600">monetization_on</span>
                     <div>
-                        <h2 class="text-sm font-bold text-slate-800">4. Pengaturan Fee Vendor, Komisi Platform & SLA Settlement</h2>
-                        <p class="text-[11px] text-slate-500">Mengatur potongan komisi marketplace dan jadwal pencairan dana ke rekening mitra vendor.</p>
+                        <h2 class="text-sm font-bold text-slate-800">4. Pengaturan Fee Vendor, Cashback Buyer & Tenor Pencairan</h2>
+                        <p class="text-[11px] text-slate-500">Konfigurasi komisi platform yang dipotong dari vendor, cashback saldo untuk buyer, dan jatuh tempo hutang ke vendor.</p>
                     </div>
                 </div>
-                <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Komisi & Settlement</span>
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Komisi & Cashback</span>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="p-4 rounded-xl border-2 border-purple-300 bg-purple-50/60 space-y-1.5">
                     <label class="block font-bold text-purple-950 flex items-center justify-between">
                         <span>Cashback Saldo Buyer (%):</span>
@@ -284,52 +253,32 @@
                                class="w-full px-3.5 py-2.5 rounded-xl border border-purple-300 bg-white font-bold text-purple-950 font-mono">
                         <span class="text-purple-700 font-bold">%</span>
                     </div>
-                    <p class="text-[10px] text-purple-800 leading-relaxed">Persentase fee cashback dari total transaksi PO yang sudah lunas terbayar. Kecuali buyer yang tidak terdaftar, mereka tidak akan menerima apa-apa.</p>
+                    <p class="text-[10px] text-purple-800 leading-relaxed">Persentase reward cashback dari nilai transaksi PO yang lunas. Masuk ke dompet saldo buyer korporat.</p>
                 </div>
 
                 <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 space-y-1.5">
-                    <label class="block font-bold text-emerald-950">Tarif Fee Default Platform (%):</label>
+                    <label class="block font-bold text-emerald-950 flex items-center justify-between">
+                        <span>Tarif Fee Default Platform (%):</span>
+                        <span class="px-2 py-0.5 rounded bg-emerald-200 text-emerald-900 text-[10px] font-extrabold">Default 2.5%</span>
+                    </label>
                     <div class="flex items-center gap-2">
                         <input type="number" step="0.1" min="0" max="100" name="vendor_fee_default_percent"
                                value="<?= esc($val($fee, 'vendor_fee_default_percent', '2.5')) ?>"
                                class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-300 bg-white font-bold text-slate-900 font-mono">
                         <span class="text-emerald-700 font-bold">%</span>
                     </div>
-                    <p class="text-[10px] text-emerald-800">Acuan komisi standar untuk pendaftaran vendor baru & barang reguler.</p>
-                </div>
-
-                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-1.5">
-                    <label class="block font-bold text-slate-700">Dasar Pengenaan Komisi:</label>
-                    <?php $basis = $val($fee, 'vendor_fee_calc_basis', 'dpp'); ?>
-                    <select name="vendor_fee_calc_basis" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-semibold">
-                        <option value="dpp" <?= $basis === 'dpp' ? 'selected' : '' ?>>DPP Subtotal (Sebelum PPN) - Standar B2B</option>
-                        <option value="gross" <?= $basis === 'gross' ? 'selected' : '' ?>>Gross Nilai Tagihan (Termasuk PPN)</option>
-                    </select>
-                    <p class="text-[10px] text-slate-400">Direkomendasikan DPP agar vendor tidak terpotong atas pajak keluaran.</p>
-                </div>
-
-                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-1.5">
-                    <label class="block font-bold text-slate-700">Nominal Minimum Fee per Item (Rp):</label>
-                    <input type="number" name="vendor_fee_min_amount"
-                           value="<?= esc($val($fee, 'vendor_fee_min_amount', '0')) ?>" step="1000"
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-bold text-slate-900 font-mono">
-                    <p class="text-[10px] text-slate-400">Biaya minimum per baris transaksi (isi 0 jika tanpa batas minimum).</p>
-                </div>
-
-                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-1.5">
-                    <label class="block font-bold text-slate-700">Label Ketentuan Settlement Vendor:</label>
-                    <input type="text" name="vendor_fee_settlement_term"
-                           value="<?= esc($val($fee, 'vendor_fee_settlement_term', 'H+3 BAST')) ?>"
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-mono font-bold text-blue-900">
-                    <p class="text-[10px] text-slate-400">Tercetak pada Faktur Penagihan Settlement Vendor.</p>
+                    <p class="text-[10px] text-emerald-800 leading-relaxed">Komisi standar platform AkuAda yang dipotong dari subtotal penjualan vendor jika belum diatur khusus per mitra.</p>
                 </div>
 
                 <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-1.5">
                     <label class="block font-bold text-slate-700">Tenor Jatuh Tempo Pencairan Vendor (Hari):</label>
-                    <input type="number" name="vendor_payout_days" min="1" max="90"
-                           value="<?= esc($val($fee, 'vendor_payout_days', '7')) ?>"
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-mono font-bold text-slate-900">
-                    <p class="text-[10px] text-slate-400">Jumlah hari kalender sejak PO terbit untuk perhitungan jatuh tempo hutang ke vendor.</p>
+                    <div class="flex items-center gap-2">
+                        <input type="number" name="vendor_payout_days" min="1" max="90"
+                               value="<?= esc($val($fee, 'vendor_payout_days', '7')) ?>"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-mono font-bold text-slate-900">
+                        <span class="text-slate-500 font-bold text-xs">Hari</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400">Jangka waktu standar pelunasan dana ke rekening vendor terhitung sejak pesanan selesai (BAST).</p>
                 </div>
             </div>
         </div>
@@ -558,54 +507,6 @@
             </div>
         </div>
 
-        <!-- =========================================================
-             TAB 6: DESIGN TOKENS & BRAND COLOR PALETTE
-             ========================================================= -->
-        <div id="panel-tab-design" class="settings-tab-panel hidden bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-5 text-xs">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-pink-600">palette</span>
-                    <div>
-                        <h2 class="text-sm font-bold text-slate-800">6. Design Tokens & Brand Color Palette (Ungu, Biru, Pink)</h2>
-                        <p class="text-[11px] text-slate-500">Konfigurasi palet warna identitas visual korporat AkuAda.</p>
-                    </div>
-                </div>
-                <span class="px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-800 text-[10px] font-bold">Tema Visual</span>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="p-4 rounded-xl border border-purple-200 bg-purple-50/50 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <label class="font-bold text-purple-900">Warna Utama (Ungu):</label>
-                        <div class="w-6 h-6 rounded-md shadow-sm border border-purple-300" style="background-color: <?= esc($val($des, 'primary_color', '#6366f1')) ?>"></div>
-                    </div>
-                    <input type="text" name="primary_color" value="<?= esc($val($des, 'primary_color', '#6366f1')) ?>"
-                           class="w-full px-3 py-2 rounded-lg border border-purple-300 bg-white font-mono text-center font-bold">
-                    <span class="text-[10px] text-purple-700 block">Digunakan untuk primary CTA, header aksen, dan logo.</span>
-                </div>
-
-                <div class="p-4 rounded-xl border border-blue-200 bg-blue-50/50 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <label class="font-bold text-blue-900">Warna Sekunder (Biru):</label>
-                        <div class="w-6 h-6 rounded-md shadow-sm border border-blue-300" style="background-color: <?= esc($val($des, 'secondary_color', '#2563eb')) ?>"></div>
-                    </div>
-                    <input type="text" name="secondary_color" value="<?= esc($val($des, 'secondary_color', '#2563eb')) ?>"
-                           class="w-full px-3 py-2 rounded-lg border border-blue-300 bg-white font-mono text-center font-bold">
-                    <span class="text-[10px] text-blue-700 block">Digunakan untuk verifikasi resmi, e-Faktur, dan portal vendor.</span>
-                </div>
-
-                <div class="p-4 rounded-xl border border-pink-200 bg-pink-50/50 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <label class="font-bold text-pink-900">Warna Aksen (Pink):</label>
-                        <div class="w-6 h-6 rounded-md shadow-sm border border-pink-300" style="background-color: <?= esc($val($des, 'accent_color', '#ec4899')) ?>"></div>
-                    </div>
-                    <input type="text" name="accent_color" value="<?= esc($val($des, 'accent_color', '#ec4899')) ?>"
-                           class="w-full px-3 py-2 rounded-lg border border-pink-300 bg-white font-mono text-center font-bold">
-                    <span class="text-[10px] text-pink-700 block">Digunakan untuk badge MOQ, notifikasi, dan tombol RFQ.</span>
-                </div>
-            </div>
-        </div>
-
         <!-- Sticky / Bottom Save Action Bar -->
         <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2 text-xs text-slate-500">
@@ -653,7 +554,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const flashTab = '<?= esc(session()->getFlashdata('active_tab') ?? '') ?>';
     let hash = flashTab || window.location.hash.replace('#', '');
     if (hash === 'invoice-settings') hash = 'tab-invoice';
-    const validTabs = ['tab-general', 'tab-tax', 'tab-payment', 'tab-vendor', 'tab-invoice', 'tab-design'];
+    const validTabs = ['tab-general', 'tab-tax', 'tab-payment', 'tab-vendor', 'tab-invoice'];
     if (validTabs.includes(hash)) {
         switchSettingsTab(hash);
     }

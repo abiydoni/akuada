@@ -78,28 +78,44 @@ $appName         = get_system_setting('app_name', 'AkuAda');
                 <!-- Monthly Credit Quota (Batas Nota Belum Lunas) -->
                 <?php
                     $bCompanyId = session('company_id');
+                    $isCompVerified = !empty($buyerInfo['is_verified']);
                     $activeUnpaidNotes = $bCompanyId ? get_buyer_unpaid_notes_count((int)$bCompanyId) : 0;
                     $monthlyNotesLimit = get_max_unpaid_notes_limit();
                     $hasNotesQuota = ($activeUnpaidNotes < $monthlyNotesLimit);
                 ?>
-                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs space-y-1.5">
-                    <div class="flex items-center justify-between text-[11px]">
-                        <span class="font-bold text-slate-700 flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[14px] text-purple-600">receipt_long</span>
-                            Batas Kredit Nota
-                        </span>
-                        <span class="text-[10px] font-bold px-1.5 py-0.2 rounded font-mono <?= $hasNotesQuota ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800' ?>">
-                            <?= $activeUnpaidNotes ?> / <?= $monthlyNotesLimit ?> Nota
-                        </span>
+                <?php if ($isCompVerified): ?>
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs space-y-1.5">
+                        <div class="flex items-center justify-between text-[11px]">
+                            <span class="font-bold text-slate-700 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px] text-purple-600">receipt_long</span>
+                                Batas Kredit Nota
+                            </span>
+                            <span class="text-[10px] font-bold px-1.5 py-0.2 rounded font-mono <?= $hasNotesQuota ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800' ?>">
+                                <?= $activeUnpaidNotes ?> / <?= $monthlyNotesLimit ?> Nota
+                            </span>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                            <div class="<?= $hasNotesQuota ? 'bg-purple-600' : 'bg-rose-600' ?> h-1.5 rounded-full" style="width: <?= min(100, round(($activeUnpaidNotes / $monthlyNotesLimit) * 100)) ?>%"></div>
+                        </div>
+                        <div class="flex justify-between items-center text-[10px] text-slate-500 font-medium pt-0.5">
+                            <span><?= $hasNotesQuota ? 'Sisa ' . ($monthlyNotesLimit - $activeUnpaidNotes) . ' nota bulan ini' : 'Batas 3 nota tercapai' ?></span>
+                            <a href="<?= base_url('customer/payables') ?>" class="text-purple-700 hover:underline">Bayar Tagihan</a>
+                        </div>
                     </div>
-                    <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                        <div class="<?= $hasNotesQuota ? 'bg-purple-600' : 'bg-rose-600' ?> h-1.5 rounded-full" style="width: <?= min(100, round(($activeUnpaidNotes / $monthlyNotesLimit) * 100)) ?>%"></div>
+                <?php else: ?>
+                    <div class="p-3 rounded-xl bg-amber-50/90 border border-amber-300 text-xs space-y-1">
+                        <div class="flex items-center justify-between text-[11px]">
+                            <span class="font-bold text-amber-950 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px] text-amber-600">hourglass_top</span>
+                                Fasilitas Kredit (TOP)
+                            </span>
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-200 text-amber-900">Menunggu Verifikasi</span>
+                        </div>
+                        <p class="text-[10px] text-amber-800 leading-tight">
+                            Legalitas sedang ditinjau Admin. Transaksi dapat dilakukan via <strong>Bank Virtual Account</strong>.
+                        </p>
                     </div>
-                    <div class="flex justify-between items-center text-[10px] text-slate-500 font-medium pt-0.5">
-                        <span><?= $hasNotesQuota ? 'Sisa ' . ($monthlyNotesLimit - $activeUnpaidNotes) . ' nota bulan ini' : 'Batas 3 nota tercapai' ?></span>
-                        <a href="<?= base_url('customer/payables') ?>" class="text-purple-700 hover:underline">Bayar Tagihan</a>
-                    </div>
-                </div>
+                <?php endif; ?>
 
                 <div>
                     <span class="text-[10px] font-bold uppercase tracking-wider text-slate-600 px-3">Pengadaan Korporat</span>

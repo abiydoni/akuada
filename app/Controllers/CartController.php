@@ -157,7 +157,8 @@ class CartController extends BaseController
         $isLoggedInCustomer = !empty(session('user_id')) && (session('user_role') === 'customer' || session('role') === 'customer');
         $buyerCompanyId = $isLoggedInCustomer ? (int)session('company_id') : null;
         $buyerCompany = null;
-        $isRegistered = false;
+        $hasCompany = false;
+        $isVerified = false;
 
         $maxUnpaidLimit = get_max_unpaid_notes_limit();
         $unpaidNotesCount = 0;
@@ -166,13 +167,18 @@ class CartController extends BaseController
 
         if ($buyerCompanyId) {
             $buyerCompany = $companyModel->find($buyerCompanyId);
-            if ($buyerCompany && $buyerCompany['type'] === 'buyer' && (int)$buyerCompany['is_verified'] === 1) {
-                $isRegistered = true;
-                $unpaidNotesCount = get_buyer_unpaid_notes_count($buyerCompanyId);
-                $remainingNotes = max(0, $maxUnpaidLimit - $unpaidNotesCount);
-                $isSufficientCredit = ($unpaidNotesCount < $maxUnpaidLimit);
+            if ($buyerCompany && $buyerCompany['type'] === 'buyer') {
+                $hasCompany = true;
+                $isVerified = ((int)$buyerCompany['is_verified'] === 1);
+                if ($isVerified) {
+                    $unpaidNotesCount = get_buyer_unpaid_notes_count($buyerCompanyId);
+                    $remainingNotes = max(0, $maxUnpaidLimit - $unpaidNotesCount);
+                    $isSufficientCredit = ($unpaidNotesCount < $maxUnpaidLimit);
+                }
             }
         }
+
+        $isRegistered = $isVerified;
 
         return view('marketplace/checkout', [
             'title'              => 'Checkout Pengadaan B2B - AkuAda',
@@ -182,6 +188,8 @@ class CartController extends BaseController
             'shippingAmount'     => $shippingAmount,
             'grandTotal'         => $grandTotal,
             'buyerCompany'       => $buyerCompany,
+            'hasCompany'         => $hasCompany,
+            'isVerified'         => $isVerified,
             'isRegistered'       => $isRegistered,
             'maxUnpaidLimit'     => $maxUnpaidLimit,
             'unpaidNotesCount'   => $unpaidNotesCount,
@@ -207,7 +215,8 @@ class CartController extends BaseController
         $buyerCompanyId = $isLoggedInCustomer ? (int)session('company_id') : null;
         $companyModel = new CompanyModel();
         $buyerCompany = null;
-        $isRegistered = false;
+        $hasCompany = false;
+        $isVerified = false;
 
         $maxUnpaidLimit = get_max_unpaid_notes_limit();
         $unpaidNotesCount = 0;
@@ -215,12 +224,17 @@ class CartController extends BaseController
 
         if ($buyerCompanyId) {
             $buyerCompany = $companyModel->find($buyerCompanyId);
-            if ($buyerCompany && $buyerCompany['type'] === 'buyer' && (int)$buyerCompany['is_verified'] === 1) {
-                $isRegistered = true;
-                $unpaidNotesCount = get_buyer_unpaid_notes_count($buyerCompanyId);
-                $isSufficientCredit = ($unpaidNotesCount < $maxUnpaidLimit);
+            if ($buyerCompany && $buyerCompany['type'] === 'buyer') {
+                $hasCompany = true;
+                $isVerified = ((int)$buyerCompany['is_verified'] === 1);
+                if ($isVerified) {
+                    $unpaidNotesCount = get_buyer_unpaid_notes_count($buyerCompanyId);
+                    $isSufficientCredit = ($unpaidNotesCount < $maxUnpaidLimit);
+                }
             }
         }
+
+        $isRegistered = $isVerified;
 
         // Group cart by vendor if multiple, or take vendor of first item
         $firstItem = reset($cart);
@@ -262,11 +276,11 @@ class CartController extends BaseController
         $shippingAmount = (float)get_system_setting('default_shipping_amount', 0);
         $grandTotal = $subtotal + $ppnTotal + $shippingAmount;
 
-        // Aturan Keras: Jika buyer belum terdaftar di AkuAda, tidak bisa membayar PO dengan kredit (TOP / PO On-Account)
+        // Aturan Keras: Jika buyer belum diverifikasi legalitasnya oleh Superadmin, tidak bisa membayar PO dengan fasilitas kredit (TOP / Corporate PO / Over-limit)
         $isOverlimitRequest = ($paymentMethod === 'overlimit_top');
         if ($isOverlimitRequest) {
-            if (!$isRegistered) {
-                session()->setFlashdata('error', 'Perusahaan Anda belum terdaftar resmi di AkuAda untuk fasilitas kredit.');
+            if (!$isVerified) {
+                session()->setFlashdata('error', 'Dokumen legalitas perusahaan Anda belum diverifikasi oleh Superadmin AkuAda. Pengajuan Over-Limit TOP hanya dapat dilakukan oleh akun resmi yang telah terverifikasi.');
                 return redirect()->to('/checkout');
             }
             $overlimitDays = max(1, (int)($this->request->getPost('overlimit_top_days') ?: 30));
@@ -274,8 +288,8 @@ class CartController extends BaseController
             $reason = trim((string)($this->request->getPost('overlimit_reason') ?: 'Pengajuan ekstra nota kredit'));
             $customerNotes = trim("[OVER-LIMIT REQUEST: Batas {$maxUnpaidLimit} Nota Tercapai ({$unpaidNotesCount} Nota Belum Lunas) | Alasan: {$reason}] " . $customerNotes);
         } elseif (str_starts_with($paymentMethod, 'top_') || $paymentMethod === 'corporate_po') {
-            if (!$isRegistered) {
-                session()->setFlashdata('error', 'Perusahaan Anda belum terdaftar resmi di AkuAda untuk fasilitas kredit. Pembayaran PO tidak dapat menggunakan kredit tempo (TOP 14-90 Hari / Corporate PO). Silakan pilih metode pembayaran Bank Virtual Account atau hubungi Superadmin AkuAda untuk pendaftaran akun fasilitas kredit.');
+            if (!$isVerified) {
+                session()->setFlashdata('error', 'Dokumen legalitas perusahaan Anda belum disetujui oleh Superadmin AkuAda. Pembayaran PO tidak dapat menggunakan kredit tempo (TOP 14-90 Hari / Corporate PO). Silakan pilih metode pembayaran Bank Virtual Account (Non-Kredit) untuk melanjutkan transaksi pengadaan.');
                 return redirect()->to('/checkout');
             }
 
@@ -357,11 +371,15 @@ class CartController extends BaseController
         }
 
         // Determine due date according to payment method
-        $days = str_starts_with($paymentMethod, 'top_') ? max(1, (int)substr($paymentMethod, 4)) : 30;
-        if ($paymentMethod === 'top_14') $days = 14;
-        if ($paymentMethod === 'top_60') $days = 60;
-        if ($paymentMethod === 'top_90') $days = 90;
-        $dueDate = date('Y-m-d', strtotime("+$days days"));
+        if ($paymentMethod === 'bank_va') {
+            $dueDate = date('Y-m-d', strtotime('+3 days'));
+        } else {
+            $days = str_starts_with($paymentMethod, 'top_') ? max(1, (int)substr($paymentMethod, 4)) : 30;
+            if ($paymentMethod === 'top_14') $days = 14;
+            if ($paymentMethod === 'top_60') $days = 60;
+            if ($paymentMethod === 'top_90') $days = 90;
+            $dueDate = date('Y-m-d', strtotime("+$days days"));
+        }
 
         $orderNumber = generate_unique_number('ORD');
         $now = date('Y-m-d H:i:s');
@@ -379,7 +397,7 @@ class CartController extends BaseController
             'shipping_amount'      => $shippingAmount,
             'total_amount'         => $grandTotal,
             'payment_method'       => $paymentMethod,
-            'payment_status'       => 'pending_approval',
+            'payment_status'       => $isOverlimitRequest ? 'pending_approval' : 'unpaid',
             'order_status'         => 'po_issued',
             'tax_invoice_required' => $taxInvoiceRequired,
             'customer_notes'       => $customerNotes,
@@ -425,8 +443,8 @@ class CartController extends BaseController
             session('user_name') ?? 'Procurement Officer'
         );
 
-        // If paying with TOP credit, update credit used on buyer company
-        if ($buyerCompany && (str_starts_with($paymentMethod, 'top_') || $paymentMethod === 'corporate_po')) {
+        // If paying with TOP credit, update credit used on buyer company (only for verified buyer)
+        if ($isVerified && $buyerCompany && (str_starts_with($paymentMethod, 'top_') || $paymentMethod === 'corporate_po')) {
             $newUsed = (float)$buyerCompany['credit_used_top'] + $grandTotal;
             $companyModel->update($buyerCompanyId, ['credit_used_top' => $newUsed]);
             session()->set('credit_used_top', $newUsed);
@@ -435,12 +453,17 @@ class CartController extends BaseController
         // Clear cart
         session()->remove('cart');
 
-        session()->setFlashdata('success', $isOverlimitRequest
-            ? 'Purchase Order (PO) #' . $poNumber . ' berhasil diterbitkan dengan status Pengajuan Over-Limit TOP! Superadmin AkuAda akan segera menyetujui penambahan plafon kredit Anda.'
-            : ($isGuestCheckout
-                ? 'Purchase Order (PO) #' . $poNumber . ' berhasil diterbitkan! Akun portal pengadaan korporat Anda telah aktif. Silakan lakukan pembayaran melalui Virtual Account untuk proses serah terima barang.'
-                : 'Purchase Order (PO) #' . $poNumber . ' Berhasil Diterbitkan! Vendor sedang memproses pesanan dan dokumen serah terima (BAST).')
-        );
+        if ($isOverlimitRequest) {
+            $successNotice = 'Purchase Order (PO) #' . $poNumber . ' berhasil diterbitkan dengan status Pengajuan Over-Limit TOP! Superadmin AkuAda akan segera menyetujui penambahan plafon kredit Anda.';
+        } elseif ($isGuestCheckout) {
+            $successNotice = 'Purchase Order (PO) #' . $poNumber . ' berhasil diterbitkan! Akun portal pengadaan korporat Anda telah aktif. Silakan lakukan pembayaran melalui Virtual Account untuk proses serah terima barang.';
+        } elseif (!$isVerified) {
+            $successNotice = 'Purchase Order (PO) #' . $poNumber . ' berhasil diterbitkan! Karena legalitas perusahaan Anda masih dalam proses verifikasi, pembayaran dilakukan melalui Bank Virtual Account (Non-Kredit).';
+        } else {
+            $successNotice = 'Purchase Order (PO) #' . $poNumber . ' Berhasil Diterbitkan! Vendor sedang memproses pesanan dan dokumen serah terima (BAST).';
+        }
+
+        session()->setFlashdata('success', $successNotice);
         return redirect()->to('/customer/orders/' . $orderId);
     }
 }

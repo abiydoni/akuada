@@ -13,13 +13,13 @@
             <p class="text-xs text-slate-500 mt-0.5">Kelola harga grosir bertingkat (Tier Pricing), stok gudang, MOQ, dan sertifikasi TKDN barang Anda.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-            <a href="<?= base_url('vendor/products/template-csv') ?>" class="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-300 shadow-xs transition flex items-center gap-1.5" title="Unduh template format CSV">
-                <span class="material-symbols-outlined text-[18px] text-emerald-600">file_download</span>
-                <span>Unduh Template CSV</span>
+            <a href="<?= base_url('vendor/products/template-csv') ?>" class="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-300 shadow-xs transition flex items-center gap-1.5" title="Unduh template format Excel (.xlsx) resmi dengan sheet panduan">
+                <span class="material-symbols-outlined text-[18px] text-emerald-600">table_view</span>
+                <span>Template Excel (.xlsx)</span>
             </a>
             <button type="button" onclick="openImportModal()" class="px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs border border-emerald-300 shadow-xs transition flex items-center gap-1.5">
                 <span class="material-symbols-outlined text-[18px]">upload_file</span>
-                <span>Import CSV</span>
+                <span>Import Excel / CSV</span>
             </button>
             <a href="<?= base_url('vendor/products/new') ?>" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition flex items-center gap-2">
                 <span class="material-symbols-outlined text-[18px]">add_box</span>
@@ -153,27 +153,27 @@
             <div class="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-emerald-950 space-y-2">
                 <div class="font-bold flex items-center justify-between">
                     <span class="flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-emerald-600 text-[18px]">description</span>
-                        Petunjuk Pengisian CSV:
+                        <span class="material-symbols-outlined text-emerald-600 text-[18px]">table_view</span>
+                        Petunjuk Template Excel & Kode Angka:
                     </span>
                     <a href="<?= base_url('vendor/products/template-csv') ?>" class="text-[11px] text-emerald-700 hover:text-emerald-900 font-extrabold underline flex items-center gap-0.5">
-                        <span class="material-symbols-outlined text-[14px]">download</span> Unduh Contoh Template
+                        <span class="material-symbols-outlined text-[14px]">download</span> Unduh Template Excel (.xlsx)
                     </a>
                 </div>
                 <ul class="text-[11px] text-slate-600 space-y-1 list-disc list-inside">
-                    <li>Gunakan file berekstensi <strong>.csv</strong> (Mendukung pemisah koma <code>,</code> maupun titik-koma <code>;</code> dari Excel).</li>
-                    <li>Kolom wajib: <strong>nama_barang</strong> dan <strong>harga_b2b</strong>.</li>
-                    <li>Jika kolom <strong>kategori</strong> tidak cocok persis, sistem otomatis memetakan ke kategori yang paling mendekati.</li>
-                    <li>Kolom <strong>sku</strong> akan dibuatkan otomatis bila dikosongkan.</li>
+                    <li>Gunakan format <strong>Excel (.xlsx)</strong> atau <strong>CSV</strong>. Pada file Excel terdapat Sheet 2 <em>"Panduan & Kode Angka"</em>.</li>
+                    <li><strong>Mudah Diisi:</strong> Kolom Kategori & Satuan UOM cukup diisi angka (misal Kategori: 1, Satuan: 1=Pcs, 2=Box, 3=Unit).</li>
+                    <li><strong>Otomatis:</strong> Kolom SKU & Barcode dapat dikosongkan agar dibuatkan otomatis oleh sistem.</li>
+                    <li>Kolom wajib: <strong>Nama Barang</strong> dan <strong>Harga B2B Regular</strong>.</li>
                 </ul>
             </div>
 
             <div>
-                <label class="block font-bold text-slate-700 mb-1.5">Pilih File CSV Produk: <span class="text-rose-500">*</span></label>
+                <label class="block font-bold text-slate-700 mb-1.5">Pilih File Excel / CSV (.xlsx, .csv): <span class="text-rose-500">*</span></label>
                 <div class="border-2 border-dashed border-slate-300 rounded-2xl p-4 text-center hover:border-emerald-500 transition-colors bg-slate-50/50">
-                    <input type="file" name="csv_file" accept=".csv,text/csv,text/plain" required id="csvInput"
+                    <input type="file" name="csv_file" accept=".xlsx,.csv,.txt" required id="csvInput"
                            class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer">
-                    <p class="text-[11px] text-slate-400 mt-2">Maksimal ukuran file: 5 MB.</p>
+                    <p class="text-[11px] text-slate-400 mt-2">Mendukung format Excel (.xlsx) atau CSV (UTF-8), maksimal ukuran 10 MB.</p>
                 </div>
             </div>
 

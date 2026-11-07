@@ -33,6 +33,25 @@
         </div>
     </div>
 
+    <?php if (empty($company['is_verified'])): ?>
+        <!-- Alert for unverified corporate buyer -->
+        <div class="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+            <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined text-amber-600 text-[26px] mt-0.5 flex-shrink-0">hourglass_top</span>
+                <div>
+                    <h3 class="font-extrabold text-xs sm:text-sm text-amber-950">Status Legalitas Perusahaan: Menunggu Verifikasi Superadmin</h3>
+                    <p class="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                        Dokumen legalitas (NPWP, NIB, Akta Perusahaan) sedang ditinjau oleh tim Compliance AkuAda. Anda <strong>tetap dapat melakukan pengadaan langsung melalui Bank Virtual Account</strong>. Fasilitas kredit tempo (TOP 14–90 Hari) akan aktif otomatis setelah verifikasi disetujui.
+                    </p>
+                </div>
+            </div>
+            <a href="<?= base_url('products') ?>" class="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 flex-shrink-0 transition shadow-xs">
+                <span class="material-symbols-outlined text-[16px]">shopping_bag</span>
+                <span>Mulai Belanja (Bank VA)</span>
+            </a>
+        </div>
+    <?php endif; ?>
+
     <!-- Plafon & Key Metrics - Fully responsive, no text clipping -->
     <?php
         $limit = (float)($company['credit_limit_top'] ?? 250000000);

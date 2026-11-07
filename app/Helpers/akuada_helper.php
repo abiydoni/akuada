@@ -259,6 +259,7 @@ if (!function_exists('get_active_buyer_credit_info')) {
                 $comp = $companyModel->find($companyId);
                 if ($comp && ($comp['type'] ?? '') === 'buyer') {
                     return [
+                        'id'               => (int)$comp['id'],
                         'company_name'     => $comp['company_name'],
                         'credit_limit_top' => (float)$comp['credit_limit_top'],
                         'credit_used_top'  => (float)$comp['credit_used_top'],
@@ -270,6 +271,7 @@ if (!function_exists('get_active_buyer_credit_info')) {
             $firstBuyer = $companyModel->where('type', 'buyer')->orderBy('id', 'ASC')->first();
             if ($firstBuyer) {
                 return [
+                    'id'               => (int)$firstBuyer['id'],
                     'company_name'     => $firstBuyer['company_name'],
                     'credit_limit_top' => (float)$firstBuyer['credit_limit_top'],
                     'credit_used_top'  => (float)$firstBuyer['credit_used_top'],

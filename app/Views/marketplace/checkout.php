@@ -42,23 +42,78 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                             <span class="material-symbols-outlined text-purple-600">domain</span>
                             <h2 class="text-sm font-bold text-slate-800">1. Identitas Perusahaan Pembeli (Corporate Buyer)</h2>
                         </div>
-                        <?php if (!empty($isRegistered)): ?>
+                        <?php if (!empty($hasCompany) && !empty($isVerified)): ?>
                             <span class="px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[14px]">verified</span> Terdaftar & Fasilitas Kredit Aktif
+                                <span class="material-symbols-outlined text-[14px]">verified</span> Terverifikasi & Fasilitas Kredit Aktif
+                            </span>
+                        <?php elseif (!empty($hasCompany) && empty($isVerified)): ?>
+                            <span class="px-2.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold text-[10px] flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">hourglass_top</span> Akun Terdaftar (Menunggu Verifikasi Legalitas)
                             </span>
                         <?php else: ?>
-                            <span class="px-2.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold text-[10px] flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[14px]">lock</span> Belum Terdaftar Akun Kredit AkuAda
+                            <span class="px-2.5 py-0.5 rounded bg-slate-100 text-slate-700 font-bold text-[10px] flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">person</span> Pembelian Tamu (Non-Kredit)
                             </span>
                         <?php endif; ?>
                     </div>
 
-                    <?php if (empty($isRegistered)): ?>
-                        <!-- Alert for Unregistered Buyer -->
+                    <?php if (!empty($hasCompany)): ?>
+                        <?php if (empty($isVerified)): ?>
+                            <!-- Alert for Registered Buyer Pending Legal Verification -->
+                            <div class="p-4 rounded-xl bg-amber-50/90 border border-amber-300 text-xs text-amber-950 flex items-start gap-3">
+                                <span class="material-symbols-outlined text-amber-600 text-[24px] mt-0.5 flex-shrink-0">info</span>
+                                <div class="space-y-1">
+                                    <strong class="font-extrabold text-amber-950 block text-[13px]">Legalitas Perusahaan Sedang Ditinjau Admin AkuAda</strong>
+                                    <p class="text-amber-900 leading-relaxed">
+                                        Dokumen legalitas (NPWP, NIB, Akta Perusahaan) akun <strong><?= esc($buyerCompany['company_name'] ?? 'Perusahaan Anda') ?></strong> sedang dalam proses verifikasi oleh tim Compliance AkuAda.
+                                    </p>
+                                    <p class="text-amber-800 leading-relaxed font-medium">
+                                        &bull; <strong>Tetap Bisa Bertransaksi:</strong> Anda dapat melanjutkan transaksi penerbitan PO ini menggunakan metode pembayaran <strong>Corporate Virtual Account (Non-Kredit)</strong>.<br>
+                                        &bull; <strong>Fasilitas Kredit Tempo (TOP 14–90 Hari):</strong> Akan langsung aktif otomatis segera setelah Superadmin AkuAda menyetujui verifikasi legalitas perusahaan Anda.
+                                    </p>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- Registered Company Profile (Read-Only) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                            <div>
+                                <label class="block text-slate-500 mb-1">Nama Perusahaan Resmi:</label>
+                                <input type="text" readonly value="<?= esc($buyerCompany['company_name'] ?? '') ?>" 
+                                       class="w-full bg-slate-50 font-bold text-slate-800 rounded-xl border border-slate-200 px-3.5 py-2.5">
+                            </div>
+                            <div>
+                                <label class="block text-slate-500 mb-1">Bentuk Legalitas:</label>
+                                <input type="text" readonly value="<?= esc($buyerCompany['legal_type'] ?? 'PT') ?>" 
+                                       class="w-full bg-slate-50 font-bold text-slate-800 rounded-xl border border-slate-200 px-3.5 py-2.5">
+                            </div>
+                            <div>
+                                <label class="block text-slate-500 mb-1">NPWP Perusahaan (16 Digit):</label>
+                                <input type="text" readonly value="<?= esc($buyerCompany['npwp'] ?? '-') ?>" 
+                                       class="w-full bg-slate-50 font-bold text-slate-800 rounded-xl border border-slate-200 px-3.5 py-2.5">
+                            </div>
+                            <div>
+                                <label class="block text-slate-500 mb-1">Nomor Induk Berusaha (NIB):</label>
+                                <input type="text" readonly value="<?= esc($buyerCompany['nib'] ?? '-') ?>" 
+                                       class="w-full bg-slate-50 font-bold text-slate-800 rounded-xl border border-slate-200 px-3.5 py-2.5">
+                            </div>
+                            <div>
+                                <label class="block text-slate-500 mb-1">PIC Procurement:</label>
+                                <input type="text" readonly value="<?= esc($buyerCompany['pic_name'] ?? session('user_name') ?? '-') ?>" 
+                                       class="w-full bg-slate-50 font-bold text-slate-800 rounded-xl border border-slate-200 px-3.5 py-2.5">
+                            </div>
+                            <div>
+                                <label class="block text-slate-500 mb-1">Email Resmi Pengiriman PO & e-Invoice:</label>
+                                <input type="text" readonly value="<?= esc($buyerCompany['email'] ?? session('user_email') ?? '-') ?>" 
+                                       class="w-full bg-slate-50 font-bold text-slate-800 rounded-xl border border-slate-200 px-3.5 py-2.5">
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <!-- Alert for Unregistered Guest Buyer -->
                         <div class="p-4 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 flex items-start gap-3">
                             <span class="material-symbols-outlined text-amber-600 text-[22px] mt-0.5">info</span>
                             <div class="space-y-1">
-                                <strong class="font-bold text-amber-950 block">Perusahaan Anda Belum Terdaftar Fasilitas Kredit:</strong>
+                                <strong class="font-bold text-amber-950 block">Pemesanan Tanpa Login (Non-Kredit):</strong>
                                 <p class="text-amber-800 leading-relaxed">
                                     Sesuai SOP AkuAda, pembayaran PO dengan <strong>Fasilitas Kredit Tempo (TOP <?= $minTopDays ?>-<?= $maxTopDays ?> Hari)</strong> hanya dapat digunakan oleh perusahaan yang telah diverifikasi dan dibuatkan akun resmi oleh AkuAda. Untuk transaksi ini, Anda dapat melanjutkan pemesanan dengan pembayaran langsung (<strong>Bank Virtual Account</strong>).
                                 </p>
@@ -103,30 +158,6 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                                        class="w-full text-slate-800 rounded-xl border border-slate-300 focus:border-purple-600 px-3.5 py-2.5">
                             </div>
                         </div>
-                    <?php else: ?>
-                        <!-- Registered Company Profile (Read-Only) -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                            <div>
-                                <label class="block text-slate-500 mb-1">Nama Perusahaan Resmi:</label>
-                                <input type="text" readonly value="<?= esc($buyerCompany['company_name'] ?? '') ?>" 
-                                       class="w-full bg-slate-50 font-bold text-slate-800 rounded-xl border border-slate-200 px-3.5 py-2.5">
-                            </div>
-                            <div>
-                                <label class="block text-slate-500 mb-1">Bentuk Legalitas:</label>
-                                <input type="text" readonly value="<?= esc($buyerCompany['legal_type'] ?? 'PT') ?>" 
-                                       class="w-full bg-slate-50 font-bold text-slate-800 rounded-xl border border-slate-200 px-3.5 py-2.5">
-                            </div>
-                            <div>
-                                <label class="block text-slate-500 mb-1">NPWP Perusahaan (16 Digit):</label>
-                                <input type="text" readonly value="<?= esc($buyerCompany['npwp'] ?? '-') ?>" 
-                                       class="w-full bg-slate-50 font-bold text-slate-800 rounded-xl border border-slate-200 px-3.5 py-2.5">
-                            </div>
-                            <div>
-                                <label class="block text-slate-500 mb-1">Nomor Induk Berusaha (NIB):</label>
-                                <input type="text" readonly value="<?= esc($buyerCompany['nib'] ?? '-') ?>" 
-                                       class="w-full bg-slate-50 font-bold text-slate-800 rounded-xl border border-slate-200 px-3.5 py-2.5">
-                            </div>
-                        </div>
                     <?php endif; ?>
 
                     <!-- Internal PO Number -->
@@ -148,13 +179,17 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                             <span class="material-symbols-outlined text-blue-600">payments</span>
                             <h2 class="text-sm font-bold text-slate-800">2. Metode Pembayaran & Termin Kredit (TOP)</h2>
                         </div>
-                        <?php if (!empty($isRegistered)): ?>
+                        <?php if (!empty($isVerified)): ?>
                             <div class="flex items-center gap-2 text-[11px]">
                                 <span class="text-slate-500">Kuota Kredit Bulan Ini:</span>
                                 <strong class="px-2 py-0.5 rounded font-mono <?= $isSufficientCredit ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200' ?>">
                                     <?= (int)($unpaidNotesCount ?? 0) ?> / <?= (int)($maxUnpaidLimit ?? 3) ?> Nota Belum Lunas
                                 </strong>
                             </div>
+                        <?php elseif (!empty($hasCompany)): ?>
+                            <span class="text-[11px] text-amber-700 font-bold flex items-center gap-1 bg-amber-50 px-2.5 py-0.5 rounded border border-amber-200">
+                                <span class="material-symbols-outlined text-[15px]">hourglass_top</span> Kredit Pending Verifikasi Legalitas
+                            </span>
                         <?php else: ?>
                             <span class="text-[11px] text-rose-600 font-bold flex items-center gap-1">
                                 <span class="material-symbols-outlined text-[15px]">block</span> Kredit Tidak Tersedia (Belum Terdaftar)
@@ -163,7 +198,7 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                     </div>
 
                     <!-- Visual Indicator Box When Registered Buyer Has Reached Unpaid Notes Limit -->
-                    <?php if (!empty($isRegistered) && !$isSufficientCredit): ?>
+                    <?php if (!empty($isVerified) && !$isSufficientCredit): ?>
                         <div class="p-4 rounded-2xl bg-rose-50/90 border-2 border-rose-300 text-xs space-y-3">
                             <div class="flex items-start gap-3">
                                 <span class="material-symbols-outlined text-rose-600 text-2xl mt-0.5">warning</span>
@@ -214,7 +249,7 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                         foreach ($allowedTopTerms as $topDay):
                             $isDefTop = ($topDay === $defaultTopChecked);
                         ?>
-                            <?php if (!empty($isRegistered) && $isSufficientCredit): ?>
+                            <?php if (!empty($isVerified) && $isSufficientCredit): ?>
                                 <label class="flex items-start gap-3 p-4 rounded-xl <?= $isDefTop ? 'border-2 border-purple-500 bg-purple-50/40' : 'border border-slate-200 hover:border-purple-300' ?> cursor-pointer transition hover:bg-purple-50/70">
                                     <input type="radio" name="payment_method" value="top_<?= $topDay ?>" <?= $isDefTop ? 'checked' : '' ?> onchange="toggleOverlimitBox()" class="mt-1 text-purple-600 focus:ring-purple-500">
                                     <div class="flex-1">
@@ -225,7 +260,7 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                                         <p class="text-[11px] text-slate-500 mt-0.5">Pembayaran dilakukan maksimal <?= $topDay ?> hari kalender setelah Berita Acara Serah Terima (BAST) ditandatangani.</p>
                                     </div>
                                 </label>
-                            <?php elseif (!empty($isRegistered) && !$isSufficientCredit): ?>
+                            <?php elseif (!empty($isVerified) && !$isSufficientCredit): ?>
                                 <!-- Visual Locked Indicator when Insufficient Credit -->
                                 <div class="flex items-start gap-3 p-3.5 rounded-xl border border-rose-200 bg-rose-50/40 opacity-75 cursor-not-allowed">
                                     <input type="radio" disabled class="mt-1 text-rose-300 cursor-not-allowed">
@@ -245,16 +280,16 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                                     <div class="flex-1">
                                         <div class="flex items-center justify-between">
                                             <span class="font-bold text-slate-500 text-xs line-through">Term of Payment <?= $topDay ?> Hari (TOP <?= $topDay ?>)</span>
-                                            <span class="px-2 py-0.5 rounded bg-slate-200 text-slate-600 text-[10px] font-bold">🔒 Khusus Akun Terdaftar</span>
+                                            <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">🔒 Butuh Verifikasi Legalitas</span>
                                         </div>
-                                        <p class="text-[11px] text-slate-400 mt-0.5">Fasilitas kredit tempo hanya untuk akun perusahaan yang telah disetujui AkuAda.</p>
+                                        <p class="text-[11px] text-slate-400 mt-0.5"><?= !empty($hasCompany) ? 'Fasilitas kredit tempo akan aktif setelah dokumen legalitas disetujui Superadmin AkuAda.' : 'Fasilitas kredit tempo hanya untuk akun perusahaan yang telah disetujui AkuAda.' ?></p>
                                     </div>
                                 </div>
                             <?php endif; ?>
                         <?php endforeach; ?>
 
                         <!-- Corporate PO On-Account -->
-                        <?php if (!empty($isRegistered) && $isSufficientCredit): ?>
+                        <?php if (!empty($isVerified) && $isSufficientCredit): ?>
                             <label class="flex items-start gap-3 p-4 rounded-xl border border-slate-200 hover:border-purple-300 cursor-pointer transition">
                                 <input type="radio" name="payment_method" value="corporate_po" onchange="toggleOverlimitBox()" class="mt-1 text-purple-600 focus:ring-purple-500">
                                 <div class="flex-1">
@@ -265,7 +300,7 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                                     <p class="text-[11px] text-slate-500 mt-0.5">Penagihan faktur bulanan gabungan (Monthly Statement) langsung ke Finance Departemen.</p>
                                 </div>
                             </label>
-                        <?php elseif (!empty($isRegistered) && !$isSufficientCredit): ?>
+                        <?php elseif (!empty($isVerified) && !$isSufficientCredit): ?>
                             <div class="flex items-start gap-3 p-3.5 rounded-xl border border-rose-200 bg-rose-50/40 opacity-75 cursor-not-allowed">
                                 <input type="radio" disabled class="mt-1 text-rose-300 cursor-not-allowed">
                                 <div class="flex-1">
@@ -277,10 +312,21 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                                     </div>
                                 </div>
                             </div>
+                        <?php else: ?>
+                            <div class="flex items-start gap-3 p-4 rounded-xl border border-slate-200 bg-slate-50/70 opacity-60 cursor-not-allowed">
+                                <input type="radio" disabled class="mt-1 text-slate-300 cursor-not-allowed">
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-bold text-slate-500 text-xs line-through">Corporate Purchase Order (PO) On-Account</span>
+                                        <span class="px-2 py-0.5 rounded bg-slate-200 text-slate-600 text-[10px] font-bold">🔒 Butuh Verifikasi Legalitas</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mt-0.5"><?= !empty($hasCompany) ? 'Fasilitas on-account akan aktif setelah akun disetujui Superadmin.' : 'Penagihan on-account hanya untuk perusahaan yang telah diverifikasi Superadmin.' ?></p>
+                                </div>
+                            </div>
                         <?php endif; ?>
 
                         <!-- SPECIAL OPTION WHEN OVER-LIMIT: Tetap Open PO dengan Pengajuan Over-Limit TOP -->
-                        <?php if (!empty($isRegistered) && !$isSufficientCredit): ?>
+                        <?php if (!empty($isVerified) && !$isSufficientCredit): ?>
                             <div class="rounded-2xl border-2 border-amber-500 bg-amber-50/50 p-4 space-y-3 shadow-sm">
                                 <label class="flex items-start gap-3 cursor-pointer">
                                     <input type="radio" name="payment_method" value="overlimit_top" id="radioOverlimitTop" checked onchange="toggleOverlimitBox()" class="mt-1 text-amber-600 focus:ring-amber-500">
@@ -306,7 +352,7 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                                         <label class="block font-bold text-amber-950 mb-1 text-[11px]">Pilih Tenor TOP yang Diajukan:</label>
                                         <select name="overlimit_top_days" class="w-full px-3 py-2 rounded-xl border border-amber-300 bg-white font-bold text-slate-900">
                                             <?php foreach ($allowedTopTerms as $tDay): ?>
-                                                <option value="<?= $tDay ?>" <?= $tDay === $defaultTopChecked ? 'selected' : '' ?>>TOP <?= $tDay ?> Hari Kalender</option>
+                                                 <option value="<?= $tDay ?>" <?= $tDay === $defaultTopChecked ? 'selected' : '' ?>>TOP <?= $tDay ?> Hari Kalender</option>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
@@ -321,14 +367,14 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                         <?php endif; ?>
 
                         <!-- Bank Virtual Account (Always available) -->
-                        <label class="flex items-start gap-3 p-4 rounded-xl border-2 <?= empty($isRegistered) ? 'border-purple-500 bg-purple-50/40 shadow-sm' : 'border-slate-200 hover:border-purple-300' ?> cursor-pointer transition">
-                            <input type="radio" name="payment_method" value="bank_va" <?= empty($isRegistered) ? 'checked' : '' ?> onchange="toggleOverlimitBox()" class="mt-1 text-purple-600 focus:ring-purple-500">
+                        <label class="flex items-start gap-3 p-4 rounded-xl border-2 <?= empty($isVerified) ? 'border-purple-500 bg-purple-50/40 shadow-sm' : 'border-slate-200 hover:border-purple-300' ?> cursor-pointer transition">
+                            <input type="radio" name="payment_method" value="bank_va" <?= empty($isVerified) ? 'checked' : '' ?> onchange="toggleOverlimitBox()" class="mt-1 text-purple-600 focus:ring-purple-500">
                             <div class="flex-1">
                                 <div class="flex items-center justify-between">
                                     <span class="font-bold text-slate-900 text-xs">Corporate Virtual Account (<?= esc(get_system_setting('inv_bank1_name', 'Bank Mandiri')) ?>, <?= esc(get_system_setting('inv_bank2_name', 'Bank BCA')) ?>, <?= esc(get_system_setting('inv_bank3_name', 'Bank BNI')) ?>)</span>
-                                    <span class="px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">Tanpa Batas Plafon (Non-Kredit)</span>
+                                    <span class="px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">Langsung Aktif & Bisa Digunakan (Non-Kredit)</span>
                                 </div>
-                                <p class="text-[11px] text-slate-500 mt-0.5">Bayar langsung melalui corporate internet banking tanpa memotong plafon kredit TOP perusahaan Anda.</p>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Bayar langsung melalui corporate internet banking tanpa memotong kuota kredit TOP perusahaan Anda. PO dan Faktur tetap diterbitkan resmi.</p>
                             </div>
                         </label>
                     </div>

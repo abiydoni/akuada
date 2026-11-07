@@ -522,16 +522,30 @@ class CustomerController extends BaseController
         $bastNumber = 'BAST/AKUADA/' . date('Ym') . '/' . $seq;
         $taxInvNumber = '010.002-' . date('y') . '.' . rand(10000000, 99999999);
 
-        // Check credit limit availability
+        // Check legal verification status
+        $isVerifiedBuyer = ((int)($buyer['is_verified'] ?? 0) === 1);
+
+        // Credit evaluation (Hanya berlaku untuk buyer yang sudah diverifikasi legalitasnya)
         $limit = (float)($buyer['credit_limit_top'] ?? 0);
         $used = (float)($buyer['credit_used_top'] ?? 0);
         $available = max(0, $limit - $used);
-        $isOverlimit = ($totalAmount > $available);
+        $isOverlimit = $isVerifiedBuyer ? ($totalAmount > $available) : false;
         $shortfall = max(0, $totalAmount - $available);
 
-        $poNotes = 'Diterbitkan otomatis dari persetujuan Tender RFQ ' . $rfq['rfq_number'] . ' (' . $rfq['title'] . ').';
-        if ($isOverlimit) {
-            $poNotes = '[OVER-LIMIT REQUEST: Kekurangan Plafon ' . format_rupiah($shortfall) . ' | Usulan Limit Baru: ' . format_rupiah($used + $totalAmount) . '] ' . $poNotes;
+        if ($isVerifiedBuyer) {
+            $paymentMethod = 'top_30';
+            $paymentStatus = $isOverlimit ? 'pending_approval' : 'unpaid';
+            $dueDate = date('Y-m-d', strtotime('+30 days'));
+            $poNotes = 'Diterbitkan otomatis dari persetujuan Tender RFQ ' . $rfq['rfq_number'] . ' (' . $rfq['title'] . ').';
+            if ($isOverlimit) {
+                $poNotes = '[OVER-LIMIT REQUEST: Kekurangan Plafon ' . format_rupiah($shortfall) . ' | Usulan Limit Baru: ' . format_rupiah($used + $totalAmount) . '] ' . $poNotes;
+            }
+        } else {
+            // Buyer belum diverifikasi legalitasnya: Tetap bisa transaksi, tapi WAJIB Bank Virtual Account (Non-Kredit)
+            $paymentMethod = 'bank_va';
+            $paymentStatus = 'unpaid';
+            $dueDate = date('Y-m-d', strtotime('+3 days'));
+            $poNotes = 'Diterbitkan otomatis dari persetujuan Tender RFQ ' . $rfq['rfq_number'] . ' (' . $rfq['title'] . ') dengan metode pembayaran Bank Virtual Account (Legalitas Perusahaan Menunggu Verifikasi Admin / Non-Kredit).';
         }
 
         $orderModel = new OrderModel();
@@ -546,8 +560,8 @@ class CustomerController extends BaseController
             'vendor_net_payout'      => $totalVendorNet,
             'shipping_amount'        => 0,
             'total_amount'           => $totalAmount,
-            'payment_method'         => 'top_30',
-            'payment_status'         => $isOverlimit ? 'pending_approval' : 'unpaid',
+            'payment_method'         => $paymentMethod,
+            'payment_status'         => $paymentStatus,
             'order_status'           => 'po_issued',
             'tax_invoice_required'   => 1,
             'customer_notes'         => $poNotes,
@@ -556,7 +570,7 @@ class CustomerController extends BaseController
             'invoice_number'         => $invNumber,
             'vendor_invoice_number'  => $vInvNumber,
             'tax_invoice_number'     => $taxInvNumber,
-            'due_date'               => date('Y-m-d', strtotime('+30 days')),
+            'due_date'               => $dueDate,
             'vendor_payout_status'   => 'unpaid',
             'vendor_payout_due_date' => date('Y-m-d', strtotime('+7 days')),
             'created_at'             => $now,
@@ -571,8 +585,8 @@ class CustomerController extends BaseController
             $orderItemModel->insert($itemRow);
         }
 
-        // Update buyer credit used if within limit
-        if (!$isOverlimit && $buyer) {
+        // Update buyer credit used ONLY if verified and within credit limit
+        if ($isVerifiedBuyer && !$isOverlimit && $buyer) {
             $newUsed = $used + $totalAmount;
             $companyModel->update($buyerId, ['credit_used_top' => $newUsed]);
             if (session('company_id') == $buyerId) {
@@ -580,12 +594,13 @@ class CustomerController extends BaseController
             }
         }
 
+        $logMethodText = $isVerifiedBuyer ? 'Fasilitas Kredit TOP 30 Hari' : 'Bank Virtual Account (Non-Kredit / Menunggu Verifikasi Legalitas)';
         $logModel = new \App\Models\OrderStatusLogModel();
         $logModel->logStatus(
             $orderId,
             'po_issued',
             'Purchase Order Diterbitkan dari Konversi RFQ ' . $rfq['rfq_number'],
-            'Penawaran harga vendor pada RFQ ' . $rfq['rfq_number'] . ' telah disetujui oleh Buyer dan dikonversi otomatis menjadi Purchase Order resmi ' . $poNumber . ' senilai ' . format_rupiah($totalAmount) . '.',
+            'Penawaran harga vendor pada RFQ ' . $rfq['rfq_number'] . ' telah disetujui oleh Buyer dan dikonversi otomatis menjadi Purchase Order resmi ' . $poNumber . ' senilai ' . format_rupiah($totalAmount) . ' dengan metode ' . $logMethodText . '.',
             session('user_name') ?? ($buyer['pic_name'] ?? 'Corporate Buyer')
         );
 
@@ -599,7 +614,10 @@ class CustomerController extends BaseController
 
         \App\Models\CoaModel::syncOrdersToJournals();
 
-        session()->setFlashdata('success', 'Penawaran RFQ ' . $rfq['rfq_number'] . ' berhasil disetujui & Purchase Order resmi ' . $poNumber . ' telah diterbitkan!');
+        $successMsg = $isVerifiedBuyer
+            ? 'Penawaran RFQ ' . $rfq['rfq_number'] . ' berhasil disetujui & Purchase Order resmi ' . $poNumber . ' telah diterbitkan dengan fasilitas kredit TOP 30!'
+            : 'Penawaran RFQ ' . $rfq['rfq_number'] . ' berhasil disetujui & Purchase Order resmi ' . $poNumber . ' telah diterbitkan! Karena legalitas perusahaan masih dalam proses verifikasi, pembayaran menggunakan Corporate Virtual Account (Non-Kredit).';
+        session()->setFlashdata('success', $successMsg);
         return redirect()->to('/customer/orders/' . $orderId);
     }
 

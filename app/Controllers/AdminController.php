@@ -18,6 +18,7 @@ use App\Models\OrderMessageModel;
 use App\Models\OrderReturnModel;
 use App\Models\BuyerWithdrawalModel;
 use App\Models\BuyerCashbackMutationModel;
+use App\Libraries\ProductExcelHelper;
 
 class AdminController extends BaseController
 {
@@ -600,110 +601,17 @@ class AdminController extends BaseController
 
     public function downloadTemplateCsv()
     {
-        $companyModel = new CompanyModel();
-        $sampleVendors = $companyModel->where('type', 'vendor')->findAll(3);
-        $v1 = !empty($sampleVendors[0]['company_name']) ? $sampleVendors[0]['company_name'] : 'PT Mitra Pemasok Mandiri';
-        $v2 = !empty($sampleVendors[1]['company_name']) ? $sampleVendors[1]['company_name'] : 'CV Berkah Teknik Sentosa';
-        $v3 = !empty($sampleVendors[2]['company_name']) ? $sampleVendors[2]['company_name'] : $v1;
+        $xlsxContent = ProductExcelHelper::generateTemplate(true);
+        $filename = 'template_import_produk_superadmin_' . date('Ymd_His') . '.xlsx';
 
-        $headers = [
-            'vendor',
-            'kategori',
-            'nama_barang',
-            'sku',
-            'barcode',
-            'merk',
-            'satuan_uom',
-            'harga_b2b',
-            'stok',
-            'moq',
-            'berat_gram',
-            'lead_time_hari',
-            'tkdn_persen',
-            'kena_ppn',
-            'bisa_sample',
-            'deskripsi',
-            'spesifikasi',
-            'gambar_url'
-        ];
-
-        $sampleRows = [
-            [
-                $v1,
-                'Alat Tulis Kantor & Kertas',
-                'Kertas HVS PaperOne A4 80gr (Box isi 5 Rim)',
-                'SKU-PPO-A480',
-                '8992345678901',
-                'PaperOne',
-                'Box',
-                '245000',
-                '150',
-                '2',
-                '12500',
-                '2',
-                '85.5',
-                '1',
-                '1',
-                'Kertas HVS putih bersih ukuran A4 dengan gramatur 80 gsm premium untuk cetak dokumen resmi kantor.',
-                'Ukuran: 210 x 297 mm; Ketebalan: 80 gsm; Kemasan: 1 Box isi 5 Rim @ 500 lembar (Total 2.500 lembar); Sertifikasi PEFC & ISO 9001',
-                'https://images.unsplash.com/photo-1589330694653-dad6d3240e2b?auto=format&fit=crop&w=600&q=80'
-            ],
-            [
-                $v2,
-                'Komputer & IT Infrastructure',
-                'Keyboard Wireless Logitech MK270 Combo Mouse Silent',
-                'SKU-LOG-MK270',
-                '8999876543210',
-                'Logitech',
-                'Unit',
-                '360000',
-                '50',
-                '1',
-                '800',
-                '3',
-                '40.0',
-                '1',
-                '0',
-                'Paket keyboard dan mouse wireless 2.4 GHz dengan baterai tahan lama dan koneksi stabil hingga 10 meter.',
-                'Koneksi: USB Receiver 2.4GHz; Jangkauan: 10 meter; Baterai: 2x AAA (Keyboard), 1x AA (Mouse); Kompatibel: Windows 10/11 & macOS; Garansi resmi 1 tahun',
-                'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80'
-            ],
-            [
-                $v3,
-                'Perlengkapan K3 & Safety APD',
-                'Helm Safety Proyek SNI MSA V-Gard Fastrac Putih',
-                'SKU-MSA-VGARD-W',
-                '8991122334455',
-                'MSA',
-                'Pcs',
-                '125000',
-                '80',
-                '5',
-                '450',
-                '2',
-                '78.0',
-                '1',
-                '1',
-                'Helm keselamatan kerja standar SNI dan ANSI dengan suspensi putar Fastrac untuk perlindungan benturan di area industri dan konstruksi.',
-                'Material: Polietilen kepadatan tinggi (HDPE); Standar: SNI ISO 3873 & ANSI/ISEA Z89.1; Suspensi: 4 titik Fastrac putar; Warna: Putih',
-                'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=600&q=80'
-            ]
-        ];
-
-        $filename = 'template_import_produk_superadmin_' . date('Ymd_His') . '.csv';
-
-        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Pragma: no-cache');
+        header('Content-Length: ' . strlen($xlsxContent));
+        header('Cache-Control: max-age=0');
+        header('Pragma: public');
         header('Expires: 0');
 
-        $out = fopen('php://output', 'w');
-        fputs($out, "\xEF\xBB\xBF"); // UTF-8 BOM
-        fputcsv($out, $headers);
-        foreach ($sampleRows as $row) {
-            fputcsv($out, $row);
-        }
-        fclose($out);
+        echo $xlsxContent;
         exit;
     }
 
@@ -712,44 +620,28 @@ class AdminController extends BaseController
         $file = $this->request->getFile('csv_file');
 
         if (!$file || !$file->isValid()) {
-            session()->setFlashdata('error', 'File CSV tidak ditemukan atau gagal diunggah.');
+            session()->setFlashdata('error', 'File tidak ditemukan atau gagal diunggah.');
             return redirect()->to('/admin/products');
         }
 
         $extension = strtolower($file->getClientExtension());
-        if ($extension !== 'csv' && $extension !== 'txt') {
-            session()->setFlashdata('error', 'Format file harus berekstensi .csv');
+        if (!in_array($extension, ['xlsx', 'csv', 'txt'])) {
+            session()->setFlashdata('error', 'Format file harus berekstensi Excel (.xlsx) atau CSV (.csv).');
             return redirect()->to('/admin/products');
         }
 
         $tempPath = $file->getTempName();
-        $handle = fopen($tempPath, 'r');
-        if (!$handle) {
-            session()->setFlashdata('error', 'Gagal membaca file CSV yang diunggah.');
+        $rows = ProductExcelHelper::parseUploadedFile($tempPath, $extension);
+
+        if (empty($rows)) {
+            session()->setFlashdata('error', 'File kosong atau tidak memiliki data yang dapat dibaca.');
             return redirect()->to('/admin/products');
         }
 
-        // Auto-detect delimiter (, or ;)
-        $firstLine = fgets($handle);
-        $delimiter = (substr_count($firstLine, ';') > substr_count($firstLine, ',')) ? ';' : ',';
-        rewind($handle);
-
-        // Strip UTF-8 BOM if present
-        $bom = fread($handle, 3);
-        if ($bom !== "\xEF\xBB\xBF") {
-            rewind($handle);
-        }
-
-        $header = fgetcsv($handle, 0, $delimiter);
-        if (!$header) {
-            fclose($handle);
-            session()->setFlashdata('error', 'File CSV kosong atau tidak memiliki format header yang valid.');
-            return redirect()->to('/admin/products');
-        }
-
+        $headerRow = array_shift($rows);
         $headerMap = [];
-        foreach ($header as $colIdx => $colName) {
-            $cleanName = strtolower(trim(preg_replace('/[^a-zA-Z0-9_]/', '', str_replace([' ', '-'], '_', $colName))));
+        foreach ($headerRow as $colIdx => $colName) {
+            $cleanName = strtolower(trim(preg_replace('/[^a-zA-Z0-9_]/', '', str_replace([' ', '-', '(', ')', '/', '='], '_', $colName))));
             $headerMap[$cleanName] = $colIdx;
         }
 
@@ -769,26 +661,31 @@ class AdminController extends BaseController
         $db = \Config\Database::connect();
         $db->transStart();
 
-        while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+        foreach ($rows as $row) {
             if (empty(array_filter($row, fn($v) => trim((string)$v) !== ''))) {
                 continue;
             }
 
-            $getVal = function($key, $default = '') use ($headerMap, $row) {
-                if (isset($headerMap[$key]) && isset($row[$headerMap[$key]])) {
-                    return trim((string)$row[$headerMap[$key]]);
+            $getVal = function(array $aliases, $default = '') use ($headerMap, $row) {
+                foreach ($aliases as $alias) {
+                    if (isset($headerMap[$alias]) && isset($row[$headerMap[$alias]])) {
+                        $val = trim((string)$row[$headerMap[$alias]]);
+                        if ($val !== '') {
+                            return $val;
+                        }
+                    }
                 }
                 return $default;
             };
 
-            $name = $getVal('nama_barang') ?: $getVal('name') ?: $getVal('nama');
+            $name = $getVal(['nama_barang_wajib', 'nama_barang', 'name', 'nama']);
             if (empty($name)) {
                 $skippedCount++;
                 continue;
             }
 
             // Vendor Matching
-            $vendorIdentifier = $getVal('vendor') ?: $getVal('vendor_name') ?: $getVal('nama_vendor') ?: $getVal('vendor_id');
+            $vendorIdentifier = $getVal(['vendor_id_nama_pt', 'vendor', 'vendor_name', 'nama_vendor', 'vendor_id']);
             $matchedVendor = null;
             if (!empty($vendorIdentifier)) {
                 if (is_numeric($vendorIdentifier)) {
@@ -818,42 +715,56 @@ class AdminController extends BaseController
                 continue;
             }
 
-            // Category Matching
-            $categoryName = $getVal('kategori') ?: $getVal('category');
-            $matchedCategoryId = null;
-            if (!empty($categoryName)) {
-                foreach ($allCategories as $cat) {
-                    if (strcasecmp($cat['name'], $categoryName) === 0 || stripos($cat['name'], $categoryName) !== false || stripos($categoryName, $cat['name']) !== false) {
-                        $matchedCategoryId = $cat['id'];
-                        break;
-                    }
-                }
-            }
-            if (!$matchedCategoryId && $defaultCategory) {
-                $matchedCategoryId = $defaultCategory['id'];
-            }
+            // Category Matching (mendukung ID Angka atau Teks)
+            $rawCat = $getVal(['kategori_id_angka_teks', 'kategori', 'category', 'category_id']);
+            $matchedCategoryId = ProductExcelHelper::resolveCategoryId($rawCat, $allCategories, $defaultCategory['id'] ?? 1);
 
-            $rawPrice = $getVal('harga_b2b') ?: $getVal('price_regular') ?: $getVal('harga') ?: '0';
+            // Sanitasi Harga Regular
+            $rawPrice = $getVal(['harga_b2b_regular_rp', 'harga_b2b', 'price_regular', 'harga'], '0');
             $cleanPrice = (float)str_replace(['Rp', 'rp', '.', ' '], '', str_replace(',', '.', $rawPrice));
             if ($cleanPrice <= 0) {
                 $skippedCount++;
                 continue;
             }
 
-            $sku = $getVal('sku') ?: 'SKU-' . strtoupper(substr(md5(uniqid($name, true)), 0, 8));
-            $barcode = $getVal('barcode');
-            $brand = $getVal('merk') ?: $getVal('brand');
-            $uom = $getVal('satuan_uom') ?: $getVal('uom') ?: 'Pcs';
-            $stock = max(0, (int)str_replace(['.', ','], '', $getVal('stok') ?: $getVal('stock') ?: '0'));
-            $moq = max(1, (int)str_replace(['.', ','], '', $getVal('moq') ?: '1'));
-            $weight = max(0, (int)str_replace(['.', ','], '', $getVal('berat_gram') ?: $getVal('weight') ?: '500'));
-            $leadTime = max(1, (int)str_replace(['.', ','], '', $getVal('lead_time_hari') ?: $getVal('lead_time') ?: '2'));
-            $tkdn = (float)str_replace(',', '.', $getVal('tkdn_persen') ?: $getVal('tkdn') ?: '0');
-            $isTaxable = in_array(strtolower($getVal('kena_ppn') ?: $getVal('is_taxable') ?: '1'), ['1', 'ya', 'yes', 'true']) ? 1 : 0;
-            $isSample = in_array(strtolower($getVal('bisa_sample') ?: $getVal('is_sample_available') ?: '1'), ['1', 'ya', 'yes', 'true']) ? 1 : 0;
-            $desc = $getVal('deskripsi') ?: $getVal('description') ?: ('Pengadaan ' . $name . ' berkualitas untuk kebutuhan korporat.');
-            $spec = $getVal('spesifikasi') ?: $getVal('spec_details') ?: '';
-            $imageUrl = $getVal('gambar_url') ?: $getVal('image_url') ?: 'https://images.unsplash.com/photo-1589330694653-dad6d3240e2b?auto=format&fit=crop&w=600&q=80';
+            // SKU & Barcode: Jika kosong otomatis dibuatkan sistem
+            $rawSku = $getVal(['sku_kosong_otomatis', 'sku']);
+            $sku = !empty($rawSku) ? $rawSku : ('SKU-AKU-' . strtoupper(substr(md5(uniqid($name . microtime(), true)), 0, 8)));
+
+            $rawBarcode = $getVal(['barcode_kosong_otomatis', 'barcode']);
+            $barcode = !empty($rawBarcode) ? $rawBarcode : ('899' . str_pad((string)rand(1000000000, 9999999999), 10, '0', STR_PAD_LEFT));
+
+            $brand = $getVal(['merk_brand', 'merk', 'brand'], 'Generic');
+            
+            // Satuan UOM (mendukung Kode Angka 1-12 atau Teks Pcs/Box dll)
+            $rawUom = $getVal(['satuan_uom_kode_angka_teks', 'satuan_uom', 'uom', 'satuan']);
+            $uom = ProductExcelHelper::resolveUom($rawUom);
+
+            // Stok, MOQ, Berat, Lead Time dengan nilai default yang aman
+            $rawStock = $getVal(['stok_kosong_100', 'stok', 'stock']);
+            $stock = ($rawStock !== '' && is_numeric(str_replace(['.', ','], '', $rawStock))) ? max(0, (int)str_replace(['.', ','], '', $rawStock)) : 100;
+
+            $rawMoq = $getVal(['moq_min_order_kosong_1', 'moq']);
+            $moq = ($rawMoq !== '' && is_numeric(str_replace(['.', ','], '', $rawMoq))) ? max(1, (int)str_replace(['.', ','], '', $rawMoq)) : 1;
+
+            $rawWeight = $getVal(['berat_gram_kosong_500', 'berat_gram', 'weight']);
+            $weight = ($rawWeight !== '' && is_numeric(str_replace(['.', ','], '', $rawWeight))) ? max(1, (int)str_replace(['.', ','], '', $rawWeight)) : 500;
+
+            $rawLeadTime = $getVal(['lead_time_hari_kosong_2', 'lead_time_hari', 'lead_time']);
+            $leadTime = ($rawLeadTime !== '' && is_numeric(str_replace(['.', ','], '', $rawLeadTime))) ? max(1, (int)str_replace(['.', ','], '', $rawLeadTime)) : 2;
+
+            $tkdn = (float)str_replace(',', '.', $getVal(['tkdn_persen', 'tkdn'], '0'));
+
+            // PPN & Sample (1 = Ya, 0 = Tidak)
+            $rawPpn = strtolower($getVal(['kena_ppn_1ya_0tidak', 'kena_ppn', 'is_taxable'], '1'));
+            $isTaxable = in_array($rawPpn, ['0', 'tidak', 'no', 'false']) ? 0 : 1;
+
+            $rawSample = strtolower($getVal(['bisa_sample_1ya_0tidak', 'bisa_sample', 'is_sample_available'], '1'));
+            $isSample = in_array($rawSample, ['0', 'tidak', 'no', 'false']) ? 0 : 1;
+
+            $desc = $getVal(['deskripsi_barang', 'deskripsi', 'description'], 'Pengadaan ' . $name . ' berkualitas untuk kebutuhan korporat.');
+            $spec = $getVal(['spesifikasi_teknis', 'spesifikasi', 'spec_details'], '');
+            $imageUrl = $getVal(['url_foto_barang', 'gambar_url', 'image_url'], 'https://images.unsplash.com/photo-1589330694653-dad6d3240e2b?auto=format&fit=crop&w=600&q=80');
 
             $slug = url_title($name, '-', true) . '-' . rand(1000, 9999);
             $contractFee = (float)($matchedVendor['commission_rate'] ?? get_default_vendor_fee_rate());
@@ -888,7 +799,6 @@ class AdminController extends BaseController
             $importedCount++;
         }
 
-        fclose($handle);
         $db->transComplete();
 
         if ($db->transStatus() === false) {
@@ -1238,17 +1148,15 @@ class AdminController extends BaseController
                 $group = 'general';
                 $type = 'string';
 
-                if (str_starts_with($key, 'vendor_fee_') || $key === 'vendor_payout_days') {
+                if (str_starts_with($key, 'vendor_fee_') || in_array($key, ['buyer_cashback_percent', 'vendor_payout_days'])) {
                     $group = 'fee';
                     if (is_numeric($value)) $type = 'number';
                 } elseif (in_array($key, ['ppn_rate', 'pph_22_rate', 'tax_nsfp_prefix'])) {
                     $group = 'tax';
                     $type = 'number';
-                } elseif (in_array($key, ['allowed_top_terms', 'default_credit_limit', 'max_credit_limit', 'credit_step_amount', 'default_shipping_amount', 'free_shipping_region'])) {
+                } elseif (in_array($key, ['max_unpaid_notes_limit', 'allowed_top_terms', 'default_shipping_amount', 'free_shipping_region', 'default_credit_limit', 'max_credit_limit', 'credit_step_amount'])) {
                     $group = 'payment';
-                    if (in_array($key, ['default_credit_limit', 'max_credit_limit', 'credit_step_amount', 'default_shipping_amount'])) $type = 'number';
-                } elseif (in_array($key, ['primary_color', 'secondary_color', 'accent_color'])) {
-                    $group = 'design';
+                    if (in_array($key, ['max_unpaid_notes_limit', 'default_shipping_amount', 'default_credit_limit', 'max_credit_limit', 'credit_step_amount'])) $type = 'number';
                 } elseif (str_starts_with($key, 'inv_')) {
                     $group = 'invoice';
                 }

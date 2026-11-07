@@ -13,13 +13,13 @@
             <p class="text-xs text-slate-500 mt-0.5">Daftar seluruh item barang yang didaftarkan oleh mitra vendor di platform AkuAda.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-            <a href="<?= base_url('admin/products/template-csv') ?>" class="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-300 shadow-xs transition flex items-center gap-1.5" title="Unduh format template CSV Superadmin">
-                <span class="material-symbols-outlined text-[18px] text-emerald-600">download</span>
-                <span>Template CSV</span>
+            <a href="<?= base_url('admin/products/template-csv') ?>" class="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-300 shadow-xs transition flex items-center gap-1.5" title="Unduh format template Excel resmi (.xlsx) dengan sheet panduan">
+                <span class="material-symbols-outlined text-[18px] text-emerald-600">table_view</span>
+                <span>Template Excel (.xlsx)</span>
             </a>
             <button type="button" onclick="openImportAdminModal()" class="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5">
                 <span class="material-symbols-outlined text-[18px]">upload_file</span>
-                <span>Import CSV Barang</span>
+                <span>Import Excel / CSV</span>
             </button>
             <span class="px-3 py-2 rounded-xl bg-purple-50 text-purple-700 text-xs font-bold border border-purple-200">
                 Total: <?= count($products) ?> SKU
@@ -176,27 +176,29 @@
         <form action="<?= base_url('admin/products/import-csv') ?>" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
             <?= csrf_field() ?>
 
-            <div class="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-emerald-950 text-[11px] space-y-1.5">
+            <div class="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-emerald-950 text-[11px] space-y-2">
                 <div class="flex items-center justify-between">
                     <strong class="font-bold flex items-center gap-1 text-emerald-900">
-                        <span class="material-symbols-outlined text-[16px]">info</span> Petunjuk Format Kolom:
+                        <span class="material-symbols-outlined text-[16px]">info</span> Petunjuk Template Excel & Angka:
                     </strong>
                     <a href="<?= base_url('admin/products/template-csv') ?>" class="text-[11px] text-emerald-700 hover:text-emerald-900 font-extrabold underline flex items-center gap-0.5">
-                        <span class="material-symbols-outlined text-[15px]">download</span> Unduh Template CSV
+                        <span class="material-symbols-outlined text-[15px]">download</span> Unduh Template Excel (.xlsx)
                     </a>
                 </div>
-                <p class="text-slate-600 leading-relaxed">
-                    Kolom CSV disesuaikan dengan database: <strong>vendor, kategori, nama_barang, sku, barcode, merk, satuan_uom, harga_b2b, stok, moq, berat_gram, lead_time_hari, tkdn_persen, kena_ppn, bisa_sample, deskripsi, spesifikasi, gambar_url</strong>.
-                </p>
+                <ul class="text-slate-600 space-y-1 list-disc list-inside">
+                    <li>Gunakan file format <strong>Excel (.xlsx)</strong> atau <strong>CSV</strong>. Pada file Excel telah tersedia Sheet 2 <em>"Panduan & Kode Angka"</em>.</li>
+                    <li><strong>Mudah Diisi:</strong> Kolom Kategori & Satuan UOM cukup diisi angka (misal Kategori: 1, Satuan: 1=Pcs, 2=Box, 3=Unit).</li>
+                    <li><strong>Otomatis:</strong> Kolom SKU & Barcode dapat dikosongkan agar digenerate otomatis oleh sistem.</li>
+                </ul>
             </div>
 
             <div>
-                <label class="block font-bold text-slate-700 mb-1.5">Pilih File CSV (.csv): <span class="text-rose-500">*</span></label>
+                <label class="block font-bold text-slate-700 mb-1.5">Pilih File Excel / CSV (.xlsx, .csv): <span class="text-rose-500">*</span></label>
                 <div class="p-4 rounded-2xl border-2 border-dashed border-slate-300 hover:border-purple-400 transition bg-slate-50 text-center space-y-2">
                     <span class="material-symbols-outlined text-3xl text-slate-400 block mx-auto">cloud_upload</span>
-                    <input type="file" name="csv_file" accept=".csv,.txt" required
+                    <input type="file" name="csv_file" accept=".xlsx,.csv,.txt" required
                            class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer">
-                    <p class="text-[10px] text-slate-400">File CSV encoding UTF-8, ukuran maks. 10MB</p>
+                    <p class="text-[10px] text-slate-400">Mendukung file Excel (.xlsx) atau CSV (UTF-8), ukuran maks. 10MB</p>
                 </div>
             </div>
 
