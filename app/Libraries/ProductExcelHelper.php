@@ -28,7 +28,7 @@ class ProductExcelHelper
 
     /**
      * Generate file Excel (.xlsx) resmi dengan 2 Sheet:
-     * Sheet 1: Data Barang (dengan kolom terpisah rapi & contoh input angka)
+     * Sheet 1: Data Barang (kolom terpisah rapi, contoh input angka)
      * Sheet 2: Panduan & Kode Angka (daftar ID kategori & kode satuan UOM)
      */
     public static function generateTemplate(bool $isAdmin = false, ?int $vendorCompanyId = null): string
@@ -42,7 +42,6 @@ class ProductExcelHelper
         $v2 = !empty($sampleVendors[1]['company_name']) ? $sampleVendors[1]['company_name'] : 'CV Berkah Teknik Sentosa';
         $v3 = !empty($sampleVendors[2]['company_name']) ? $sampleVendors[2]['company_name'] : $v1;
 
-        // Headers
         if ($isAdmin) {
             $headers = [
                 'Vendor (ID / Nama PT)',
@@ -150,7 +149,7 @@ class ProductExcelHelper
                 [
                     '1', // Kategori ID 1
                     'Kertas HVS PaperOne A4 80gr (Box isi 5 Rim)',
-                    '',  // Kosongkan agar otomatis dibuat sistem
+                    '',  // Kosongkan agar otomatis
                     '',  // Kosongkan agar otomatis
                     'PaperOne',
                     '2', // Kode 2 = Box
@@ -207,8 +206,21 @@ class ProductExcelHelper
             ];
         }
 
+        // Shared strings manager
+        $sharedStrings = [];
+        $stringMap = [];
+        $getStringIndex = function(string $str) use (&$sharedStrings, &$stringMap): int {
+            if (isset($stringMap[$str])) {
+                return $stringMap[$str];
+            }
+            $idx = count($sharedStrings);
+            $sharedStrings[] = $str;
+            $stringMap[$str] = $idx;
+            return $idx;
+        };
+
         // Build Sheet 1 (Data Barang)
-        $sheet1Xml = self::buildSheetXml($headers, $sampleRows);
+        $sheet1Xml = self::buildSheetXmlData($headers, $sampleRows, $getStringIndex);
 
         // Build Sheet 2 (Panduan & Kode Angka)
         $guideHeaders = ['Kode / ID', 'Nama Standar Baku', 'Keterangan Penggunaan'];
@@ -234,54 +246,54 @@ class ProductExcelHelper
         $guideRows[] = ['Lead Time Hari', 'Angka (Kosong = 2)', 'Estimasi lama hari kerja pengiriman barang, default 2'];
         $guideRows[] = ['Berat Gram', 'Angka (Kosong = 500)', 'Berat barang per satuan dalam gram, default 500'];
 
-        $sheet2Xml = self::buildSheetXml($guideHeaders, $guideRows);
+        $sheet2Xml = self::buildSheetXmlData($guideHeaders, $guideRows, $getStringIndex);
 
-        // Package into ZIP as XLSX
+        // Build SharedStrings XML
+        $uniqueCount = count($sharedStrings);
+        $sharedStringsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n";
+        $sharedStringsXml .= '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="' . $uniqueCount . '" uniqueCount="' . $uniqueCount . '">' . "\n";
+        foreach ($sharedStrings as $str) {
+            $safe = htmlspecialchars($str, ENT_XML1, 'UTF-8');
+            $sharedStringsXml .= '  <si><t>' . $safe . '</t></si>' . "\n";
+        }
+        $sharedStringsXml .= '</sst>';
+
+        // Build Workbook XML
+        $wbXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n";
+        $wbXml .= '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' . "\n";
+        $wbXml .= '  <sheets>' . "\n";
+        $wbXml .= '    <sheet name="Data Barang" sheetId="1" r:id="rId1"/>' . "\n";
+        $wbXml .= '    <sheet name="Panduan &amp; Kode Angka" sheetId="2" r:id="rId2"/>' . "\n";
+        $wbXml .= '  </sheets>' . "\n";
+        $wbXml .= '</workbook>';
+
+        // Package into ZIP as XLSX using native Microsoft Excel scaffold
         $tempFile = tempnam(sys_get_temp_dir(), 'akuada_tpl_');
         $zip = new ZipArchive();
         if ($zip->open($tempFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
             throw new \RuntimeException('Gagal membuat file template Excel.');
         }
 
-        // 1. [Content_Types].xml
-        $contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Default Extension="xml" ContentType="application/xml"/>
-  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
-  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
-  <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
-</Types>';
-        $zip->addFromString('[Content_Types].xml', $contentTypes);
+        $scaffoldDir = __DIR__ . '/templates/xlsx_scaffold';
 
-        // 2. _rels/.rels
-        $rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
-</Relationships>';
-        $zip->addFromString('_rels/.rels', $rels);
+        // Content Types
+        $zip->addFromString('[Content_Types].xml', self::getFileOrFallback($scaffoldDir . '/[Content_Types].xml', self::defaultContentTypesXml()));
+        // Root rels
+        $zip->addFromString('_rels/.rels', self::getFileOrFallback($scaffoldDir . '/_rels/.rels', self::defaultRootRelsXml()));
+        // DocProps
+        $zip->addFromString('docProps/app.xml', self::getFileOrFallback($scaffoldDir . '/docProps/app.xml', self::defaultAppXml()));
+        $zip->addFromString('docProps/core.xml', self::getFileOrFallback($scaffoldDir . '/docProps/core.xml', self::defaultCoreXml()));
+        // XL rels
+        $zip->addFromString('xl/_rels/workbook.xml.rels', self::getFileOrFallback($scaffoldDir . '/xl/_rels/workbook.xml.rels', self::defaultWorkbookRelsXml()));
+        // Theme & Styles
+        $zip->addFromString('xl/theme/theme1.xml', self::getFileOrFallback($scaffoldDir . '/xl/theme/theme1.xml', self::defaultTheme1Xml()));
+        $zip->addFromString('xl/styles.xml', self::getFileOrFallback($scaffoldDir . '/xl/styles.xml', self::defaultStylesXml()));
 
-        // 3. xl/_rels/workbook.xml.rels
-        $wbRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
-  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
-</Relationships>';
-        $zip->addFromString('xl/_rels/workbook.xml.rels', $wbRels);
-
-        // 4. xl/workbook.xml
-        $wb = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-  <sheets>
-    <sheet name="Data Barang" sheetId="1" r:id="rId1"/>
-    <sheet name="Panduan &amp; Kode Angka" sheetId="2" r:id="rId2"/>
-  </sheets>
-</workbook>';
-        $zip->addFromString('xl/workbook.xml', $wb);
-
-        // 5. Worksheets
+        // Workbook, Worksheets, and Shared Strings
+        $zip->addFromString('xl/workbook.xml', $wbXml);
         $zip->addFromString('xl/worksheets/sheet1.xml', $sheet1Xml);
         $zip->addFromString('xl/worksheets/sheet2.xml', $sheet2Xml);
+        $zip->addFromString('xl/sharedStrings.xml', $sharedStringsXml);
 
         $zip->close();
         $content = file_get_contents($tempFile);
@@ -338,7 +350,6 @@ class ProductExcelHelper
         // Baca worksheet pertama (sheet1.xml)
         $sheetXmlStr = $zip->getFromName('xl/worksheets/sheet1.xml');
         if (!$sheetXmlStr) {
-            // Coba temukan file worksheet apa pun di xl/worksheets/
             for ($i = 0; $i < $zip->numFiles; $i++) {
                 $filename = $zip->getNameIndex($i);
                 if (str_starts_with($filename, 'xl/worksheets/sheet') && str_ends_with($filename, '.xml')) {
@@ -467,7 +478,6 @@ class ProductExcelHelper
             }
         }
 
-        // Jika teks lain seperti "Botol", "Liter", "Kaleng", tetap simpan
         return ucfirst(strtolower($trimmed));
     }
 
@@ -502,45 +512,58 @@ class ProductExcelHelper
     }
 
     /**
-     * Helper membuat XML Sheet OpenXML
+     * Helper membuat XML Worksheet dengan shared strings & skipping cell kosong
      */
-    private static function buildSheetXml(array $headers, array $rows): string
+    private static function buildSheetXmlData(array $headers, array $rows, callable $getStringIndex): string
     {
+        $maxCol = count($headers);
+        $totalRows = count($rows) + 1;
+        $lastColLetter = self::indexToColLetter($maxCol - 1);
+        $dimRef = "A1:{$lastColLetter}{$totalRows}";
+
         $xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n";
         $xml .= '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' . "\n";
+        $xml .= '  <dimension ref="' . $dimRef . '"/>' . "\n";
+        $xml .= '  <sheetViews><sheetView tabSelected="1" workbookViewId="0"/></sheetViews>' . "\n";
+        $xml .= '  <sheetFormatPr defaultRowHeight="15"/>' . "\n";
         $xml .= '  <sheetData>' . "\n";
 
         // Row 1: Headers
-        $xml .= '    <row r="1">' . "\n";
-        foreach ($headers as $colIdx => $hText) {
-            $colLetter = self::indexToColLetter($colIdx);
-            $safeText = htmlspecialchars((string)$hText, ENT_XML1, 'UTF-8');
-            $xml .= '      <c r="' . $colLetter . '1" t="inlineStr"><is><t>' . $safeText . '</t></is></c>' . "\n";
+        $xml .= '    <row r="1" spans="1:' . $maxCol . '">' . "\n";
+        foreach ($headers as $cIdx => $h) {
+            $colLetter = self::indexToColLetter($cIdx);
+            $sIdx = $getStringIndex((string)$h);
+            $xml .= '      <c r="' . $colLetter . '1" t="s"><v>' . $sIdx . '</v></c>' . "\n";
         }
         $xml .= '    </row>' . "\n";
 
-        // Data Rows
-        $rowNum = 2;
+        // Rows 2..N
+        $rNum = 2;
         foreach ($rows as $row) {
-            $xml .= '    <row r="' . $rowNum . '">' . "\n";
-            foreach ($row as $colIdx => $val) {
-                $colLetter = self::indexToColLetter($colIdx);
-                $ref = $colLetter . $rowNum;
+            $xml .= '    <row r="' . $rNum . '" spans="1:' . $maxCol . '">' . "\n";
+            foreach ($row as $cIdx => $val) {
+                // Sangat penting: Lewati cell kosong agar tidak menimbulkan string property corrupt di Excel!
+                if ($val === '' || $val === null) {
+                    continue;
+                }
+                $colLetter = self::indexToColLetter($cIdx);
+                $ref = $colLetter . $rNum;
 
                 if (is_int($val) || is_float($val)) {
                     $xml .= '      <c r="' . $ref . '"><v>' . $val . '</v></c>' . "\n";
                 } elseif (is_numeric($val) && !str_starts_with((string)$val, '0')) {
                     $xml .= '      <c r="' . $ref . '"><v>' . $val . '</v></c>' . "\n";
                 } else {
-                    $safeText = htmlspecialchars((string)$val, ENT_XML1, 'UTF-8');
-                    $xml .= '      <c r="' . $ref . '" t="inlineStr"><is><t>' . $safeText . '</t></is></c>' . "\n";
+                    $sIdx = $getStringIndex((string)$val);
+                    $xml .= '      <c r="' . $ref . '" t="s"><v>' . $sIdx . '</v></c>' . "\n";
                 }
             }
             $xml .= '    </row>' . "\n";
-            $rowNum++;
+            $rNum++;
         }
 
         $xml .= '  </sheetData>' . "\n";
+        $xml .= '  <pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/>' . "\n";
         $xml .= '</worksheet>';
 
         return $xml;
@@ -567,5 +590,153 @@ class ProductExcelHelper
             $idx = $idx * 26 + (ord($col[$i]) - 64);
         }
         return $idx - 1;
+    }
+
+    private static function getFileOrFallback(string $path, string $fallback): string
+    {
+        if (file_exists($path)) {
+            $c = @file_get_contents($path);
+            if ($c !== false && strlen($c) > 0) {
+                return $c;
+            }
+        }
+        return $fallback;
+    }
+
+    private static function defaultContentTypesXml(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>
+  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+  <Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>
+  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
+</Types>';
+    }
+
+    private static function defaultRootRelsXml(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
+</Relationships>';
+    }
+
+    private static function defaultWorkbookRelsXml(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/>
+  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+  <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>
+</Relationships>';
+    }
+
+    private static function defaultAppXml(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+  <Application>Microsoft Excel</Application>
+  <DocSecurity>0</DocSecurity>
+  <ScaleCrop>false</ScaleCrop>
+  <HeadingPairs>
+    <vt:vector size="2" baseType="variant">
+      <vt:variant><vt:lpstr>Worksheets</vt:lpstr></vt:variant>
+      <vt:variant><vt:i4>2</vt:i4></vt:variant>
+    </vt:vector>
+  </HeadingPairs>
+  <TitlesOfParts>
+    <vt:vector size="2" baseType="lpstr">
+      <vt:lpstr>Data Barang</vt:lpstr>
+      <vt:lpstr>Panduan &amp; Kode Angka</vt:lpstr>
+    </vt:vector>
+  </TitlesOfParts>
+  <Company>AkuAda B2B</Company>
+  <LinksUpToDate>false</LinksUpToDate>
+  <SharedDoc>false</SharedDoc>
+  <HyperlinksChanged>false</HyperlinksChanged>
+  <AppVersion>16.0300</AppVersion>
+</Properties>';
+    }
+
+    private static function defaultCoreXml(): string
+    {
+        $now = gmdate('Y-m-d\TH:i:s\Z');
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <dc:creator>AkuAda B2B</dc:creator>
+  <cp:lastModifiedBy>AkuAda B2B</cp:lastModifiedBy>
+  <dcterms:created xsi:type="dcterms:W3CDTF">' . $now . '</dcterms:created>
+  <dcterms:modified xsi:type="dcterms:W3CDTF">' . $now . '</dcterms:modified>
+</cp:coreProperties>';
+    }
+
+    private static function defaultStylesXml(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts count="1">
+    <font><sz val="11"/><color theme="1"/><name val="Calibri"/><family val="2"/><scheme val="minor"/></font>
+  </fonts>
+  <fills count="2">
+    <fill><patternFill patternType="none"/></fill>
+    <fill><patternFill patternType="gray125"/></fill>
+  </fills>
+  <borders count="1">
+    <border><left/><right/><top/><bottom/><diagonal/></border>
+  </borders>
+  <cellStyleXfs count="1">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>
+  </cellStyleXfs>
+  <cellXfs count="1">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+  </cellXfs>
+  <cellStyles count="1">
+    <cellStyle name="Normal" xfId="0" builtinId="0"/>
+  </cellStyles>
+</styleSheet>';
+    }
+
+    private static function defaultTheme1Xml(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office Theme">
+  <a:themeElements>
+    <a:clrScheme name="Office">
+      <a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1>
+      <a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1>
+      <a:dk2><a:srgbClr val="44546A"/></a:dk2>
+      <a:lt2><a:srgbClr val="E7E6E6"/></a:lt2>
+      <a:accent1><a:srgbClr val="4472C4"/></a:accent1>
+      <a:accent2><a:srgbClr val="ED7D31"/></a:accent2>
+      <a:accent3><a:srgbClr val="A5A5A5"/></a:accent3>
+      <a:accent4><a:srgbClr val="FFC000"/></a:accent4>
+      <a:accent5><a:srgbClr val="5B9BD5"/></a:accent5>
+      <a:accent6><a:srgbClr val="70AD47"/></a:accent6>
+      <a:hlink><a:srgbClr val="0563C1"/></a:hlink>
+      <a:folHlink><a:srgbClr val="954F72"/></a:folHlink>
+    </a:clrScheme>
+    <a:fontScheme name="Office">
+      <a:majorFont><a:latin typeface="Calibri Light"/></a:majorFont>
+      <a:minorFont><a:latin typeface="Calibri"/></a:minorFont>
+    </a:fontScheme>
+    <a:fmtScheme name="Office">
+      <a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst>
+      <a:lnStyleLst><a:ln w="9525"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst>
+      <a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst>
+      <a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst>
+    </a:fmtScheme>
+  </a:themeElements>
+</a:theme>';
     }
 }
