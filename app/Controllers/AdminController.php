@@ -601,6 +601,22 @@ class AdminController extends BaseController
 
     public function downloadTemplateCsv()
     {
+        $format = strtolower((string)($this->request->getGet('format') ?? 'xlsx'));
+        if ($format === 'csv') {
+            $csvContent = ProductExcelHelper::generateCsvTemplate(true);
+            $filename = 'template_import_produk_superadmin_' . date('Ymd_His') . '.csv';
+
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Content-Length: ' . strlen($csvContent));
+            header('Cache-Control: max-age=0');
+            header('Pragma: public');
+            header('Expires: 0');
+
+            echo $csvContent;
+            exit;
+        }
+
         $xlsxContent = ProductExcelHelper::generateTemplate(true);
         $filename = 'template_import_produk_superadmin_' . date('Ymd_His') . '.xlsx';
 

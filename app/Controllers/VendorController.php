@@ -436,6 +436,22 @@ class VendorController extends BaseController
     public function downloadTemplateCsv()
     {
         $vendorId = $this->getVendorCompanyId();
+        $format = strtolower((string)($this->request->getGet('format') ?? 'xlsx'));
+        if ($format === 'csv') {
+            $csvContent = ProductExcelHelper::generateCsvTemplate(false, $vendorId);
+            $filename = 'template_import_produk_vendor_' . date('Ymd_His') . '.csv';
+
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Content-Length: ' . strlen($csvContent));
+            header('Cache-Control: max-age=0');
+            header('Pragma: public');
+            header('Expires: 0');
+
+            echo $csvContent;
+            exit;
+        }
+
         $xlsxContent = ProductExcelHelper::generateTemplate(false, $vendorId);
         $filename = 'template_import_produk_vendor_' . date('Ymd_His') . '.xlsx';
 

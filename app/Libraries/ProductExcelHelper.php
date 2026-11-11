@@ -4,7 +4,6 @@ namespace App\Libraries;
 
 use App\Models\CategoryModel;
 use App\Models\CompanyModel;
-use ZipArchive;
 
 class ProductExcelHelper
 {
@@ -267,39 +266,24 @@ class ProductExcelHelper
         $wbXml .= '  </sheets>' . "\n";
         $wbXml .= '</workbook>';
 
-        // Package into ZIP as XLSX using native Microsoft Excel scaffold
-        $tempFile = tempnam(sys_get_temp_dir(), 'akuada_tpl_');
-        $zip = new ZipArchive();
-        if ($zip->open($tempFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            throw new \RuntimeException('Gagal membuat file template Excel.');
-        }
-
+        // Package into ZIP as XLSX (auto-detect ZipArchive or zero-dependency pure PHP fallback)
         $scaffoldDir = __DIR__ . '/templates/xlsx_scaffold';
 
-        // Content Types
-        $zip->addFromString('[Content_Types].xml', self::getFileOrFallback($scaffoldDir . '/[Content_Types].xml', self::defaultContentTypesXml()));
-        // Root rels
-        $zip->addFromString('_rels/.rels', self::getFileOrFallback($scaffoldDir . '/_rels/.rels', self::defaultRootRelsXml()));
-        // DocProps
-        $zip->addFromString('docProps/app.xml', self::getFileOrFallback($scaffoldDir . '/docProps/app.xml', self::defaultAppXml()));
-        $zip->addFromString('docProps/core.xml', self::getFileOrFallback($scaffoldDir . '/docProps/core.xml', self::defaultCoreXml()));
-        // XL rels
-        $zip->addFromString('xl/_rels/workbook.xml.rels', self::getFileOrFallback($scaffoldDir . '/xl/_rels/workbook.xml.rels', self::defaultWorkbookRelsXml()));
-        // Theme & Styles
-        $zip->addFromString('xl/theme/theme1.xml', self::getFileOrFallback($scaffoldDir . '/xl/theme/theme1.xml', self::defaultTheme1Xml()));
-        $zip->addFromString('xl/styles.xml', self::getFileOrFallback($scaffoldDir . '/xl/styles.xml', self::defaultStylesXml()));
+        $zipFiles = [
+            '[Content_Types].xml'        => self::getFileOrFallback($scaffoldDir . '/[Content_Types].xml', self::defaultContentTypesXml()),
+            '_rels/.rels'                => self::getFileOrFallback($scaffoldDir . '/_rels/.rels', self::defaultRootRelsXml()),
+            'docProps/app.xml'           => self::getFileOrFallback($scaffoldDir . '/docProps/app.xml', self::defaultAppXml()),
+            'docProps/core.xml'          => self::getFileOrFallback($scaffoldDir . '/docProps/core.xml', self::defaultCoreXml()),
+            'xl/_rels/workbook.xml.rels' => self::getFileOrFallback($scaffoldDir . '/xl/_rels/workbook.xml.rels', self::defaultWorkbookRelsXml()),
+            'xl/theme/theme1.xml'        => self::getFileOrFallback($scaffoldDir . '/xl/theme/theme1.xml', self::defaultTheme1Xml()),
+            'xl/styles.xml'              => self::getFileOrFallback($scaffoldDir . '/xl/styles.xml', self::defaultStylesXml()),
+            'xl/workbook.xml'            => $wbXml,
+            'xl/worksheets/sheet1.xml'   => $sheet1Xml,
+            'xl/worksheets/sheet2.xml'   => $sheet2Xml,
+            'xl/sharedStrings.xml'       => $sharedStringsXml,
+        ];
 
-        // Workbook, Worksheets, and Shared Strings
-        $zip->addFromString('xl/workbook.xml', $wbXml);
-        $zip->addFromString('xl/worksheets/sheet1.xml', $sheet1Xml);
-        $zip->addFromString('xl/worksheets/sheet2.xml', $sheet2Xml);
-        $zip->addFromString('xl/sharedStrings.xml', $sharedStringsXml);
-
-        $zip->close();
-        $content = file_get_contents($tempFile);
-        @unlink($tempFile);
-
-        return $content;
+        return self::packageZip($zipFiles);
     }
 
     /**
@@ -317,19 +301,20 @@ class ProductExcelHelper
     }
 
     /**
-     * Parse file format Excel .xlsx menggunakan ZipArchive & SimpleXML murni
+     * Parse file format Excel .xlsx menggunakan ZipArchive atau Pure PHP Zip Reader & SimpleXML murni
      */
     private static function parseXlsxFile(string $filePath): array
     {
-        $zip = new ZipArchive();
-        if ($zip->open($filePath) !== true) {
+        $files = self::extractZip($filePath);
+        if (empty($files)) {
             return [];
         }
 
         // Shared strings jika ada
         $sharedStrings = [];
-        if (($idx = $zip->locateName('xl/sharedStrings.xml')) !== false) {
-            $xml = @simplexml_load_string($zip->getFromIndex($idx));
+        $sharedStringsXml = $files['xl/sharedStrings.xml'] ?? null;
+        if ($sharedStringsXml) {
+            $xml = @simplexml_load_string($sharedStringsXml);
             if ($xml && isset($xml->si)) {
                 foreach ($xml->si as $si) {
                     if (isset($si->t)) {
@@ -348,18 +333,15 @@ class ProductExcelHelper
         }
 
         // Baca worksheet pertama (sheet1.xml)
-        $sheetXmlStr = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $sheetXmlStr = $files['xl/worksheets/sheet1.xml'] ?? null;
         if (!$sheetXmlStr) {
-            for ($i = 0; $i < $zip->numFiles; $i++) {
-                $filename = $zip->getNameIndex($i);
-                if (str_starts_with($filename, 'xl/worksheets/sheet') && str_ends_with($filename, '.xml')) {
-                    $sheetXmlStr = $zip->getFromIndex($i);
+            foreach ($files as $fname => $fcontent) {
+                if (str_starts_with($fname, 'xl/worksheets/sheet') && str_ends_with($fname, '.xml')) {
+                    $sheetXmlStr = $fcontent;
                     break;
                 }
             }
         }
-
-        $zip->close();
 
         if (!$sheetXmlStr) {
             return [];
@@ -738,5 +720,370 @@ class ProductExcelHelper
     </a:fmtScheme>
   </a:themeElements>
 </a:theme>';
+    }
+
+    /**
+     * Kompres kumpulan file XML/scaffold menjadi arsip XLSX
+     * Prioritas: Gunakan ZipArchive jika ada, jika tidak otomatis gunakan Pure PHP ZIP Engine (zero-dependency).
+     */
+    public static function packageZip(array $files): string
+    {
+        if (class_exists(\ZipArchive::class)) {
+            try {
+                $tempFile = tempnam(sys_get_temp_dir(), 'akuada_tpl_');
+                $zip = new \ZipArchive();
+                if ($zip->open($tempFile, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+                    foreach ($files as $name => $data) {
+                        $zip->addFromString($name, $data);
+                    }
+                    $zip->close();
+                    $content = @file_get_contents($tempFile);
+                    @unlink($tempFile);
+                    if ($content !== false && strlen($content) > 0) {
+                        return $content;
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Fallback to pure PHP zip generator
+            }
+        }
+
+        return self::buildPurePhpZip($files);
+    }
+
+    /**
+     * Engine pembuat ZIP murni PHP (standar RFC 1951 / PKZIP)
+     * Tidak membutuhkan ekstensi eksternal, kompatibel penuh dengan Excel / Google Sheets
+     */
+    public static function buildPurePhpZip(array $files): string
+    {
+        $time = time();
+        $d = getdate($time);
+        $dosTime = (($d['hours'] << 11) | ($d['minutes'] << 5) | ($d['seconds'] >> 1)) & 0xFFFF;
+        $dosDate = ((($d['year'] - 1980) << 9) | ($d['mon'] << 5) | $d['mday']) & 0xFFFF;
+
+        $ctrlDir = '';
+        $dataBlocks = '';
+        $offset = 0;
+        $entriesCount = 0;
+
+        foreach ($files as $name => $content) {
+            $name = str_replace('\\', '/', $name);
+            $uncompressedSize = strlen($content);
+            $crc = crc32($content);
+
+            if (function_exists('gzdeflate')) {
+                $compressed = (string)@gzdeflate($content);
+                $compressedSize = strlen($compressed);
+                $method = 8;
+            } else {
+                $compressed = $content;
+                $compressedSize = $uncompressedSize;
+                $method = 0;
+            }
+
+            $localHeader = pack(
+                'VvvvvvVVVvv',
+                0x04034b50,
+                20,
+                0x0800,
+                $method,
+                $dosTime,
+                $dosDate,
+                $crc,
+                $compressedSize,
+                $uncompressedSize,
+                strlen($name),
+                0
+            ) . $name;
+
+            $dataBlocks .= $localHeader . $compressed;
+
+            $ctrlDir .= pack(
+                'VvvvvvvVVVvvvvvVV',
+                0x02014b50,
+                20,
+                20,
+                0x0800,
+                $method,
+                $dosTime,
+                $dosDate,
+                $crc,
+                $compressedSize,
+                $uncompressedSize,
+                strlen($name),
+                0,
+                0,
+                0,
+                0,
+                0x00000020,
+                $offset
+            ) . $name;
+
+            $offset = strlen($dataBlocks);
+            $entriesCount++;
+        }
+
+        $eocd = pack(
+            'VvvvvVVv',
+            0x06054b50,
+            0,
+            0,
+            $entriesCount,
+            $entriesCount,
+            strlen($ctrlDir),
+            $offset,
+            0
+        );
+
+        return $dataBlocks . $ctrlDir . $eocd;
+    }
+
+    /**
+     * Ekstraksi arsip ZIP (XLSX) menjadi daftar file [nama => isi]
+     */
+    public static function extractZip(string $filePath): array
+    {
+        if (class_exists(\ZipArchive::class)) {
+            try {
+                $zip = new \ZipArchive();
+                if ($zip->open($filePath) === true) {
+                    $files = [];
+                    for ($i = 0; $i < $zip->numFiles; $i++) {
+                        $name = $zip->getNameIndex($i);
+                        $files[$name] = $zip->getFromIndex($i);
+                    }
+                    $zip->close();
+                    if (!empty($files)) {
+                        return $files;
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Fallback to pure PHP extractor
+            }
+        }
+
+        return self::extractPurePhpZip($filePath);
+    }
+
+    /**
+     * Engine ekstraksi ZIP murni PHP membaca Central Directory
+     */
+    public static function extractPurePhpZip(string $filePath): array
+    {
+        $data = @file_get_contents($filePath);
+        if ($data === false || strlen($data) < 22) {
+            return [];
+        }
+
+        $eocdPos = -1;
+        $maxScan = min(strlen($data), 65557);
+        $scanStart = strlen($data) - 22;
+        for ($i = $scanStart; $i >= strlen($data) - $maxScan; $i--) {
+            if (substr($data, $i, 4) === "\x50\x4b\x05\x06") {
+                $eocdPos = $i;
+                break;
+            }
+        }
+
+        if ($eocdPos === -1) {
+            return [];
+        }
+
+        $eocd = unpack('vdisk/vcdDisk/vdiskEntries/vtotalEntries/VcdSize/VcdOffset/vcommentLen', substr($data, $eocdPos + 4, 18));
+        $totalEntries = $eocd['totalEntries'] ?? 0;
+        $cdOffset = $eocd['cdOffset'] ?? 0;
+
+        $files = [];
+        $curCd = $cdOffset;
+
+        for ($n = 0; $n < $totalEntries; $n++) {
+            if ($curCd + 46 > strlen($data) || substr($data, $curCd, 4) !== "\x50\x4b\x01\x02") {
+                break;
+            }
+
+            $cd = unpack(
+                'vverMade/vverNeeded/vflag/vmethod/vtime/vdate/Vcrc/VcompSize/VuncompSize/vnameLen/vextraLen/vcommentLen/vdisk/vintAttr/VextAttr/VlocalOffset',
+                substr($data, $curCd + 4, 42)
+            );
+
+            $curCd += 46;
+            $name = substr($data, $curCd, $cd['nameLen']);
+            $curCd += $cd['nameLen'] + $cd['extraLen'] + $cd['commentLen'];
+
+            $localOffset = $cd['localOffset'];
+            if ($localOffset + 30 > strlen($data) || substr($data, $localOffset, 4) !== "\x50\x4b\x03\x04") {
+                continue;
+            }
+
+            $local = unpack('vver/vflag/vmethod/vtime/vdate/Vcrc/VcompSize/VuncompSize/vnameLen/vextraLen', substr($data, $localOffset + 4, 26));
+            $dataOffset = $localOffset + 30 + $local['nameLen'] + $local['extraLen'];
+
+            $compressedData = substr($data, $dataOffset, $cd['compSize']);
+            $uncompressed = '';
+
+            if ($cd['method'] === 8) {
+                $uncompressed = @gzinflate($compressedData);
+                if ($uncompressed === false) {
+                    $uncompressed = @gzuncompress($compressedData);
+                }
+            } elseif ($cd['method'] === 0) {
+                $uncompressed = $compressedData;
+            }
+
+            $files[$name] = (string)$uncompressed;
+        }
+
+        return $files;
+    }
+
+    /**
+     * Generate template berformat CSV murni ber-BOM UTF-8 (agar langsung terbuka rapi berkolom di Excel)
+     */
+    public static function generateCsvTemplate(bool $isAdmin = false, ?int $vendorCompanyId = null): string
+    {
+        $companyModel = new CompanyModel();
+        $sampleVendors = $isAdmin ? $companyModel->where('type', 'vendor')->findAll(3) : [];
+        $v1 = !empty($sampleVendors[0]['company_name']) ? $sampleVendors[0]['company_name'] : 'PT Mitra Pemasok Mandiri';
+        $v2 = !empty($sampleVendors[1]['company_name']) ? $sampleVendors[1]['company_name'] : 'CV Berkah Teknik Sentosa';
+        $v3 = !empty($sampleVendors[2]['company_name']) ? $sampleVendors[2]['company_name'] : $v1;
+
+        if ($isAdmin) {
+            $headers = [
+                'Vendor (ID / Nama PT)',
+                'Kategori (ID Angka / Teks)',
+                'Nama Barang (Wajib)',
+                'SKU (Kosong = Otomatis)',
+                'Barcode (Kosong = Otomatis)',
+                'Merk / Brand',
+                'Satuan UOM (Kode Angka / Teks)',
+                'Harga B2B Regular (Rp)',
+                'Stok (Kosong = 100)',
+                'MOQ Min Order (Kosong = 1)',
+                'Berat Gram (Kosong = 500)',
+                'Lead Time Hari (Kosong = 2)',
+                'TKDN Persen',
+                'Kena PPN (1=Ya, 0=Tidak)',
+                'Bisa Sample (1=Ya, 0=Tidak)',
+                'Deskripsi Barang',
+                'Spesifikasi Teknis',
+                'URL Foto Barang'
+            ];
+            $sampleRows = [
+                [
+                    $v1,
+                    '1',
+                    'Kertas HVS PaperOne A4 80gr (Box isi 5 Rim)',
+                    '',
+                    '',
+                    'PaperOne',
+                    '2', // Box
+                    245000,
+                    150,
+                    2,
+                    12500,
+                    2,
+                    85.5,
+                    1,
+                    1,
+                    'Kertas HVS putih bersih ukuran A4 gramatur 80 gsm premium untuk dokumen resmi kantor.',
+                    'Ukuran: 210 x 297 mm; Ketebalan: 80 gsm; Kemasan: 1 Box isi 5 Rim @ 500 lembar (Total 2.500 lembar); Sertifikasi PEFC & ISO 9001',
+                    'https://images.unsplash.com/photo-1589330694653-dad6d3240e2b?auto=format&fit=crop&w=600&q=80'
+                ],
+                [
+                    $v2,
+                    '2',
+                    'Keyboard Wireless Logitech MK270 Combo Mouse Silent',
+                    '',
+                    '',
+                    'Logitech',
+                    '3', // Unit
+                    360000,
+                    50,
+                    1,
+                    800,
+                    3,
+                    40.0,
+                    1,
+                    0,
+                    'Paket mouse keyboard nirkabel 2.4GHz USB nano receiver tahan tumpahan air.',
+                    'Konektivitas: Nirkabel 2.4GHz; Jangkauan: 10 meter; Baterai: 2x AAA (Keyboard), 1x AA (Mouse); Garansi: 1 Tahun',
+                    'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80'
+                ]
+            ];
+        } else {
+            $headers = [
+                'Kategori (ID Angka / Teks)',
+                'Nama Barang (Wajib)',
+                'SKU (Kosong = Otomatis)',
+                'Barcode (Kosong = Otomatis)',
+                'Merk / Brand',
+                'Satuan UOM (Kode Angka / Teks)',
+                'Harga B2B Regular (Rp)',
+                'Stok (Kosong = 100)',
+                'MOQ Min Order (Kosong = 1)',
+                'Berat Gram (Kosong = 500)',
+                'Lead Time Hari (Kosong = 2)',
+                'TKDN Persen',
+                'Kena PPN (1=Ya, 0=Tidak)',
+                'Bisa Sample (1=Ya, 0=Tidak)',
+                'Deskripsi Barang',
+                'Spesifikasi Teknis',
+                'URL Foto Barang'
+            ];
+            $sampleRows = [
+                [
+                    '1',
+                    'Kertas HVS PaperOne A4 80gr (Box isi 5 Rim)',
+                    '',
+                    '',
+                    'PaperOne',
+                    '2', // Box
+                    245000,
+                    150,
+                    2,
+                    12500,
+                    2,
+                    85.5,
+                    1,
+                    1,
+                    'Kertas HVS putih bersih ukuran A4 gramatur 80 gsm premium untuk dokumen resmi kantor.',
+                    'Ukuran: 210 x 297 mm; Ketebalan: 80 gsm; Kemasan: 1 Box isi 5 Rim @ 500 lembar (Total 2.500 lembar); Sertifikasi PEFC & ISO 9001',
+                    'https://images.unsplash.com/photo-1589330694653-dad6d3240e2b?auto=format&fit=crop&w=600&q=80'
+                ],
+                [
+                    '3',
+                    'Helm Proyek Keselamatan Safety Helmet V-Gard Fastrac',
+                    '',
+                    '',
+                    'MSA',
+                    '1', // Pcs
+                    78000,
+                    200,
+                    5,
+                    450,
+                    1,
+                    65.0,
+                    1,
+                    1,
+                    'Helm keselamatan kerja standar SNI dan ANSI dengan suspensi putar Fastrac untuk perlindungan industri.',
+                    'Material: Polietilen (HDPE); Standar: SNI ISO 3873 & ANSI/ISEA Z89.1; Suspensi: 4 titik Fastrac putar; Warna: Putih',
+                    'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=600&q=80'
+                ]
+            ];
+        }
+
+        $f = fopen('php://temp', 'r+');
+        // UTF-8 BOM agar Microsoft Excel langsung membaca sebagai UTF-8
+        fputs($f, "\xEF\xBB\xBF");
+        fputcsv($f, $headers);
+        foreach ($sampleRows as $row) {
+            fputcsv($f, $row);
+        }
+        rewind($f);
+        $csv = stream_get_contents($f);
+        fclose($f);
+
+        return $csv;
     }
 }
