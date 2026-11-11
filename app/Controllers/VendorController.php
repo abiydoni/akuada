@@ -538,7 +538,7 @@ class VendorController extends BaseController
             }
 
             // Category Matching (mendukung ID Angka atau Teks)
-            $rawCat = $getVal(['kategori_id_angka_teks', 'kategori', 'category', 'category_id']);
+            $rawCat = $getVal(['kategori_id_id_angka_teks', 'kategori_id_angka_teks', 'kategori_id', 'kategori', 'category', 'category_id', 'id_kategori']);
             $matchedCategoryId = ProductExcelHelper::resolveCategoryId($rawCat, $allCategories, $defaultCategory['id'] ?? 1);
 
             // Sanitasi Harga Regular
@@ -575,7 +575,7 @@ class VendorController extends BaseController
             $rawLeadTime = $getVal(['lead_time_hari_kosong_2', 'lead_time_hari', 'lead_time']);
             $leadTime = ($rawLeadTime !== '' && is_numeric(str_replace(['.', ','], '', $rawLeadTime))) ? max(1, (int)str_replace(['.', ','], '', $rawLeadTime)) : 2;
 
-            $tkdn = (float)str_replace(',', '.', $getVal(['tkdn_persen', 'tkdn'], '0'));
+            $tkdn = (float)str_replace(',', '.', $getVal(['tkdn_persen_kosong_0', 'tkdn_persen', 'tkdn'], '0'));
 
             // PPN & Sample (1 = Ya, 0 = Tidak)
             $rawPpn = strtolower($getVal(['kena_ppn_1ya_0tidak', 'kena_ppn', 'is_taxable'], '1'));

@@ -36,15 +36,15 @@ class ProductExcelHelper
         $categories = $categoryModel->orderBy('id', 'ASC')->findAll();
 
         $companyModel = new CompanyModel();
-        $sampleVendors = $isAdmin ? $companyModel->where('type', 'vendor')->findAll(3) : [];
-        $v1 = !empty($sampleVendors[0]['company_name']) ? $sampleVendors[0]['company_name'] : 'PT Mitra Pemasok Mandiri';
-        $v2 = !empty($sampleVendors[1]['company_name']) ? $sampleVendors[1]['company_name'] : 'CV Berkah Teknik Sentosa';
-        $v3 = !empty($sampleVendors[2]['company_name']) ? $sampleVendors[2]['company_name'] : $v1;
+        $sampleVendors = $isAdmin ? $companyModel->where('type', 'vendor')->orderBy('id', 'ASC')->findAll() : [];
+        $v1Id = !empty($sampleVendors[0]['id']) ? (string)$sampleVendors[0]['id'] : '1';
+        $v2Id = !empty($sampleVendors[1]['id']) ? (string)$sampleVendors[1]['id'] : $v1Id;
+        $v3Id = !empty($sampleVendors[2]['id']) ? (string)$sampleVendors[2]['id'] : $v1Id;
 
         if ($isAdmin) {
             $headers = [
-                'Vendor (ID / Nama PT)',
-                'Kategori (ID Angka / Teks)',
+                'Vendor ID (Wajib Angka)',
+                'Kategori ID (ID Angka / Teks)',
                 'Nama Barang (Wajib)',
                 'SKU (Kosong = Otomatis)',
                 'Barcode (Kosong = Otomatis)',
@@ -55,7 +55,7 @@ class ProductExcelHelper
                 'MOQ Min Order (Kosong = 1)',
                 'Berat Gram (Kosong = 500)',
                 'Lead Time Hari (Kosong = 2)',
-                'TKDN Persen',
+                'TKDN Persen (Kosong = 0)',
                 'Kena PPN (1=Ya, 0=Tidak)',
                 'Bisa Sample (1=Ya, 0=Tidak)',
                 'Deskripsi Barang',
@@ -64,7 +64,7 @@ class ProductExcelHelper
             ];
             $sampleRows = [
                 [
-                    $v1,
+                    $v1Id,
                     '1',
                     'Kertas HVS PaperOne A4 80gr (Box isi 5 Rim)',
                     '',
@@ -84,7 +84,7 @@ class ProductExcelHelper
                     'https://images.unsplash.com/photo-1589330694653-dad6d3240e2b?auto=format&fit=crop&w=600&q=80'
                 ],
                 [
-                    $v2,
+                    $v2Id,
                     '2',
                     'Keyboard Wireless Logitech MK270 Combo Mouse Silent',
                     '',
@@ -104,7 +104,7 @@ class ProductExcelHelper
                     'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80'
                 ],
                 [
-                    $v3,
+                    $v3Id,
                     '3',
                     'Helm Safety Proyek SNI MSA V-Gard Fastrac Putih',
                     '',
@@ -126,7 +126,7 @@ class ProductExcelHelper
             ];
         } else {
             $headers = [
-                'Kategori (ID Angka / Teks)',
+                'Kategori ID (ID Angka / Teks)',
                 'Nama Barang (Wajib)',
                 'SKU (Kosong = Otomatis)',
                 'Barcode (Kosong = Otomatis)',
@@ -137,7 +137,7 @@ class ProductExcelHelper
                 'MOQ Min Order (Kosong = 1)',
                 'Berat Gram (Kosong = 500)',
                 'Lead Time Hari (Kosong = 2)',
-                'TKDN Persen',
+                'TKDN Persen (Kosong = 0)',
                 'Kena PPN (1=Ya, 0=Tidak)',
                 'Bisa Sample (1=Ya, 0=Tidak)',
                 'Deskripsi Barang',
@@ -223,27 +223,54 @@ class ProductExcelHelper
 
         // Build Sheet 2 (Panduan & Kode Angka)
         $guideHeaders = ['Kode / ID', 'Nama Standar Baku', 'Keterangan Penggunaan'];
-        $guideRows = [
-            ['=== DAFTAR KODE KATEGORI (KOLOM KATEGORI) ===', '', ''],
-        ];
+        $guideRows = [];
+
+        if ($isAdmin) {
+            $guideRows[] = ['=== DAFTAR VENDOR / SUPPLIER AKTIF (KOLOM VENDOR ID) ===', '', ''];
+            if (!empty($sampleVendors)) {
+                foreach ($sampleVendors as $vItem) {
+                    $guideRows[] = [
+                        (string)$vItem['id'],
+                        (string)$vItem['company_name'],
+                        'Tulis angka ID ' . $vItem['id'] . ' pada kolom Vendor ID (PIC: ' . ($vItem['pic_name'] ?? '-') . ')'
+                    ];
+                }
+            } else {
+                $guideRows[] = ['1', 'PT Contoh Mitra Supplier', 'Lihat ID Vendor di menu Admin > Verifikasi Mitra Vendor'];
+            }
+            $guideRows[] = ['', '', ''];
+        }
+
+        $guideRows[] = ['=== DAFTAR KATEGORI MASTER DATABASE (KOLOM KATEGORI ID) ===', '', ''];
         foreach ($categories as $cat) {
-            $guideRows[] = [(string)$cat['id'], (string)$cat['name'], 'Cukup tulis angka ' . $cat['id'] . ' pada kolom Kategori (atau ketik nama kategorinya)'];
+            $guideRows[] = [
+                (string)$cat['id'],
+                (string)$cat['name'],
+                'Tulis angka ID ' . $cat['id'] . ' pada kolom Kategori ID (atau ketik nama kategorinya)'
+            ];
         }
         $guideRows[] = ['', '', ''];
+
         $guideRows[] = ['=== DAFTAR KODE SATUAN JUAL (KOLOM SATUAN UOM) ===', '', ''];
         foreach (self::$uomMap as $code => $label) {
-            $guideRows[] = [(string)$code, $label, 'Cukup tulis angka ' . $code . ' pada kolom Satuan UOM (atau ketik ' . $label . ')'];
+            $guideRows[] = [
+                (string)$code,
+                $label,
+                'Tulis angka kode ' . $code . ' pada kolom Satuan UOM (atau ketik teks ' . $label . ')'
+            ];
         }
         $guideRows[] = ['', '', ''];
-        $guideRows[] = ['=== KETENTUAN PENGISIAN PRAKTIS ===', '', ''];
-        $guideRows[] = ['SKU', 'Kosongkan', 'Jika dikosongkan, sistem AkuAda otomatis membuatkan kode SKU unik'];
-        $guideRows[] = ['Barcode', 'Kosongkan', 'Jika dikosongkan, sistem otomatis membuatkan nomor barcode unik'];
+
+        $guideRows[] = ['=== KETENTUAN PENGISIAN PRAKTIS & FITUR B2B ===', '', ''];
+        $guideRows[] = ['Vendor ID (Khusus Admin)', 'Wajib Angka ID', 'ID numerik mitra vendor tempat produk ini bernaung (lihat daftar di atas)'];
+        $guideRows[] = ['Kategori ID', 'Angka ID atau Teks', 'ID numerik dari master kategori database (lihat daftar di atas)'];
+        $guideRows[] = ['SKU & Barcode', 'Teks / Kosongkan', 'Jika dikosongkan, sistem AkuAda otomatis membuatkan SKU dan Barcode unik resmi'];
+        $guideRows[] = ['TKDN Persen', 'Angka 0 - 100', 'Tingkat Komponen Dalam Negeri (Kemenperin). Isi angka misal 45 atau 85.5. Jika barang impor / belum bersertifikat, isi 0 atau kosongkan.'];
         $guideRows[] = ['Kena PPN', '1 atau 0', 'Tulis 1 untuk Kena PPN 11%, atau 0 untuk Bebas PPN (default: 1)'];
-        $guideRows[] = ['Bisa Sample', '1 atau 0', 'Tulis 1 jika buyer boleh minta sample uji coba, atau 0 jika tidak (default: 1)'];
-        $guideRows[] = ['Stok', 'Angka (Kosong = 100)', 'Jika dikosongkan otomatis diisi 100 unit'];
-        $guideRows[] = ['MOQ (Min Order)', 'Angka (Kosong = 1)', 'Minimal jumlah pembelian per pesanan, default 1'];
-        $guideRows[] = ['Lead Time Hari', 'Angka (Kosong = 2)', 'Estimasi lama hari kerja pengiriman barang, default 2'];
-        $guideRows[] = ['Berat Gram', 'Angka (Kosong = 500)', 'Berat barang per satuan dalam gram, default 500'];
+        $guideRows[] = ['Bisa Sample', '1 atau 0', 'Tulis 1 jika buyer boleh mengajukan permintaan sample uji coba, atau 0 jika tidak (default: 1)'];
+        $guideRows[] = ['Stok & MOQ', 'Angka', 'Stok default 100 jika kosong. MOQ (minimal pembelian) default 1 jika kosong'];
+        $guideRows[] = ['Lead Time & Berat', 'Angka', 'Lead time (hari kerja kirim) default 2 hari. Berat barang dalam satuan gram (default 500 gram)'];
+        $guideRows[] = ['URL Foto Barang', 'URL Link Gambar', 'Tautan langsung ke file foto (contoh: https://.../foto.jpg). Jika dikosongkan, otomatis dipasang foto placeholder resmi. Foto dapat diubah/diupload ulang kapan saja di menu edit produk.'];
 
         $sheet2Xml = self::buildSheetXmlData($guideHeaders, $guideRows, $getStringIndex);
 
@@ -943,15 +970,15 @@ class ProductExcelHelper
     public static function generateCsvTemplate(bool $isAdmin = false, ?int $vendorCompanyId = null): string
     {
         $companyModel = new CompanyModel();
-        $sampleVendors = $isAdmin ? $companyModel->where('type', 'vendor')->findAll(3) : [];
-        $v1 = !empty($sampleVendors[0]['company_name']) ? $sampleVendors[0]['company_name'] : 'PT Mitra Pemasok Mandiri';
-        $v2 = !empty($sampleVendors[1]['company_name']) ? $sampleVendors[1]['company_name'] : 'CV Berkah Teknik Sentosa';
-        $v3 = !empty($sampleVendors[2]['company_name']) ? $sampleVendors[2]['company_name'] : $v1;
+        $sampleVendors = $isAdmin ? $companyModel->where('type', 'vendor')->orderBy('id', 'ASC')->findAll() : [];
+        $v1Id = !empty($sampleVendors[0]['id']) ? (string)$sampleVendors[0]['id'] : '1';
+        $v2Id = !empty($sampleVendors[1]['id']) ? (string)$sampleVendors[1]['id'] : $v1Id;
+        $v3Id = !empty($sampleVendors[2]['id']) ? (string)$sampleVendors[2]['id'] : $v1Id;
 
         if ($isAdmin) {
             $headers = [
-                'Vendor (ID / Nama PT)',
-                'Kategori (ID Angka / Teks)',
+                'Vendor ID (Wajib Angka)',
+                'Kategori ID (ID Angka / Teks)',
                 'Nama Barang (Wajib)',
                 'SKU (Kosong = Otomatis)',
                 'Barcode (Kosong = Otomatis)',
@@ -962,7 +989,7 @@ class ProductExcelHelper
                 'MOQ Min Order (Kosong = 1)',
                 'Berat Gram (Kosong = 500)',
                 'Lead Time Hari (Kosong = 2)',
-                'TKDN Persen',
+                'TKDN Persen (Kosong = 0)',
                 'Kena PPN (1=Ya, 0=Tidak)',
                 'Bisa Sample (1=Ya, 0=Tidak)',
                 'Deskripsi Barang',
@@ -971,7 +998,7 @@ class ProductExcelHelper
             ];
             $sampleRows = [
                 [
-                    $v1,
+                    $v1Id,
                     '1',
                     'Kertas HVS PaperOne A4 80gr (Box isi 5 Rim)',
                     '',
@@ -991,7 +1018,7 @@ class ProductExcelHelper
                     'https://images.unsplash.com/photo-1589330694653-dad6d3240e2b?auto=format&fit=crop&w=600&q=80'
                 ],
                 [
-                    $v2,
+                    $v2Id,
                     '2',
                     'Keyboard Wireless Logitech MK270 Combo Mouse Silent',
                     '',
@@ -1013,7 +1040,7 @@ class ProductExcelHelper
             ];
         } else {
             $headers = [
-                'Kategori (ID Angka / Teks)',
+                'Kategori ID (ID Angka / Teks)',
                 'Nama Barang (Wajib)',
                 'SKU (Kosong = Otomatis)',
                 'Barcode (Kosong = Otomatis)',
@@ -1024,7 +1051,7 @@ class ProductExcelHelper
                 'MOQ Min Order (Kosong = 1)',
                 'Berat Gram (Kosong = 500)',
                 'Lead Time Hari (Kosong = 2)',
-                'TKDN Persen',
+                'TKDN Persen (Kosong = 0)',
                 'Kena PPN (1=Ya, 0=Tidak)',
                 'Bisa Sample (1=Ya, 0=Tidak)',
                 'Deskripsi Barang',
