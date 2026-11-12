@@ -391,6 +391,8 @@ class AdminController extends BaseController
         $productModel = new ProductModel();
         $productModel->where('vendor_company_id', $id)->delete();
 
+        $db->table('rfqs')->where('vendor_company_id', $id)->delete();
+
         $userModel = new UserModel();
         $userModel->where('company_id', $id)->delete();
 
@@ -677,7 +679,7 @@ class AdminController extends BaseController
         }
 
         $orderModel = new OrderModel();
-        $activeOrders = $orderModel->where('buyer_company_id', $id)->countAllResults();
+        $activeOrders = $orderModel->where('customer_company_id', $id)->countAllResults();
 
         if ($activeOrders > 0) {
             session()->setFlashdata('error', 'Tidak dapat menghapus buyer ' . $buyer['company_name'] . ' karena memiliki ' . $activeOrders . ' riwayat transaksi PO. Silakan cabut akses/nonaktifkan status akun untuk mencegah pesanan baru.');
@@ -685,10 +687,19 @@ class AdminController extends BaseController
         }
 
         $db = \Config\Database::connect();
+        $withdrawalCount = $db->table('buyer_withdrawals')->where('company_id', $id)->countAllResults();
+        if ($withdrawalCount > 0) {
+            session()->setFlashdata('error', 'Tidak dapat menghapus buyer ' . $buyer['company_name'] . ' karena memiliki riwayat penarikan dana cashback. Silakan cabut status verifikasi untuk menonaktifkan akun.');
+            return redirect()->to('/admin/buyers');
+        }
+
         $db->transStart();
 
         $userModel = new UserModel();
         $userModel->where('company_id', $id)->delete();
+
+        $db->table('buyer_cashback_mutations')->where('company_id', $id)->delete();
+        $db->table('rfqs')->where('customer_company_id', $id)->delete();
 
         $companyModel->delete($id);
 
