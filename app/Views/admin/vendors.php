@@ -43,17 +43,18 @@
             <table class="w-full text-xs text-left border-collapse">
                 <thead class="bg-slate-50/90 border-b border-slate-200 text-slate-600 font-semibold uppercase text-[11px] tracking-wider">
                     <tr>
+                        <th class="px-3 py-3.5 w-16 text-center">ID</th>
                         <th class="px-4 py-3.5">Perusahaan Vendor & Legalitas</th>
                         <th class="px-4 py-3.5">Kontak PIC Vendor</th>
-                        <th class="px-4 py-3.5 text-center w-40 text-purple-900">Fee Komisi PKS</th>
+                        <th class="px-4 py-3.5 text-center w-36 text-purple-900">Fee Komisi PKS</th>
                         <th class="px-4 py-3.5 text-center w-36">Status Akun</th>
-                        <th class="px-4 py-3.5 text-center w-44">Aksi Manajemen</th>
+                        <th class="px-4 py-3.5 text-center w-52">Aksi Manajemen</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
                     <?php if (empty($vendors)): ?>
                         <tr>
-                            <td colspan="5" class="px-6 py-12 text-center">
+                            <td colspan="6" class="px-6 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center text-slate-400">
                                     <span class="material-symbols-outlined text-4xl mb-2 text-slate-300">store</span>
                                     <p class="font-semibold text-slate-600">Belum ada mitra vendor terdaftar</p>
@@ -65,6 +66,13 @@
 
                     <?php foreach ($vendors as $vendor): ?>
                         <tr class="hover:bg-slate-50/80 transition-colors">
+                            <!-- ID Vendor -->
+                            <td class="px-3 py-3.5 align-top text-center font-mono font-bold text-slate-700">
+                                <span class="px-2 py-1 rounded-lg bg-slate-100 text-slate-900 border border-slate-200 block text-xs">
+                                    #<?= esc($vendor['id']) ?>
+                                </span>
+                            </td>
+
                             <!-- Company & Legalities (No cut-off) -->
                             <td class="px-4 py-3.5 align-top">
                                 <div class="flex items-start gap-3">
@@ -72,7 +80,10 @@
                                         <?= strtoupper(substr($vendor['company_name'], 0, 1)) ?>
                                     </div>
                                     <div class="space-y-0.5">
-                                        <div class="font-bold text-slate-900 leading-snug break-words"><?= esc($vendor['company_name']) ?></div>
+                                        <div class="font-bold text-slate-900 leading-snug break-words">
+                                            <?= esc($vendor['company_name']) ?>
+                                            <span class="ml-1 text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 border border-purple-200">ID: <?= esc($vendor['id']) ?></span>
+                                        </div>
                                         <div class="text-[11px] text-slate-500 font-mono"><?= esc($vendor['email']) ?></div>
                                         <div class="text-[11px] text-slate-400 font-mono pt-0.5">
                                             <span class="font-bold text-slate-600 uppercase"><?= esc($vendor['legal_type']) ?></span> • 
@@ -112,18 +123,39 @@
 
                             <!-- Actions -->
                             <td class="px-4 py-3.5 align-top text-center">
-                                <div class="flex flex-col gap-1.5">
+                                <div class="grid grid-cols-2 gap-1.5">
+                                    <!-- Edit Profil -->
+                                    <a href="<?= base_url('admin/vendors/edit/' . $vendor['id']) ?>" 
+                                       class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 transition inline-flex items-center justify-center gap-1 border border-purple-200"
+                                       title="Edit Data Lengkap Vendor">
+                                        <span class="material-symbols-outlined text-[15px]">edit</span>
+                                        <span>Edit</span>
+                                    </a>
+
+                                    <!-- Atur Fee Modal -->
                                     <button type="button" onclick="openFeeModal(<?= $vendor['id'] ?>, '<?= esc($vendor['company_name']) ?>', <?= (float)($vendor['commission_rate'] ?? 2.5) ?>)" 
-                                            class="w-full px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-50 hover:bg-purple-100 text-purple-700 transition inline-flex items-center justify-center gap-1 border border-purple-200"
+                                            class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 transition inline-flex items-center justify-center gap-1 border border-slate-200"
                                             title="Atur persentase fee komisi">
                                         <span class="material-symbols-outlined text-[15px]">tune</span>
-                                        <span>Atur Fee</span>
+                                        <span>Fee</span>
                                     </button>
+
+                                    <!-- Toggle Verifikasi -->
                                     <a href="<?= base_url('admin/vendors/toggle/' . $vendor['id']) ?>" 
                                        data-confirm="Ubah status verifikasi untuk <?= esc($vendor['company_name']) ?>?"
-                                       class="w-full px-2.5 py-1 rounded-lg text-xs font-semibold transition text-center <?= $vendor['is_verified'] ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200' ?>"
+                                       class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition text-center inline-flex items-center justify-center gap-0.5 <?= $vendor['is_verified'] ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200' ?>"
                                        title="<?= $vendor['is_verified'] ? 'Cabut verifikasi mitra' : 'Setujui verifikasi mitra' ?>">
-                                        <?= $vendor['is_verified'] ? 'Cabut Akses' : 'Verifikasi' ?>
+                                        <span class="material-symbols-outlined text-[14px]"><?= $vendor['is_verified'] ? 'block' : 'verified' ?></span>
+                                        <span><?= $vendor['is_verified'] ? 'Cabut' : 'Verif' ?></span>
+                                    </a>
+
+                                    <!-- Hapus Vendor -->
+                                    <a href="<?= base_url('admin/vendors/delete/' . $vendor['id']) ?>" 
+                                       data-confirm="Apakah Anda yakin ingin MENGHAPUS PERMANEN vendor <?= esc($vendor['company_name']) ?>? Seluruh produk katalog dan akun loginnya akan dihapus!"
+                                       class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 transition inline-flex items-center justify-center gap-0.5 border border-rose-200"
+                                       title="Hapus Vendor Permanen">
+                                        <span class="material-symbols-outlined text-[15px]">delete</span>
+                                        <span>Hapus</span>
                                     </a>
                                 </div>
                             </td>

@@ -273,6 +273,135 @@ class AdminController extends BaseController
         return redirect()->back();
     }
 
+    public function editVendor(int $id)
+    {
+        $companyModel = new CompanyModel();
+        $vendor = $companyModel->find($id);
+
+        if (!$vendor || $vendor['type'] !== 'vendor') {
+            session()->setFlashdata('error', 'Mitra Vendor tidak ditemukan.');
+            return redirect()->to('/admin/vendors');
+        }
+
+        $userModel = new UserModel();
+        $user = $userModel->where('company_id', $id)->first();
+
+        return view('admin/vendor_edit', [
+            'title'  => 'Edit Data Mitra Vendor: ' . $vendor['company_name'] . ' - Superadmin AkuAda',
+            'vendor' => $vendor,
+            'user'   => $user,
+        ]);
+    }
+
+    public function updateVendor(int $id)
+    {
+        $companyModel = new CompanyModel();
+        $vendor = $companyModel->find($id);
+
+        if (!$vendor || $vendor['type'] !== 'vendor') {
+            session()->setFlashdata('error', 'Mitra Vendor tidak ditemukan.');
+            return redirect()->to('/admin/vendors');
+        }
+
+        $companyName    = trim((string)$this->request->getPost('company_name'));
+        $legalType      = $this->request->getPost('legal_type') ?? 'PT';
+        $npwp           = $this->request->getPost('npwp');
+        $nib            = $this->request->getPost('nib');
+        $address        = $this->request->getPost('address');
+        $city           = $this->request->getPost('city');
+        $province       = $this->request->getPost('province') ?? 'DKI Jakarta';
+        $phone          = $this->request->getPost('phone');
+        $email          = $this->request->getPost('email');
+        $website        = $this->request->getPost('website');
+        $picName        = $this->request->getPost('pic_name');
+        $picPhone       = $this->request->getPost('pic_phone');
+        $picEmail       = $this->request->getPost('pic_email') ?: $email;
+        $bankName       = $this->request->getPost('bank_name');
+        $bankNumber     = $this->request->getPost('bank_account_number');
+        $bankHolder     = $this->request->getPost('bank_account_holder');
+        $commissionRate = (float)$this->request->getPost('commission_rate');
+        $isVerified     = $this->request->getPost('is_verified') ? 1 : 0;
+        $password       = $this->request->getPost('password');
+
+        $now = date('Y-m-d H:i:s');
+
+        $companyModel->update($id, [
+            'company_name'        => $companyName,
+            'legal_type'          => $legalType,
+            'npwp'                => $npwp,
+            'nib'                 => $nib,
+            'address'             => $address,
+            'city'                => $city,
+            'province'            => $province,
+            'phone'               => $phone,
+            'email'               => $email,
+            'website'             => $website,
+            'pic_name'            => $picName,
+            'pic_phone'           => $picPhone,
+            'pic_email'           => $picEmail,
+            'bank_name'           => $bankName,
+            'bank_account_number' => $bankNumber,
+            'bank_account_holder' => $bankHolder,
+            'commission_rate'     => $commissionRate,
+            'is_verified'         => $isVerified,
+            'updated_at'          => $now,
+        ]);
+
+        // Update user account associated with this vendor
+        $userModel = new UserModel();
+        $user = $userModel->where('company_id', $id)->first();
+        if ($user) {
+            $userUpdateData = [
+                'name'       => $picName . ' (' . $companyName . ')',
+                'email'      => $email,
+                'phone'      => $picPhone,
+                'updated_at' => $now,
+            ];
+            if (!empty($password)) {
+                $userUpdateData['password'] = password_hash($password, PASSWORD_BCRYPT);
+            }
+            $userModel->update($user['id'], $userUpdateData);
+        }
+
+        session()->setFlashdata('success', 'Data Mitra Vendor ' . $companyName . ' (ID: ' . $id . ') berhasil diperbarui.');
+        return redirect()->to('/admin/vendors');
+    }
+
+    public function deleteVendor(int $id)
+    {
+        $companyModel = new CompanyModel();
+        $vendor = $companyModel->find($id);
+
+        if (!$vendor || $vendor['type'] !== 'vendor') {
+            session()->setFlashdata('error', 'Mitra Vendor tidak ditemukan.');
+            return redirect()->to('/admin/vendors');
+        }
+
+        $orderModel = new OrderModel();
+        $activeOrders = $orderModel->where('vendor_company_id', $id)->countAllResults();
+
+        if ($activeOrders > 0) {
+            session()->setFlashdata('error', 'Tidak dapat menghapus vendor ' . $vendor['company_name'] . ' karena memiliki ' . $activeOrders . ' riwayat transaksi PO. Silakan cabut akses/nonaktifkan status akun untuk mencegah transaksi baru.');
+            return redirect()->to('/admin/vendors');
+        }
+
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        $productModel = new ProductModel();
+        $productModel->where('vendor_company_id', $id)->delete();
+
+        $userModel = new UserModel();
+        $userModel->where('company_id', $id)->delete();
+
+        $companyModel->delete($id);
+
+        $db->transComplete();
+
+        session()->setFlashdata('success', 'Mitra Vendor ' . $vendor['company_name'] . ' beserta akun pengguna terkait berhasil dihapus.');
+        return redirect()->to('/admin/vendors');
+    }
+
     public function toggleBuyerVerification($id)
     {
         $companyModel = new CompanyModel();
@@ -429,6 +558,144 @@ class AdminController extends BaseController
         session()->setFlashdata('success', 'Persentase cashback untuk ' . $buyer['company_name'] . ' berhasil diperbarui menjadi: ' . $displayRate);
 
         return redirect()->back();
+    }
+
+    public function editBuyer(int $id)
+    {
+        $companyModel = new CompanyModel();
+        $buyer = $companyModel->find($id);
+
+        if (!$buyer || $buyer['type'] !== 'buyer') {
+            session()->setFlashdata('error', 'Perusahaan Buyer tidak ditemukan.');
+            return redirect()->to('/admin/buyers');
+        }
+
+        $userModel = new UserModel();
+        $user = $userModel->where('company_id', $id)->first();
+
+        return view('admin/buyer_edit', [
+            'title' => 'Edit Perusahaan Buyer: ' . $buyer['company_name'] . ' - Superadmin AkuAda',
+            'buyer' => $buyer,
+            'user'  => $user,
+        ]);
+    }
+
+    public function updateBuyer(int $id)
+    {
+        $companyModel = new CompanyModel();
+        $buyer = $companyModel->find($id);
+
+        if (!$buyer || $buyer['type'] !== 'buyer') {
+            session()->setFlashdata('error', 'Perusahaan Buyer tidak ditemukan.');
+            return redirect()->to('/admin/buyers');
+        }
+
+        $companyName       = trim((string)$this->request->getPost('company_name'));
+        $legalType         = $this->request->getPost('legal_type') ?? 'PT';
+        $npwp              = $this->request->getPost('npwp');
+        $nib               = $this->request->getPost('nib');
+        $address           = $this->request->getPost('address');
+        $city              = $this->request->getPost('city') ?? 'Jakarta Selatan';
+        $province          = $this->request->getPost('province') ?? 'DKI Jakarta';
+        $phone             = $this->request->getPost('phone');
+        $website           = $this->request->getPost('website');
+        $businessField     = $this->request->getPost('business_field') ?: 'Perdagangan Umum & Jasa';
+        $email             = $this->request->getPost('email');
+        $picName           = $this->request->getPost('pic_name');
+        $picPhone          = $this->request->getPost('pic_phone');
+        $picEmail          = $this->request->getPost('pic_email') ?: $email;
+        $creditLimit       = (float)$this->request->getPost('credit_limit_top');
+        $cashbackRateInput = $this->request->getPost('cashback_rate');
+        $cashbackRate      = ($cashbackRateInput !== null && $cashbackRateInput !== '') ? (float)$cashbackRateInput : null;
+        $isVerified        = $this->request->getPost('is_verified') ? 1 : 0;
+        $password          = $this->request->getPost('password');
+        $position          = $this->request->getPost('position') ?: 'Procurement Manager';
+
+        $slug = url_title($companyName, '-', true);
+        $npwpPath   = $this->saveUploadedFile('npwp_file', 'npwp', $slug) ?: ($buyer['npwp_file'] ?? null);
+        $nibPath    = $this->saveUploadedFile('nib_file', 'nib', $slug) ?: ($buyer['nib_file'] ?? null);
+        $deedPath   = $this->saveUploadedFile('deed_file', 'akta', $slug) ?: ($buyer['deed_file'] ?? null);
+        $idCardPath = $this->saveUploadedFile('id_card_file', 'ktp', $slug) ?: ($buyer['id_card_file'] ?? null);
+        $sppkpPath  = $this->saveUploadedFile('sppkp_file', 'sppkp', $slug) ?: ($buyer['sppkp_file'] ?? null);
+
+        $now = date('Y-m-d H:i:s');
+
+        $companyModel->update($id, [
+            'company_name'     => $companyName,
+            'legal_type'       => $legalType,
+            'npwp'             => $npwp,
+            'nib'              => $nib,
+            'business_field'   => $businessField,
+            'address'          => $address,
+            'city'             => $city,
+            'province'         => $province,
+            'phone'            => $phone,
+            'website'          => $website,
+            'email'            => $email,
+            'pic_name'         => $picName,
+            'pic_phone'        => $picPhone,
+            'pic_email'        => $picEmail,
+            'credit_limit_top' => $creditLimit,
+            'cashback_rate'    => $cashbackRate,
+            'is_verified'      => $isVerified,
+            'npwp_file'        => $npwpPath,
+            'nib_file'         => $nibPath,
+            'deed_file'        => $deedPath,
+            'id_card_file'     => $idCardPath,
+            'sppkp_file'       => $sppkpPath,
+            'updated_at'       => $now,
+        ]);
+
+        $userModel = new UserModel();
+        $user = $userModel->where('company_id', $id)->first();
+        if ($user) {
+            $userUpdateData = [
+                'name'       => $picName . ' (' . $companyName . ')',
+                'email'      => $email,
+                'phone'      => $picPhone,
+                'position'   => $position,
+                'updated_at' => $now,
+            ];
+            if (!empty($password)) {
+                $userUpdateData['password'] = password_hash($password, PASSWORD_BCRYPT);
+            }
+            $userModel->update($user['id'], $userUpdateData);
+        }
+
+        session()->setFlashdata('success', 'Data Perusahaan Buyer ' . $companyName . ' (ID: ' . $id . ') berhasil diperbarui.');
+        return redirect()->to('/admin/buyers');
+    }
+
+    public function deleteBuyer(int $id)
+    {
+        $companyModel = new CompanyModel();
+        $buyer = $companyModel->find($id);
+
+        if (!$buyer || $buyer['type'] !== 'buyer') {
+            session()->setFlashdata('error', 'Perusahaan Buyer tidak ditemukan.');
+            return redirect()->to('/admin/buyers');
+        }
+
+        $orderModel = new OrderModel();
+        $activeOrders = $orderModel->where('buyer_company_id', $id)->countAllResults();
+
+        if ($activeOrders > 0) {
+            session()->setFlashdata('error', 'Tidak dapat menghapus buyer ' . $buyer['company_name'] . ' karena memiliki ' . $activeOrders . ' riwayat transaksi PO. Silakan cabut akses/nonaktifkan status akun untuk mencegah pesanan baru.');
+            return redirect()->to('/admin/buyers');
+        }
+
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        $userModel = new UserModel();
+        $userModel->where('company_id', $id)->delete();
+
+        $companyModel->delete($id);
+
+        $db->transComplete();
+
+        session()->setFlashdata('success', 'Perusahaan Buyer ' . $buyer['company_name'] . ' beserta akun pengguna terkait berhasil dihapus.');
+        return redirect()->to('/admin/buyers');
     }
 
     public function buyerWithdrawals()

@@ -43,17 +43,18 @@
             <table class="w-full text-xs text-left border-collapse">
                 <thead class="bg-slate-50/90 border-b border-slate-200 text-slate-600 font-semibold uppercase text-[11px] tracking-wider">
                     <tr>
+                        <th class="px-3 py-3.5 w-16 text-center">ID</th>
                         <th class="px-4 py-3.5">Perusahaan Pembeli & Legalitas</th>
                         <th class="px-4 py-3.5">Kontak PIC Procurement</th>
                         <th class="px-4 py-3.5 text-right w-44">Batas Nota Belum Lunas</th>
                         <th class="px-4 py-3.5 text-right w-48">Cashback & Persentase</th>
-                        <th class="px-4 py-3.5 text-center w-40">Aksi</th>
+                        <th class="px-4 py-3.5 text-center w-52">Aksi Manajemen</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
                     <?php if (empty($buyers)): ?>
                         <tr>
-                            <td colspan="5" class="px-6 py-12 text-center">
+                            <td colspan="6" class="px-6 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center text-slate-400">
                                     <span class="material-symbols-outlined text-4xl mb-2 text-slate-300">corporate_fare</span>
                                     <p class="font-semibold text-slate-600">Belum ada akun corporate buyer terdaftar</p>
@@ -73,6 +74,13 @@
                             $reqData = $hasPendingIncrease ? $creditRequests[$b['id']] : null;
                         ?>
                         <tr class="hover:bg-slate-50/80 transition-colors <?= $hasPendingIncrease ? 'bg-amber-50/30' : '' ?>">
+                            <!-- ID Buyer -->
+                            <td class="px-3 py-3.5 align-top text-center font-mono font-bold text-slate-700">
+                                <span class="px-2 py-1 rounded-lg bg-slate-100 text-slate-900 border border-slate-200 block text-xs">
+                                    #<?= esc($b['id']) ?>
+                                </span>
+                            </td>
+
                             <!-- Company & Legality -->
                             <td class="px-4 py-3.5 align-top">
                                 <div class="flex items-start gap-3">
@@ -80,7 +88,10 @@
                                         <?= strtoupper(substr($b['company_name'], 0, 1)) ?>
                                     </div>
                                     <div class="space-y-0.5">
-                                        <div class="font-bold text-slate-900 leading-snug break-words"><?= esc($b['company_name']) ?></div>
+                                        <div class="font-bold text-slate-900 leading-snug break-words">
+                                            <?= esc($b['company_name']) ?>
+                                            <span class="ml-1 text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-pink-50 text-pink-700 border border-pink-200">ID: <?= esc($b['id']) ?></span>
+                                        </div>
                                         <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
                                             <span class="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-bold text-[10px] border border-purple-200 uppercase"><?= esc($b['legal_type']) ?></span>
                                             <?php if ($b['is_verified']): ?>
@@ -168,22 +179,44 @@
                                 </div>
                             </td>
 
-                            <!-- Action -->
-                            <td class="px-4 py-3.5 align-top text-center space-y-1.5">
-                                <?php if (!$b['is_verified']): ?>
-                                    <a href="<?= base_url('admin/buyers/toggle/' . $b['id']) ?>" 
-                                       data-confirm="Sahkan dan verifikasi legalitas perusahaan <?= esc($b['company_name']) ?>?" 
-                                       class="w-full px-2.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition inline-flex items-center justify-center gap-1 shadow-xs">
-                                        <span class="material-symbols-outlined text-[15px]">verified</span>
-                                        <span>Verifikasi Legalitas</span>
+                            <!-- Actions -->
+                            <td class="px-4 py-3.5 align-top text-center">
+                                <div class="grid grid-cols-2 gap-1.5">
+                                    <!-- Edit Profil -->
+                                    <a href="<?= base_url('admin/buyers/edit/' . $b['id']) ?>" 
+                                       class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 transition inline-flex items-center justify-center gap-1 border border-purple-200"
+                                       title="Edit Data Lengkap Buyer">
+                                        <span class="material-symbols-outlined text-[15px]">edit</span>
+                                        <span>Edit</span>
                                     </a>
-                                <?php endif; ?>
-                                <button type="button" 
-                                        onclick="openCashbackModal(<?= $b['id'] ?>, '<?= esc($b['company_name']) ?>', '<?= esc($b['cashback_rate'] ?? '') ?>', <?= esc(get_buyer_cashback_rate()) ?>)"
-                                        class="w-full px-2.5 py-1.5 rounded-xl text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 transition inline-flex items-center justify-center gap-1 border border-purple-200 shadow-xs">
-                                    <span class="material-symbols-outlined text-[15px]">percent</span>
-                                    <span>Atur Cashback</span>
-                                </button>
+
+                                    <!-- Atur Cashback Modal -->
+                                    <button type="button" 
+                                            onclick="openCashbackModal(<?= $b['id'] ?>, '<?= esc($b['company_name']) ?>', '<?= esc($b['cashback_rate'] ?? '') ?>', <?= esc(get_buyer_cashback_rate()) ?>)"
+                                            class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 transition inline-flex items-center justify-center gap-1 border border-slate-200"
+                                            title="Atur persentase cashback">
+                                        <span class="material-symbols-outlined text-[15px]">percent</span>
+                                        <span>Cashback</span>
+                                    </button>
+
+                                    <!-- Toggle Verifikasi -->
+                                    <a href="<?= base_url('admin/buyers/toggle/' . $b['id']) ?>" 
+                                       data-confirm="Ubah status verifikasi untuk <?= esc($b['company_name']) ?>?"
+                                       class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition text-center inline-flex items-center justify-center gap-0.5 <?= $b['is_verified'] ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200' ?>"
+                                       title="<?= $b['is_verified'] ? 'Cabut verifikasi akun buyer' : 'Verifikasi legalitas akun buyer' ?>">
+                                        <span class="material-symbols-outlined text-[14px]"><?= $b['is_verified'] ? 'block' : 'verified' ?></span>
+                                        <span><?= $b['is_verified'] ? 'Cabut' : 'Verif' ?></span>
+                                    </a>
+
+                                    <!-- Hapus Buyer -->
+                                    <a href="<?= base_url('admin/buyers/delete/' . $b['id']) ?>" 
+                                       data-confirm="Apakah Anda yakin ingin MENGHAPUS PERMANEN buyer <?= esc($b['company_name']) ?>? Seluruh akun login dan berkasnya akan dihapus!"
+                                       class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 transition inline-flex items-center justify-center gap-0.5 border border-rose-200"
+                                       title="Hapus Buyer Permanen">
+                                        <span class="material-symbols-outlined text-[15px]">delete</span>
+                                        <span>Hapus</span>
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>

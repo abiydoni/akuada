@@ -44,16 +44,23 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->get('/', 'AdminController::dashboard');
     $routes->get('dashboard', 'AdminController::dashboard');
     
-    // 1 & 2. Companies (Vendors & Buyers)
+    // 1 & 2. Companies (Vendors & Buyers) - Full CRUD
     $routes->get('vendors', 'AdminController::vendors');
     $routes->get('vendors/create', 'AdminController::createVendor');
     $routes->post('vendors/store', 'AdminController::storeVendor');
+    $routes->get('vendors/edit/(:num)', 'AdminController::editVendor/$1');
+    $routes->post('vendors/update/(:num)', 'AdminController::updateVendor/$1');
+    $routes->get('vendors/delete/(:num)', 'AdminController::deleteVendor/$1');
     $routes->post('vendors/update-fee', 'AdminController::updateVendorFee');
     $routes->get('vendors/toggle/(:num)', 'AdminController::toggleVendorVerification/$1');
+
     $routes->get('buyers', 'AdminController::buyers');
-    $routes->get('buyers/toggle/(:num)', 'AdminController::toggleBuyerVerification/$1');
     $routes->get('buyers/create', 'AdminController::createBuyer');
     $routes->post('buyers/store', 'AdminController::storeBuyer');
+    $routes->get('buyers/edit/(:num)', 'AdminController::editBuyer/$1');
+    $routes->post('buyers/update/(:num)', 'AdminController::updateBuyer/$1');
+    $routes->get('buyers/delete/(:num)', 'AdminController::deleteBuyer/$1');
+    $routes->get('buyers/toggle/(:num)', 'AdminController::toggleBuyerVerification/$1');
     $routes->post('buyers/limit', 'AdminController::updateBuyerLimit');
     $routes->post('buyers/update-cashback', 'AdminController::updateBuyerCashbackRate');
 
