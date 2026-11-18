@@ -19,7 +19,9 @@ class OrderModel extends Model
         'buyer_sender_bank', 'buyer_sender_account_name', 'buyer_sender_account_number',
         'buyer_payment_proof', 'buyer_payment_amount', 'buyer_payment_notes', 'payment_rejection_reason',
         'vendor_payout_status', 'vendor_payout_due_date', 'vendor_paid_at', 'vendor_payout_ref', 'vendor_payout_bank',
-        'delivered_at', 'delivered_by_name', 'delivery_notes', 'has_review'
+        'delivered_at', 'delivered_by_name', 'delivery_notes', 'has_review',
+        'design_file_buyer', 'design_file_vendor', 'design_specs', 'design_notes_vendor',
+        'design_status', 'mockup_file_vendor', 'mockup_file_buyer', 'mockup_notes'
     ];
     protected $useTimestamps = true;
 
@@ -70,6 +72,18 @@ class OrderModel extends Model
                     ADD COLUMN `delivered_by_name` VARCHAR(150) NULL DEFAULT NULL,
                     ADD COLUMN `delivery_notes` TEXT NULL DEFAULT NULL,
                     ADD COLUMN `has_review` TINYINT(1) NOT NULL DEFAULT 0
+                ");
+            }
+            if (!$this->db->fieldExists('design_status', 'orders')) {
+                $this->db->query("ALTER TABLE `orders`
+                    ADD COLUMN `design_file_buyer` VARCHAR(255) NULL DEFAULT NULL,
+                    ADD COLUMN `design_file_vendor` VARCHAR(255) NULL DEFAULT NULL,
+                    ADD COLUMN `design_specs` TEXT NULL DEFAULT NULL,
+                    ADD COLUMN `design_notes_vendor` TEXT NULL DEFAULT NULL,
+                    ADD COLUMN `design_status` VARCHAR(40) NOT NULL DEFAULT 'none',
+                    ADD COLUMN `mockup_file_vendor` VARCHAR(255) NULL DEFAULT NULL,
+                    ADD COLUMN `mockup_file_buyer` VARCHAR(255) NULL DEFAULT NULL,
+                    ADD COLUMN `mockup_notes` TEXT NULL DEFAULT NULL
                 ");
             }
             if (function_exists('sync_orders_with_system_settings')) {

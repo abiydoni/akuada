@@ -1048,4 +1048,74 @@ class VendorController extends BaseController
         session()->setFlashdata('success', 'Pengajuan pencairan dana sebesar ' . format_rupiah($net) . ' berhasil dikirimkan ke Tim Finance AkuAda!');
         return redirect()->back();
     }
+
+    public function uploadDesignMockup()
+    {
+        $vendorId = $this->getVendorCompanyId();
+        $orderId = (int)$this->request->getPost('order_id');
+        $mockupNotes = trim((string)$this->request->getPost('mockup_notes'));
+
+        $orderModel = new OrderModel();
+        $order = $orderModel->find($orderId);
+
+        if (!$order || (int)$order['vendor_company_id'] !== (int)$vendorId) {
+            session()->setFlashdata('error', 'Pesanan tidak ditemukan atau Anda tidak memiliki hak akses.');
+            return redirect()->back();
+        }
+
+        $mockupFileVendor = $order['mockup_file_vendor'] ?? null;
+        $file = $this->request->getFile('mockup_file');
+        if ($file && $file->isValid() && !$file->hasMoved()) {
+            $ext = strtolower($file->getClientExtension());
+            $allowedExts = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'zip', 'rar', 'ai', 'cdr', 'psd', 'svg'];
+            if (in_array($ext, $allowedExts)) {
+                $uploadDir = FCPATH . 'uploads/designs';
+                if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
+                $newFileName = 'vendor_mockup_' . $orderId . '_' . date('YmdHis') . '.' . $ext;
+                $file->move($uploadDir, $newFileName);
+                $mockupFileVendor = 'uploads/designs/' . $newFileName;
+            }
+        }
+
+        if (empty($mockupFileVendor) && empty($mockupNotes)) {
+            session()->setFlashdata('error', 'Silakan pilih file gambar/dokumen mockup atau isi catatan preview terlebih dahulu.');
+            return redirect()->back();
+        }
+
+        $orderModel->update($orderId, [
+            'mockup_file_vendor' => $mockupFileVendor,
+            'mockup_notes'       => $mockupNotes ?: 'Mockup pra-produksi siap ditinjau oleh Tim AkuAda untuk diteruskan ke Buyer.',
+            'design_status'      => 'mockup_uploaded',
+            'updated_at'         => date('Y-m-d H:i:s'),
+        ]);
+
+        $logModel = new \App\Models\OrderStatusLogModel();
+        $logModel->logStatus(
+            $orderId,
+            $order['order_status'],
+            'Upload Mockup Pra-Produksi oleh Vendor ke AkuAda',
+            'Vendor telah mengunggah hasil preview/mockup desain ke Tim AkuAda untuk diverifikasi sebelum diteruskan ke pihak Buyer.',
+            session('user_name') ?? 'Mitra Vendor'
+        );
+
+        // Kirim notifikasi ke ruang chat Vendor <-> AkuAda
+        $msgModel = new OrderMessageModel();
+        $msgModel->addMessage(
+            $orderId,
+            (int)session('user_id'),
+            session('user_name') ?? 'Mitra Vendor',
+            'vendor',
+            session('company_name') ?? 'Mitra Vendor',
+            "📐 [Mockup Pra-Produksi PO #{$order['po_number']}] Kami telah mengunggah file Mockup/Sample desain untuk diperiksa Tim AkuAda dan diteruskan ke pihak pemesan.\nCatatan: " . ($mockupNotes ?: '-'),
+            $mockupFileVendor,
+            'admin_comp_' . (int)$vendorId,
+            (int)$vendorId,
+            null,
+            'admin',
+            'Mockup PO #' . $order['po_number']
+        );
+
+        session()->setFlashdata('success', 'File Mockup Pra-Produksi berhasil dikirim ke Tim AkuAda untuk diteruskan ke Buyer!');
+        return redirect()->back();
+    }
 }

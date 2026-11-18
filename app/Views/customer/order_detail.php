@@ -259,6 +259,129 @@
 
         <!-- Stepper Component -->
         <?= render_order_progress_stepper($order['order_status']) ?>
+    </div>
+
+    <!-- 1.5. PANEL SPESIFIKASI DESAIN CUSTOM & PERSETUJUAN MOCKUP (DIJEMBATANI TIM AKUADA) -->
+    <?php
+        $dStatus = $order['design_status'] ?? 'none';
+        $dBadges = [
+            'none'                 => ['bg-slate-100 text-slate-600 border-slate-200', 'Opsional / Belum Ada Lampiran Desain'],
+            'submitted_to_admin'   => ['bg-amber-100 text-amber-900 border-amber-300', '⏳ Desain Sedang Diverifikasi Tim AkuAda'],
+            'forwarded_to_vendor'  => ['bg-blue-100 text-blue-900 border-blue-300', '📐 Desain Diproses (Menunggu Mockup Pra-Produksi)'],
+            'mockup_uploaded'      => ['bg-indigo-100 text-indigo-900 border-indigo-300', '🔍 Mockup Sedang Diperiksa Tim QC AkuAda'],
+            'mockup_sent_to_buyer' => ['bg-purple-100 text-purple-900 border-purple-300 animate-pulse', '✨ Menunggu Persetujuan (ACC) Desain dari Anda'],
+            'approved_by_buyer'    => ['bg-emerald-100 text-emerald-900 border-emerald-300', '✅ Desain Telah Di-ACC (Siap Produksi Massal)'],
+            'revision_requested'   => ['bg-rose-100 text-rose-900 border-rose-300', '🔄 Revisi Desain Sedang Diproses Tim AkuAda'],
+        ];
+        $curBadge = $dBadges[$dStatus] ?? $dBadges['none'];
+    ?>
+    <div class="bg-white rounded-3xl border-2 <?= $dStatus === 'mockup_sent_to_buyer' ? 'border-purple-400 shadow-lg' : 'border-purple-200 shadow-md' ?> p-6 sm:p-7 space-y-5 text-xs">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-sm flex-shrink-0">
+                    <span class="material-symbols-outlined text-[22px]">palette</span>
+                </div>
+                <div>
+                    <h3 class="text-sm font-extrabold text-slate-900">Spesifikasi Desain Barang & Persetujuan Mockup (Dikelola AkuAda)</h3>
+                    <p class="text-[11px] text-slate-500">Kirimkan file/detail desain Anda ke Tim AkuAda. Kami akan mengawasi pembuatan sample mockup hingga Anda memberikan ACC produksi.</p>
+                </div>
+            </div>
+            <span class="px-3 py-1 rounded-full border font-bold text-[11px] <?= $curBadge[0] ?>">
+                <?= $curBadge[1] ?>
+            </span>
+        </div>
+
+        <!-- Jika Ada Mockup yang Dikirim AkuAda untuk Di-ACC Buyer -->
+        <?php if (in_array($dStatus, ['mockup_sent_to_buyer', 'approved_by_buyer', 'revision_requested']) && (!empty($order['mockup_file_buyer']) || !empty($order['mockup_notes']))): ?>
+            <div class="p-5 rounded-2xl <?= $dStatus === 'approved_by_buyer' ? 'bg-emerald-50/70 border-2 border-emerald-300' : 'bg-purple-50/80 border-2 border-purple-300' ?> space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="space-y-1">
+                        <strong class="text-sm font-black text-slate-900 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-purple-600 text-[20px]">verified</span>
+                            Preview Mockup / Dummy Pra-Produksi dari Tim AkuAda
+                        </strong>
+                        <?php if (!empty($order['mockup_notes'])): ?>
+                            <p class="text-slate-700 bg-white p-3 rounded-xl border border-purple-200"><?= nl2br(esc($order['mockup_notes'])) ?></p>
+                        <?php endif; ?>
+                    </div>
+                    <?php if (!empty($order['mockup_file_buyer'])): ?>
+                        <a href="<?= base_url($order['mockup_file_buyer']) ?>" target="_blank" class="px-4 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-sm flex-shrink-0">
+                            <span class="material-symbols-outlined text-[18px]">visibility</span>
+                            <span>Lihat / Unduh File Mockup</span>
+                        </a>
+                    <?php endif; ?>
+                </div>
+
+                <?php if ($dStatus === 'mockup_sent_to_buyer'): ?>
+                    <form action="<?= base_url('customer/orders/respond-mockup') ?>" method="POST" class="pt-3 border-t border-purple-200 space-y-3">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                        <div>
+                            <label class="block font-bold text-slate-800 mb-1">Catatan Persetujuan (ACC) atau Instruksi Revisi ke Tim AkuAda:</label>
+                            <input type="text" name="feedback_notes" placeholder="Contoh: Desain dan warna sudah sesuai standar korporat kami, silakan lanjut produksi massal." class="w-full px-3.5 py-2 rounded-xl border border-purple-300 bg-white">
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button type="submit" name="decision" value="approve" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md">
+                                <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                                <span>Setujui Desain (ACC Produksi Massal)</span>
+                            </button>
+                            <button type="submit" name="decision" value="revision" class="px-4 py-2.5 rounded-xl bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 font-bold text-xs flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[18px]">edit_note</span>
+                                <span>Minta Revisi Desain</span>
+                            </button>
+                        </div>
+                    </form>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- Detail Desain Buyer Saat Ini & Form Upload / Update Desain -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+                <strong class="text-slate-800 font-bold block">Detail & File Desain yang Anda Kirimkan:</strong>
+                <?php if (!empty($order['design_specs'])): ?>
+                    <p class="text-slate-700 bg-white p-3 rounded-xl border border-slate-200 leading-relaxed"><?= nl2br(esc($order['design_specs'])) ?></p>
+                <?php else: ?>
+                    <p class="text-slate-400 italic">Belum ada rincian spesifikasi desain khusus yang dicantumkan.</p>
+                <?php endif; ?>
+
+                <?php if (!empty($order['design_file_buyer'])): ?>
+                    <div class="pt-1 flex items-center justify-between bg-white p-2.5 rounded-xl border border-purple-200">
+                        <span class="text-purple-900 font-bold flex items-center gap-1.5 truncate">
+                            <span class="material-symbols-outlined text-purple-600 text-[18px]">attach_file</span>
+                            File Desain Anda Terlampir
+                        </span>
+                        <a href="<?= base_url($order['design_file_buyer']) ?>" target="_blank" class="px-3 py-1 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-900 font-bold text-[11px] flex-shrink-0">
+                            Buka File ↗
+                        </a>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <?php if (!in_array($order['order_status'], ['completed', 'bast_signed']) && $dStatus !== 'approved_by_buyer'): ?>
+                <form action="<?= base_url('customer/orders/upload-design') ?>" method="POST" enctype="multipart/form-data" class="p-4 rounded-2xl bg-purple-50/40 border border-purple-200 space-y-3">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                    <strong class="text-purple-950 font-bold block"><?= empty($order['design_file_buyer']) && empty($order['design_specs']) ? 'Kirim File & Detail Desain ke Tim AkuAda:' : 'Perbarui / Susulkan File & Spesifikasi Desain:' ?></strong>
+                    <div>
+                        <label class="block text-slate-700 font-semibold mb-1 text-[11px]">Upload File Desain / Logo / Blueprint (PDF, PNG, JPG, ZIP, AI, CDR):</label>
+                        <input type="file" name="design_file" accept=".pdf,.png,.jpg,.jpeg,.webp,.zip,.rar,.ai,.cdr,.psd,.svg"
+                               class="w-full bg-white rounded-xl border border-slate-300 px-3 py-1.5 text-[11px] file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:font-bold file:bg-purple-600 file:text-white cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block text-slate-700 font-semibold mb-1 text-[11px]">Rincian Spesifikasi Desain (Ukuran, Warna, Posisi Logo, Bahan):</label>
+                        <textarea name="design_specs" rows="2" placeholder="Tuliskan detail ukuran, kode warna, posisi cetak/bordir, dll..." class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"><?= esc($order['design_specs'] ?? '') ?></textarea>
+                    </div>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold flex items-center gap-1.5 shadow-sm">
+                        <span class="material-symbols-outlined text-[16px]">cloud_upload</span>
+                        <span>Kirim Detail Desain ke AkuAda</span>
+                    </button>
+                </form>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-purple-200 shadow-md p-6 sm:p-8 space-y-4">
 
         <!-- Arrival Notice: Vendor marked delivered, waiting for Buyer to complete -->
         <?php if ($order['order_status'] === 'delivered'): ?>

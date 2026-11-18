@@ -10,9 +10,38 @@ class RfqModel extends Model
     protected $primaryKey = 'id';
     protected $allowedFields = [
         'rfq_number', 'customer_company_id', 'vendor_company_id', 'title',
-        'notes', 'target_delivery_date', 'status', 'total_estimate'
+        'notes', 'target_delivery_date', 'status', 'total_estimate',
+        'design_file_buyer', 'design_file_vendor', 'design_specs', 'design_status'
     ];
     protected $useTimestamps = true;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->ensureDesignColumns();
+    }
+
+    public function ensureDesignColumns(): void
+    {
+        static $checked = false;
+        if ($checked) {
+            return;
+        }
+        $checked = true;
+
+        try {
+            if (!$this->db->fieldExists('design_status', 'rfqs')) {
+                $this->db->query("ALTER TABLE `rfqs`
+                    ADD COLUMN `design_file_buyer` VARCHAR(255) NULL DEFAULT NULL,
+                    ADD COLUMN `design_file_vendor` VARCHAR(255) NULL DEFAULT NULL,
+                    ADD COLUMN `design_specs` TEXT NULL DEFAULT NULL,
+                    ADD COLUMN `design_status` VARCHAR(40) NOT NULL DEFAULT 'none'
+                ");
+            }
+        } catch (\Throwable $e) {
+            // Ignore if columns already exist
+        }
+    }
 
     public function getDetailedRfqs($companyId = null, $role = null)
     {

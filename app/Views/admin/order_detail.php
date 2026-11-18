@@ -57,6 +57,109 @@
         <?= render_order_progress_stepper($order['order_status']) ?>
     </div>
 
+    <!-- 1a. PANEL MEDIASI DESAIN & MOCKUP SUPERADMIN (JEMBATAN BUYER <-> AKUADA <-> VENDOR) -->
+    <?php
+        $dStatus = $order['design_status'] ?? 'none';
+    ?>
+    <div class="bg-white rounded-3xl border-2 border-purple-300 shadow-md p-6 space-y-5 text-xs">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-2xl bg-purple-700 text-white flex items-center justify-center shadow-sm">
+                    <span class="material-symbols-outlined text-[22px]">palette</span>
+                </div>
+                <div>
+                    <h3 class="text-sm font-extrabold text-slate-900">Mediasi Desain Custom & Mockup (Jembatan Buyer ↔ AkuAda ↔ Vendor)</h3>
+                    <p class="text-[11px] text-slate-500">Filter dan teruskan file desain dari Buyer ke Vendor, serta teruskan hasil Mockup dari Vendor ke Buyer agar tidak ada kontak langsung.</p>
+                </div>
+            </div>
+            <span class="px-3 py-1 rounded-full bg-purple-100 text-purple-900 font-extrabold text-[11px] uppercase border border-purple-200">
+                Status Desain: <?= esc(str_replace('_', ' ', $dStatus)) ?>
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- TAHAP 1: DARI BUYER -> KURASI AKUADA -> TERUSKAN KE VENDOR -->
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div class="flex items-center justify-between">
+                    <strong class="text-purple-950 font-extrabold flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-purple-600 text-[18px]">looks_one</span>
+                        1. File & Spesifikasi Desain dari Buyer ke Vendor
+                    </strong>
+                    <?php if (!empty($order['design_file_buyer'])): ?>
+                        <a href="<?= base_url($order['design_file_buyer']) ?>" target="_blank" class="px-2.5 py-1 rounded-lg bg-pink-100 hover:bg-pink-200 text-pink-900 font-bold text-[11px] flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">visibility</span> Lihat File Buyer
+                        </a>
+                    <?php endif; ?>
+                </div>
+
+                <div class="bg-white p-3 rounded-xl border border-slate-200">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase block">Spesifikasi Asli dari Buyer:</span>
+                    <p class="text-slate-700 mt-0.5"><?= !empty($order['design_specs']) ? nl2br(esc($order['design_specs'])) : '<span class="italic text-slate-400">Buyer belum mengisi spesifikasi desain khusus.</span>' ?></p>
+                </div>
+
+                <form action="<?= base_url('admin/orders/forward-design') ?>" method="POST" enctype="multipart/form-data" class="space-y-2.5 pt-2 border-t border-slate-200">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Instruksi Spesifikasi yang Diteruskan ke Vendor (Bebas Kontak Buyer):</label>
+                        <textarea name="design_notes_vendor" rows="2" placeholder="Tulis spesifikasi teknis desain untuk dikerjakan oleh vendor..." class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"><?= esc($order['design_notes_vendor'] ?: ($order['design_specs'] ?? '')) ?></textarea>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Upload File Desain untuk Vendor (Kosongkan jika meneruskan file Buyer):</label>
+                        <input type="file" name="design_file_vendor" accept=".pdf,.png,.jpg,.jpeg,.webp,.zip,.rar,.ai,.cdr,.psd,.svg" class="w-full text-[11px] bg-white rounded-xl border border-slate-300 p-1.5">
+                        <?php if (!empty($order['design_file_vendor'])): ?>
+                            <a href="<?= base_url($order['design_file_vendor']) ?>" target="_blank" class="text-[11px] text-blue-700 font-bold hover:underline inline-block mt-1">✓ File untuk Vendor sudah aktif (Klik untuk cek)</a>
+                        <?php endif; ?>
+                    </div>
+                    <button type="submit" class="w-full py-2 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold flex items-center justify-center gap-1.5 shadow-sm">
+                        <span class="material-symbols-outlined text-[16px]">forward</span>
+                        <span>Teruskan Spesifikasi & File Desain ke Vendor</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- TAHAP 2: MOCKUP DARI VENDOR -> KURASI AKUADA -> TERUSKAN KE BUYER UNTUK ACC -->
+            <div class="p-4 rounded-2xl bg-blue-50/50 border border-blue-200 space-y-3">
+                <div class="flex items-center justify-between">
+                    <strong class="text-blue-950 font-extrabold flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-blue-600 text-[18px]">looks_two</span>
+                        2. Mockup Pra-Produksi dari Vendor ke Buyer (ACC)
+                    </strong>
+                    <?php if (!empty($order['mockup_file_vendor'])): ?>
+                        <a href="<?= base_url($order['mockup_file_vendor']) ?>" target="_blank" class="px-2.5 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-900 font-bold text-[11px] flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">visibility</span> Lihat Mockup Vendor
+                        </a>
+                    <?php endif; ?>
+                </div>
+
+                <div class="bg-white p-3 rounded-xl border border-blue-100">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase block">Catatan Mockup / Status Revisi:</span>
+                    <p class="text-slate-700 mt-0.5"><?= !empty($order['mockup_notes']) ? nl2br(esc($order['mockup_notes'])) : '<span class="italic text-slate-400">Belum ada mockup yang diunggah oleh vendor.</span>' ?></p>
+                </div>
+
+                <form action="<?= base_url('admin/orders/forward-mockup') ?>" method="POST" enctype="multipart/form-data" class="space-y-2.5 pt-2 border-t border-blue-200">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Pesan Pengantar Mockup untuk Buyer:</label>
+                        <textarea name="mockup_notes" rows="2" placeholder="Catatan pengantar preview mockup untuk di-ACC oleh Buyer..." class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"><?= esc($order['mockup_notes'] ?? '') ?></textarea>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Upload File Mockup untuk Buyer (Kosongkan jika meneruskan file Vendor):</label>
+                        <input type="file" name="mockup_file_buyer" accept=".pdf,.png,.jpg,.jpeg,.webp,.zip,.rar,.ai,.cdr,.psd,.svg" class="w-full text-[11px] bg-white rounded-xl border border-slate-300 p-1.5">
+                        <?php if (!empty($order['mockup_file_buyer'])): ?>
+                            <a href="<?= base_url($order['mockup_file_buyer']) ?>" target="_blank" class="text-[11px] text-emerald-700 font-bold hover:underline inline-block mt-1">✓ File Mockup untuk Buyer sudah aktif (Klik untuk cek)</a>
+                        <?php endif; ?>
+                    </div>
+                    <button type="submit" class="w-full py-2 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center justify-center gap-1.5 shadow-sm">
+                        <span class="material-symbols-outlined text-[16px]">send</span>
+                        <span>Teruskan Mockup ke Buyer untuk Di-ACC</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- 1b. Dispute / Return Status Banner (If Applicable) -->
     <?php if (!empty($latestReturn)): ?>
         <div class="bg-amber-50 rounded-3xl border-2 border-amber-300 p-6 shadow-sm space-y-4">

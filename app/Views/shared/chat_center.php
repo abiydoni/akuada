@@ -244,16 +244,25 @@ if (!$activeThread && !empty($threads)) {
 
                 <!-- Message Input Footer -->
                 <div class="p-4 bg-white border-t border-slate-200 flex-shrink-0">
-                    <form id="chatSendForm" onsubmit="handleSendMessage(event)" class="flex items-end gap-2">
+                    <form id="chatSendForm" onsubmit="handleSendMessage(event)" enctype="multipart/form-data" class="flex items-end gap-2">
                         <?= csrf_field() ?>
                         <input type="hidden" id="activeConvKeyInput" name="conversation_key" value="<?= esc($activeKey) ?>">
                         <input type="hidden" id="activeOrderIdInput" name="order_id" value="<?= esc($activeThread['order_id'] ?? '') ?>">
+                        <input type="file" id="chatAttachmentInput" name="attachment" accept=".pdf,.png,.jpg,.jpeg,.webp,.zip,.rar,.ai,.cdr,.psd,.svg" class="hidden" onchange="onChatAttachmentSelected(this)">
+
+                        <button type="button" onclick="document.getElementById('chatAttachmentInput').click()" title="Lampirkan File Desain / Dokumen" class="p-3 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined text-[18px]">attach_file</span>
+                        </button>
 
                         <div class="flex-1 relative">
+                            <div id="chatAttachmentBadge" class="hidden mb-1.5 px-3 py-1 rounded-xl bg-purple-50 border border-purple-200 text-[11px] text-purple-900 font-bold items-center justify-between">
+                                <span id="chatAttachmentName" class="truncate"></span>
+                                <button type="button" onclick="clearChatAttachment()" class="text-rose-600 hover:text-rose-800 ml-2 font-extrabold">✕</button>
+                            </div>
                             <textarea id="chatMessageInput" 
                                       name="message" 
                                       rows="2" 
-                                      placeholder="Tulis pesan ke <?= esc($activeThread['counterparty_name']) ?>... (Enter untuk kirim, Shift+Enter untuk baris baru)" 
+                                      placeholder="Tulis pesan atau kirim detail desain ke <?= esc($activeThread['counterparty_name']) ?>..." 
                                       class="w-full px-4 py-2.5 text-xs rounded-2xl border border-slate-300 focus:border-purple-600 focus:ring-4 focus:ring-purple-100 bg-slate-50 focus:bg-white resize-none transition leading-relaxed"></textarea>
                         </div>
 
@@ -468,12 +477,16 @@ if (!$activeThread && !empty($threads)) {
             const roleBadgeClass = m.sender_role === 'vendor' ? 'bg-blue-100 text-blue-800' : (m.sender_role === 'admin' ? 'bg-purple-100 text-purple-900' : (m.sender_role === 'guest' ? 'bg-emerald-100 text-emerald-800' : 'bg-pink-100 text-pink-800'));
             const roleName = m.sender_role === 'vendor' ? 'Vendor' : (m.sender_role === 'admin' ? 'Superadmin' : (m.sender_role === 'guest' ? 'Tamu Publik' : 'Buyer'));
 
+            const attachHtmlMe = m.attachment_path ? `<div class="mt-2 pt-2 border-t border-white/20"><a href="${m.attachment_path}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white font-bold text-[11px]"><span class="material-symbols-outlined text-[14px]">attach_file</span> Buka File Desain / Lampiran ↗</a></div>` : '';
+            const attachHtmlOther = m.attachment_path ? `<div class="mt-2 pt-2 border-t border-slate-100"><a href="${m.attachment_path}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 font-bold text-[11px]"><span class="material-symbols-outlined text-[14px]">attach_file</span> Buka File Desain / Lampiran ↗</a></div>` : '';
+
             if (isMe) {
                 html += `
                     <div class="flex justify-end items-end gap-2">
                         <div class="max-w-md sm:max-w-lg space-y-1">
                             <div class="p-3.5 rounded-2xl rounded-tr-xs bg-gradient-to-r from-purple-700 to-indigo-700 text-white text-xs leading-relaxed shadow-sm">
                                 ${m.message}
+                                ${attachHtmlMe}
                             </div>
                             <div class="flex items-center justify-end gap-1 text-[10px] text-slate-400 font-mono">
                                 <span>${m.time_formatted} WIB</span>
@@ -496,6 +509,7 @@ if (!$activeThread && !empty($threads)) {
                             </div>
                             <div class="p-3.5 rounded-2xl rounded-tl-xs bg-white border border-slate-200/90 text-slate-800 text-xs leading-relaxed shadow-2xs">
                                 ${m.message}
+                                ${attachHtmlOther}
                             </div>
                             <div class="text-[10px] text-slate-400 font-mono">
                                 <span>${m.time_formatted} WIB</span>
@@ -548,11 +562,37 @@ if (!$activeThread && !empty($threads)) {
         }
     }
 
+    function onChatAttachmentSelected(fileInput) {
+        const badge = document.getElementById('chatAttachmentBadge');
+        const nameEl = document.getElementById('chatAttachmentName');
+        if (fileInput.files && fileInput.files.length > 0) {
+            if (nameEl) nameEl.textContent = '📎 ' + fileInput.files[0].name;
+            if (badge) {
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+            }
+        } else {
+            clearChatAttachment();
+        }
+    }
+
+    function clearChatAttachment() {
+        const fileInput = document.getElementById('chatAttachmentInput');
+        const badge = document.getElementById('chatAttachmentBadge');
+        if (fileInput) fileInput.value = '';
+        if (badge) {
+            badge.classList.add('hidden');
+            badge.classList.remove('flex');
+        }
+    }
+
     function handleSendMessage(e) {
         e.preventDefault();
         const input = document.getElementById('chatMessageInput');
+        const fileInput = document.getElementById('chatAttachmentInput');
         const text = input ? input.value.trim() : '';
-        if (!text) return;
+        const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+        if (!text && !hasFile) return;
 
         const sendBtn = document.getElementById('chatSendButton');
         const indicator = document.getElementById('chatSendingIndicator');
@@ -572,6 +612,7 @@ if (!$activeThread && !empty($threads)) {
             if (indicator) indicator.classList.add('hidden');
             if (data.status === 'success') {
                 input.value = '';
+                clearChatAttachment();
                 loadMessages(false);
                 setTimeout(scrollMessagesToBottom, 150);
             } else {

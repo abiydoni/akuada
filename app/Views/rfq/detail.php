@@ -62,6 +62,40 @@
                     <p class="text-xs text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-200 leading-relaxed"><?= esc($rfq['notes']) ?></p>
                 </div>
             <?php endif; ?>
+
+            <?php if (!empty($rfq['design_specs']) || !empty($rfq['design_file_buyer'])): ?>
+                <div class="p-6 pt-0">
+                    <div class="p-4 rounded-2xl bg-purple-50/70 border border-purple-200 space-y-2 text-xs">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <strong class="font-bold text-purple-950 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-purple-600 text-[18px]">palette</span>
+                                Spesifikasi Desain & Lampiran Custom
+                            </strong>
+                            <?php if (($rfq['design_status'] ?? '') === 'forwarded_to_vendor'): ?>
+                                <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">✓ Telah Diteruskan AkuAda ke Vendor</span>
+                            <?php else: ?>
+                                <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">⏳ Sedang Diverifikasi Tim AkuAda</span>
+                            <?php endif; ?>
+                        </div>
+                        <?php if (!empty($rfq['design_specs'])): ?>
+                            <p class="text-slate-700 bg-white p-3 rounded-xl border border-purple-100 leading-relaxed"><?= nl2br(esc($rfq['design_specs'])) ?></p>
+                        <?php endif; ?>
+                        <?php
+                            $currentRole = session('user_role') ?: (session('role') ?: 'customer');
+                            $canSeeBuyerFile = in_array($currentRole, ['admin', 'customer']);
+                            $fileToShow = $canSeeBuyerFile ? ($rfq['design_file_buyer'] ?? null) : (($rfq['design_status'] ?? '') === 'forwarded_to_vendor' ? ($rfq['design_file_vendor'] ?: $rfq['design_file_buyer']) : null);
+                        ?>
+                        <?php if (!empty($fileToShow)): ?>
+                            <div class="pt-1">
+                                <a href="<?= base_url($fileToShow) ?>" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-[11px] transition shadow-xs">
+                                    <span class="material-symbols-outlined text-[15px]">download</span>
+                                    <span>Lihat / Unduh File Desain</span>
+                                </a>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
 
         <!-- Right: Parties Info (4 Cols) -->

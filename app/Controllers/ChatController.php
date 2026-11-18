@@ -179,6 +179,7 @@ class ChatController extends Controller
                 'sender_company_name' => $m['sender_company_name'] ?? '',
                 'message'             => nl2br(esc($m['message'])),
                 'raw_message'         => $m['message'],
+                'attachment_path'     => !empty($m['attachment_path']) ? base_url($m['attachment_path']) : null,
                 'is_me'               => $isMe,
                 'created_at'          => $m['created_at'],
                 'time_formatted'      => date('H:i', strtotime($m['created_at'])),
@@ -271,10 +272,28 @@ class ChatController extends Controller
             }
         }
 
+        $attachmentPath = null;
+        $file = $this->request->getFile('attachment');
+        if ($file && $file->isValid() && !$file->hasMoved()) {
+            $ext = strtolower($file->getClientExtension());
+            $allowedExts = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'zip', 'rar', 'ai', 'cdr', 'psd', 'svg'];
+            if (in_array($ext, $allowedExts)) {
+                $uploadDir = FCPATH . 'uploads/designs';
+                if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
+                $newFileName = 'chat_file_' . date('YmdHis') . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                $file->move($uploadDir, $newFileName);
+                $attachmentPath = 'uploads/designs/' . $newFileName;
+            }
+        }
+
+        if (empty($message) && !empty($attachmentPath)) {
+            $message = '📎 Mengirimkan lampiran file desain / spesifikasi.';
+        }
+
         if (empty($message)) {
             return $this->response->setStatusCode(400)->setJSON([
                 'status'  => 'error',
-                'message' => 'Pesan tidak boleh kosong.'
+                'message' => 'Pesan atau lampiran file tidak boleh kosong.'
             ]);
         }
 
@@ -286,7 +305,7 @@ class ChatController extends Controller
             $userRole,
             $companyName,
             $message,
-            null,
+            $attachmentPath,
             $key,
             $companyId,
             $receiverCompanyId,
@@ -303,6 +322,7 @@ class ChatController extends Controller
                 'sender_role'         => $userRole,
                 'sender_company_name' => $companyName,
                 'message'             => nl2br(esc($message)),
+                'attachment_path'     => $attachmentPath ? base_url($attachmentPath) : null,
                 'is_me'               => true,
                 'time_formatted'      => date('H:i'),
                 'date_formatted'      => date('d M Y'),

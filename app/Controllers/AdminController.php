@@ -1819,4 +1819,171 @@ class AdminController extends BaseController
     private function _unusedSettingsStub() {
         return redirect()->back();
     }
+
+    public function forwardRfqDesignToVendor()
+    {
+        $rfqId = (int)$this->request->getPost('rfq_id');
+        $designSpecs = trim((string)$this->request->getPost('design_specs'));
+
+        $rfqModel = new RfqModel();
+        $rfq = $rfqModel->find($rfqId);
+        if (!$rfq) {
+            session()->setFlashdata('error', 'Data RFQ tidak ditemukan.');
+            return redirect()->back();
+        }
+
+        $designFileVendor = $rfq['design_file_vendor'] ?: ($rfq['design_file_buyer'] ?? null);
+        $file = $this->request->getFile('design_file_vendor');
+        if ($file && $file->isValid() && !$file->hasMoved()) {
+            $ext = strtolower($file->getClientExtension());
+            $allowedExts = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'zip', 'rar', 'ai', 'cdr', 'psd', 'svg'];
+            if (in_array($ext, $allowedExts)) {
+                $uploadDir = FCPATH . 'uploads/designs';
+                if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
+                $newFileName = 'rfq_vendor_design_' . $rfqId . '_' . date('YmdHis') . '.' . $ext;
+                $file->move($uploadDir, $newFileName);
+                $designFileVendor = 'uploads/designs/' . $newFileName;
+            }
+        }
+
+        $rfqModel->update($rfqId, [
+            'design_specs'       => $designSpecs ?: $rfq['design_specs'],
+            'design_file_vendor' => $designFileVendor,
+            'design_status'      => 'forwarded_to_vendor',
+            'updated_at'         => date('Y-m-d H:i:s'),
+        ]);
+
+        session()->setFlashdata('success', 'Spesifikasi & file desain untuk RFQ #' . $rfq['rfq_number'] . ' berhasil dikurasi dan diteruskan ke Mitra Vendor!');
+        return redirect()->back();
+    }
+
+    public function forwardDesignToVendor()
+    {
+        $orderId = (int)$this->request->getPost('order_id');
+        $designNotesVendor = trim((string)$this->request->getPost('design_notes_vendor'));
+
+        $orderModel = new OrderModel();
+        $order = $orderModel->find($orderId);
+        if (!$order) {
+            session()->setFlashdata('error', 'Pesanan PO tidak ditemukan.');
+            return redirect()->back();
+        }
+
+        $designFileVendor = $order['design_file_vendor'] ?: ($order['design_file_buyer'] ?? null);
+        $file = $this->request->getFile('design_file_vendor');
+        if ($file && $file->isValid() && !$file->hasMoved()) {
+            $ext = strtolower($file->getClientExtension());
+            $allowedExts = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'zip', 'rar', 'ai', 'cdr', 'psd', 'svg'];
+            if (in_array($ext, $allowedExts)) {
+                $uploadDir = FCPATH . 'uploads/designs';
+                if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
+                $newFileName = 'po_vendor_design_' . $orderId . '_' . date('YmdHis') . '.' . $ext;
+                $file->move($uploadDir, $newFileName);
+                $designFileVendor = 'uploads/designs/' . $newFileName;
+            }
+        }
+
+        $orderModel->update($orderId, [
+            'design_file_vendor'  => $designFileVendor,
+            'design_notes_vendor' => $designNotesVendor ?: ($order['design_specs'] ?? ''),
+            'design_status'       => 'forwarded_to_vendor',
+            'updated_at'          => date('Y-m-d H:i:s'),
+        ]);
+
+        $logModel = new OrderStatusLogModel();
+        $logModel->logStatus(
+            $orderId,
+            $order['order_status'],
+            'Kurasi & Penerusan Desain dari AkuAda ke Vendor',
+            'Superadmin AkuAda telah memverifikasi dan meneruskan spesifikasi desain custom kepada Mitra Vendor untuk pembuatan sample/mockup pra-produksi.',
+            session('user_name') ?? 'Superadmin AkuAda'
+        );
+
+        // Kirim notifikasi ke ruang chat personal Vendor <-> AkuAda
+        if (!empty($order['vendor_company_id'])) {
+            $msgModel = new OrderMessageModel();
+            $msgModel->addMessage(
+                $orderId,
+                (int)session('user_id'),
+                session('user_name') ?? 'Tim Pengadaan AkuAda',
+                'admin',
+                'Superadmin Platform AkuAda',
+                "🎨 [Instruksi Desain PO #{$order['po_number']}] Tim AkuAda telah meneruskan file & spesifikasi desain resmi untuk pesanan ini. Silakan unduh di halaman Detail PO dan unggah hasil Mockup/Dummy sebelum produksi massal.\nInstruksi: " . ($designNotesVendor ?: ($order['design_specs'] ?? '-')),
+                $designFileVendor,
+                'admin_comp_' . (int)$order['vendor_company_id'],
+                null,
+                (int)$order['vendor_company_id'],
+                'vendor',
+                'Instruksi Desain PO #' . $order['po_number']
+            );
+        }
+
+        session()->setFlashdata('success', 'Desain & spesifikasi custom berhasil diteruskan ke Mitra Vendor!');
+        return redirect()->back();
+    }
+
+    public function forwardMockupToBuyer()
+    {
+        $orderId = (int)$this->request->getPost('order_id');
+        $mockupNotes = trim((string)$this->request->getPost('mockup_notes'));
+
+        $orderModel = new OrderModel();
+        $order = $orderModel->find($orderId);
+        if (!$order) {
+            session()->setFlashdata('error', 'Pesanan PO tidak ditemukan.');
+            return redirect()->back();
+        }
+
+        $mockupFileBuyer = $order['mockup_file_buyer'] ?: ($order['mockup_file_vendor'] ?? null);
+        $file = $this->request->getFile('mockup_file_buyer');
+        if ($file && $file->isValid() && !$file->hasMoved()) {
+            $ext = strtolower($file->getClientExtension());
+            $allowedExts = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'zip', 'rar', 'ai', 'cdr', 'psd', 'svg'];
+            if (in_array($ext, $allowedExts)) {
+                $uploadDir = FCPATH . 'uploads/designs';
+                if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
+                $newFileName = 'po_buyer_mockup_' . $orderId . '_' . date('YmdHis') . '.' . $ext;
+                $file->move($uploadDir, $newFileName);
+                $mockupFileBuyer = 'uploads/designs/' . $newFileName;
+            }
+        }
+
+        $orderModel->update($orderId, [
+            'mockup_file_buyer' => $mockupFileBuyer,
+            'mockup_notes'      => $mockupNotes ?: ($order['mockup_notes'] ?? 'Silakan tinjau hasil mockup pra-produksi ini dan klik ACC Desain jika sudah sesuai.'),
+            'design_status'     => 'mockup_sent_to_buyer',
+            'updated_at'        => date('Y-m-d H:i:s'),
+        ]);
+
+        $logModel = new OrderStatusLogModel();
+        $logModel->logStatus(
+            $orderId,
+            $order['order_status'],
+            'Pengiriman Mockup Pra-Produksi ke Buyer oleh AkuAda',
+            'Tim AkuAda telah meneruskan preview Mockup Pra-Produksi kepada Corporate Buyer untuk mendapatkan persetujuan (ACC Desain) sebelum produksi massal.',
+            session('user_name') ?? 'Superadmin AkuAda'
+        );
+
+        // Kirim notifikasi ke ruang chat personal Buyer <-> AkuAda
+        if (!empty($order['customer_company_id'])) {
+            $msgModel = new OrderMessageModel();
+            $msgModel->addMessage(
+                $orderId,
+                (int)session('user_id'),
+                session('user_name') ?? 'Tim Pengadaan AkuAda',
+                'admin',
+                'Superadmin Platform AkuAda',
+                "✨ [Preview Mockup Desain PO #{$order['po_number']}] Tim AkuAda telah mengunggah hasil Mockup Pra-Produksi pesanan Anda. Silakan buka halaman Detail PO untuk meninjau dan klik 'Setujui Desain (ACC Produksi)'.\nCatatan: " . ($mockupNotes ?: '-'),
+                $mockupFileBuyer,
+                'admin_comp_' . (int)$order['customer_company_id'],
+                null,
+                (int)$order['customer_company_id'],
+                'customer',
+                'Mockup Desain PO #' . $order['po_number']
+            );
+        }
+
+        session()->setFlashdata('success', 'Mockup Pra-Produksi berhasil diteruskan ke Corporate Buyer untuk persetujuan (ACC)!');
+        return redirect()->back();
+    }
 }

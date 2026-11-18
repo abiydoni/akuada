@@ -73,6 +73,56 @@
         </div>
     <?php endif; ?>
 
+    <!-- Panel Mediasi Desain RFQ (Buyer -> AkuAda -> Vendor) -->
+    <?php if (!empty($rfq['design_specs']) || !empty($rfq['design_file_buyer']) || ($rfq['design_status'] ?? 'none') !== 'none'): ?>
+        <div class="bg-white p-6 rounded-2xl border-2 border-purple-200 shadow-sm space-y-4 text-xs">
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-purple-600">palette</span>
+                    <h3 class="text-sm font-bold text-slate-900">Mediasi Desain & Spesifikasi Custom RFQ (Kurasi AkuAda)</h3>
+                </div>
+                <?php if (($rfq['design_status'] ?? '') === 'forwarded_to_vendor'): ?>
+                    <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[11px]">✓ Sudah Diteruskan ke Vendor</span>
+                <?php else: ?>
+                    <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-900 font-bold text-[11px] animate-pulse">⏳ Menunggu Kurasi Admin AkuAda (Vendor Belum Bisa Lihat)</span>
+                <?php endif; ?>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                    <strong class="text-slate-800 block">File & Detail Desain Asli dari Buyer:</strong>
+                    <p class="text-slate-600"><?= !empty($rfq['design_specs']) ? nl2br(esc($rfq['design_specs'])) : '<span class="italic text-slate-400">Tidak ada catatan spesifikasi teks.</span>' ?></p>
+                    <?php if (!empty($rfq['design_file_buyer'])): ?>
+                        <div class="pt-1">
+                            <a href="<?= base_url($rfq['design_file_buyer']) ?>" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-bold text-[11px]">
+                                <span class="material-symbols-outlined text-[15px]">visibility</span>
+                                <span>Periksa File Desain Buyer</span>
+                            </a>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <form action="<?= base_url('admin/rfqs/forward-design') ?>" method="POST" enctype="multipart/form-data" class="p-4 rounded-xl bg-purple-50/50 border border-purple-200 space-y-3">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="rfq_id" value="<?= $rfq['id'] ?>">
+                    <strong class="text-purple-950 block">Teruskan Spesifikasi & File Desain ke Mitra Vendor:</strong>
+                    <div>
+                        <label class="block text-slate-700 font-semibold mb-1">Spesifikasi Desain untuk Vendor (Pastikan bebas kontak langsung buyer):</label>
+                        <textarea name="design_specs" rows="2" class="w-full px-3 py-2 rounded-xl border border-purple-300 bg-white"><?= esc($rfq['design_specs'] ?? '') ?></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-slate-700 font-semibold mb-1">Upload File Desain Pengganti / Watermark AkuAda (Opsional — kosongkan jika ingin meneruskan file asli buyer):</label>
+                        <input type="file" name="design_file_vendor" accept=".pdf,.png,.jpg,.jpeg,.webp,.zip,.rar,.ai,.cdr,.psd,.svg" class="w-full text-[11px] bg-white rounded-xl border border-purple-200 p-1.5">
+                    </div>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold flex items-center gap-1.5 shadow-sm">
+                        <span class="material-symbols-outlined text-[16px]">send</span>
+                        <span>Setujui & Teruskan Desain ke Vendor</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <!-- Table of RFQ Items (rfq_items table) -->
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden p-6 space-y-4">
         <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">

@@ -34,7 +34,7 @@
                             <strong class="text-slate-900 text-sm"><?= esc($rfq['title']) ?></strong>
                         </div>
                         <p class="text-slate-500">
-                            Perusahaan Peminta: <strong><?= esc($rfq['buyer_name']) ?></strong> |
+                            Dikelola via: <strong>Tim Pengadaan AkuAda</strong> |
                             Target Kirim: <strong><?= date('d M Y', strtotime($rfq['target_delivery_date'])) ?></strong>
                         </p>
                     </div>
@@ -42,6 +42,31 @@
                         Status: <?= esc($rfq['status']) ?>
                     </span>
                 </div>
+
+                <?php if (($rfq['design_status'] ?? 'none') === 'forwarded_to_vendor'): ?>
+                    <div class="p-3.5 rounded-xl bg-purple-50 border border-purple-200 space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <strong class="text-purple-950 font-bold flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-purple-600 text-[16px]">palette</span>
+                                Lampiran & Spesifikasi Desain Resmi dari AkuAda:
+                            </strong>
+                            <?php $vFile = !empty($rfq['design_file_vendor']) ? $rfq['design_file_vendor'] : ($rfq['design_file_buyer'] ?? null); ?>
+                            <?php if (!empty($vFile)): ?>
+                                <a href="<?= base_url($vFile) ?>" target="_blank" class="px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-[11px] flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[14px]">download</span> Unduh File Desain
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                        <?php if (!empty($rfq['design_specs'])): ?>
+                            <p class="text-slate-700 bg-white p-2.5 rounded-lg border border-purple-100"><?= nl2br(esc($rfq['design_specs'])) ?></p>
+                        <?php endif; ?>
+                    </div>
+                <?php elseif (($rfq['design_status'] ?? 'none') === 'submitted_to_admin'): ?>
+                    <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-amber-600 text-[18px]">hourglass_top</span>
+                        <span>Permintaan ini memiliki lampiran desain custom yang sedang dikurasi oleh Tim AkuAda sebelum diteruskan kepada Anda.</span>
+                    </div>
+                <?php endif; ?>
 
                 <div class="w-full rounded-xl border border-slate-200 overflow-hidden">
                     <table class="w-full text-xs text-left border-collapse">

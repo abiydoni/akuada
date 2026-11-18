@@ -1040,4 +1040,159 @@ class CustomerController extends BaseController
             'orders'  => $orders,
         ]);
     }
+
+    public function uploadOrderDesign()
+    {
+        $buyerId = $this->getBuyerCompanyId();
+        $orderId = (int)$this->request->getPost('order_id');
+        $designSpecs = trim((string)$this->request->getPost('design_specs'));
+
+        $orderModel = new OrderModel();
+        $order = $orderModel->find($orderId);
+
+        if (!$order || ((int)$order['customer_company_id'] !== (int)$buyerId && session('role') !== 'admin')) {
+            session()->setFlashdata('error', 'Pesanan PO tidak ditemukan atau akses tidak diizinkan.');
+            return redirect()->back();
+        }
+
+        $designFileBuyer = $order['design_file_buyer'] ?? null;
+        $file = $this->request->getFile('design_file');
+        if ($file && $file->isValid() && !$file->hasMoved()) {
+            $ext = strtolower($file->getClientExtension());
+            $allowedExts = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'zip', 'rar', 'ai', 'cdr', 'psd', 'svg'];
+            if (in_array($ext, $allowedExts)) {
+                $uploadDir = FCPATH . 'uploads/designs';
+                if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
+                $newFileName = 'buyer_design_' . $orderId . '_' . date('YmdHis') . '.' . $ext;
+                $file->move($uploadDir, $newFileName);
+                $designFileBuyer = 'uploads/designs/' . $newFileName;
+            }
+        }
+
+        if (empty($designFileBuyer) && empty($designSpecs)) {
+            session()->setFlashdata('error', 'Silakan unggah file desain atau tuliskan rincian spesifikasi desain terlebih dahulu.');
+            return redirect()->back();
+        }
+
+        $orderModel->update($orderId, [
+            'design_file_buyer' => $designFileBuyer,
+            'design_specs'      => $designSpecs ?: ($order['design_specs'] ?? ''),
+            'design_status'     => 'submitted_to_admin',
+            'updated_at'        => date('Y-m-d H:i:s'),
+        ]);
+
+        $logModel = new \App\Models\OrderStatusLogModel();
+        $logModel->logStatus(
+            $orderId,
+            $order['order_status'],
+            'Pengiriman Detail & File Desain oleh Buyer ke AkuAda',
+            'Buyer telah mengirimkan/memperbarui file desain & spesifikasi custom untuk dikurasi oleh Tim AkuAda sebelum diteruskan ke vendor.',
+            session('user_name') ?? 'PIC Procurement Buyer'
+        );
+
+        // Kirim notifikasi ke ruang chat personal Buyer <-> AkuAda
+        $msgModel = new OrderMessageModel();
+        $msgModel->addMessage(
+            $orderId,
+            (int)session('user_id'),
+            session('user_name') ?? 'PIC Procurement Buyer',
+            'customer',
+            session('company_name') ?? 'Corporate Buyer',
+            "🎨 [Update Desain Custom PO #{$order['po_number']}] Kami telah mengunggah file & detail desain pesanan untuk diperiksa Tim AkuAda.\nSpesifikasi: " . ($designSpecs ?: '-'),
+            $designFileBuyer,
+            'admin_comp_' . (int)$buyerId,
+            (int)$buyerId,
+            null,
+            'admin',
+            'Desain Custom PO #' . $order['po_number']
+        );
+
+        session()->setFlashdata('success', 'Detail spesifikasi & file desain berhasil dikirim ke Tim AkuAda! Tim kami akan segera memverifikasi dan meneruskannya ke bagian produksi.');
+        return redirect()->back();
+    }
+
+    public function respondDesignMockup()
+    {
+        $buyerId = $this->getBuyerCompanyId();
+        $orderId = (int)$this->request->getPost('order_id');
+        $decision = $this->request->getPost('decision'); // 'approve' or 'revision'
+        $feedbackNotes = trim((string)$this->request->getPost('feedback_notes'));
+
+        $orderModel = new OrderModel();
+        $order = $orderModel->find($orderId);
+
+        if (!$order || ((int)$order['customer_company_id'] !== (int)$buyerId && session('role') !== 'admin')) {
+            session()->setFlashdata('error', 'Pesanan PO tidak ditemukan.');
+            return redirect()->back();
+        }
+
+        $logModel = new \App\Models\OrderStatusLogModel();
+        $msgModel = new OrderMessageModel();
+
+        if ($decision === 'approve') {
+            $orderModel->update($orderId, [
+                'design_status' => 'approved_by_buyer',
+                'mockup_notes'  => $feedbackNotes ?: 'Desain/Mockup telah disetujui (ACC) oleh Buyer untuk langsung diproduksi massal.',
+                'updated_at'    => date('Y-m-d H:i:s'),
+            ]);
+
+            $logModel->logStatus(
+                $orderId,
+                $order['order_status'],
+                'Persetujuan Desain (ACC Produksi) oleh Buyer',
+                'Corporate Buyer telah menyetujui (ACC) hasil Mockup Pra-Produksi. Pesanan siap diproduksi massal sesuai desain final. Catatan: ' . ($feedbackNotes ?: 'ACC Sesuai Mockup.'),
+                session('user_name') ?? 'PIC Procurement Buyer'
+            );
+
+            $msgModel->addMessage(
+                $orderId,
+                (int)session('user_id'),
+                session('user_name') ?? 'PIC Procurement Buyer',
+                'customer',
+                session('company_name') ?? 'Corporate Buyer',
+                "✅ [ACC DESAIN FINAL PO #{$order['po_number']}] Kami telah menyetujui hasil Mockup Pra-Produksi. Silakan Tim AkuAda menginstruksikan produksi massal.\nCatatan: " . ($feedbackNotes ?: 'ACC Sesuai Mockup.'),
+                null,
+                'admin_comp_' . (int)$buyerId,
+                (int)$buyerId,
+                null,
+                'admin',
+                'ACC Desain PO #' . $order['po_number']
+            );
+
+            session()->setFlashdata('success', 'Desain Mockup berhasil di-ACC! Tim AkuAda akan langsung menginstruksikan produksi massal.');
+        } else {
+            $orderModel->update($orderId, [
+                'design_status' => 'revision_requested',
+                'mockup_notes'  => $feedbackNotes ?: 'Buyer meminta revisi pada mockup desain.',
+                'updated_at'    => date('Y-m-d H:i:s'),
+            ]);
+
+            $logModel->logStatus(
+                $orderId,
+                $order['order_status'],
+                'Permintaan Revisi Mockup Desain oleh Buyer',
+                'Buyer mengajukan catatan revisi atas mockup pra-produksi kepada Tim AkuAda: ' . ($feedbackNotes ?: '-'),
+                session('user_name') ?? 'PIC Procurement Buyer'
+            );
+
+            $msgModel->addMessage(
+                $orderId,
+                (int)session('user_id'),
+                session('user_name') ?? 'PIC Procurement Buyer',
+                'customer',
+                session('company_name') ?? 'Corporate Buyer',
+                "🔄 [Permintaan Revisi Mockup PO #{$order['po_number']}] Mohon revisi pada desain mockup dengan rincian berikut:\n" . ($feedbackNotes ?: '-'),
+                null,
+                'admin_comp_' . (int)$buyerId,
+                (int)$buyerId,
+                null,
+                'admin',
+                'Revisi Desain PO #' . $order['po_number']
+            );
+
+            session()->setFlashdata('success', 'Permintaan revisi desain telah dikirimkan ke Tim AkuAda!');
+        }
+
+        return redirect()->back();
+    }
 }

@@ -210,6 +210,25 @@ class CartController extends BaseController
         $taxInvoiceRequired = $this->request->getPost('tax_invoice_required') ? 1 : 0;
         $customerNotes = $this->request->getPost('customer_notes');
         $shippingAddress = $this->request->getPost('shipping_address');
+        $designSpecs = trim((string)$this->request->getPost('design_specs'));
+
+        // Handle optional design file upload from Buyer
+        $designFileBuyer = null;
+        $fileDesign = $this->request->getFile('design_file');
+        if ($fileDesign && $fileDesign->isValid() && !$fileDesign->hasMoved()) {
+            $ext = strtolower($fileDesign->getClientExtension());
+            $allowedExts = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'zip', 'rar', 'ai', 'cdr', 'psd', 'svg'];
+            if (in_array($ext, $allowedExts)) {
+                $uploadDir = FCPATH . 'uploads/designs';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0775, true);
+                }
+                $newFileName = 'design_po_' . date('YmdHis') . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                $fileDesign->move($uploadDir, $newFileName);
+                $designFileBuyer = 'uploads/designs/' . $newFileName;
+            }
+        }
+        $designStatus = (!empty($designSpecs) || !empty($designFileBuyer)) ? 'submitted_to_admin' : 'none';
 
         $isLoggedInCustomer = !empty(session('user_id')) && (session('user_role') === 'customer' || session('role') === 'customer');
         $buyerCompanyId = $isLoggedInCustomer ? (int)session('company_id') : null;
@@ -409,6 +428,9 @@ class CartController extends BaseController
             'vendor_invoice_number'  => generate_unique_number('VINV'),
             'vendor_payout_status'   => 'unpaid',
             'vendor_payout_due_date' => date('Y-m-d', strtotime('+' . max(1, (int)get_system_setting('vendor_payout_days', 7)) . ' days')),
+            'design_file_buyer'      => $designFileBuyer,
+            'design_specs'           => $designSpecs ?: null,
+            'design_status'          => $designStatus,
             'created_at'           => $now,
             'updated_at'           => $now,
         ]);
@@ -439,9 +461,27 @@ class CartController extends BaseController
             $orderId,
             'po_issued',
             'Penerbitan Purchase Order (PO)',
-            'PO resmi #' . $poNumber . ' berhasil diterbitkan oleh pembeli dengan metode pembayaran ' . strtoupper($paymentMethod) . '.',
+            'PO resmi #' . $poNumber . ' berhasil diterbitkan oleh pembeli dengan metode pembayaran ' . strtoupper($paymentMethod) . '.' . ($designStatus === 'submitted_to_admin' ? ' Lampiran desain & spesifikasi custom telah dikirim ke Tim AkuAda untuk kurasi.' : ''),
             session('user_name') ?? 'Procurement Officer'
         );
+
+        if ($designStatus === 'submitted_to_admin' && $buyerCompanyId) {
+            $msgModel = new \App\Models\OrderMessageModel();
+            $msgModel->addMessage(
+                (int)$orderId,
+                session('user_id') ? (int)session('user_id') : null,
+                session('user_name') ?? 'PIC Procurement',
+                'customer',
+                session('company_name') ?? 'Corporate Buyer',
+                "🎨 [Permintaan Desain Custom PO #{$poNumber}] Kami telah mengunggah spesifikasi desain barang pesanan untuk dikurasi oleh Tim AkuAda sebelum diteruskan ke vendor.\nSpesifikasi: " . ($designSpecs ?: 'Terlampir di file desain.'),
+                $designFileBuyer,
+                'admin_comp_' . $buyerCompanyId,
+                (int)$buyerCompanyId,
+                null,
+                'admin',
+                'Desain Custom PO #' . $poNumber
+            );
+        }
 
         // If paying with TOP credit, update credit used on buyer company (only for verified buyer)
         if ($isVerified && $buyerCompany && (str_starts_with($paymentMethod, 'top_') || $paymentMethod === 'corporate_po')) {

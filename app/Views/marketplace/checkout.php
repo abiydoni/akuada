@@ -28,7 +28,7 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
 </div>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <form action="<?= base_url('checkout/process') ?>" method="POST" id="checkoutForm">
+    <form action="<?= base_url('checkout/process') ?>" method="POST" enctype="multipart/form-data" id="checkoutForm">
         <?= csrf_field() ?>
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
@@ -407,6 +407,43 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                                 </label>
                             </div>
                             <span class="text-[11px] text-blue-700 font-semibold">Tercatat ke NPWP Badan</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Custom Design & Specification Upload (Mediated by AkuAda) -->
+                <div class="bg-white rounded-2xl p-6 border border-purple-200 shadow-sm space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-purple-600">palette</span>
+                            <h2 class="text-sm font-bold text-slate-800">4. Detail Desain & Spesifikasi Custom Barang (Opsional)</h2>
+                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[13px]">shield_lock</span> Dikurasi & Dijembatani Tim AkuAda
+                        </span>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-purple-50/70 border border-purple-200 text-xs text-purple-950 flex items-start gap-2.5">
+                        <span class="material-symbols-outlined text-purple-600 text-[20px] mt-0.5 flex-shrink-0">verified_user</span>
+                        <div class="space-y-0.5 leading-relaxed">
+                            <strong class="font-bold block">Perlindungan Kerahasiaan Desain Buyer (Satu Pintu via AkuAda):</strong>
+                            <p class="text-[11px] text-purple-800">
+                                Jika barang yang dipesan membutuhkan cetak logo, seragam custom, kemasan khusus, atau blueprint teknis, unggah file dan detailnya di bawah ini. Tim AkuAda akan memeriksa dan meneruskan spesifikasi ke Vendor serta mengirimkan <strong>Mockup Pra-Produksi</strong> ke halaman pesanan Anda untuk di-ACC sebelum diproduksi massal.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <label class="block text-slate-700 font-bold mb-1">Unggah File Desain / Logo / Blueprint Teknis (Opsional):</label>
+                            <input type="file" name="design_file" accept=".pdf,.png,.jpg,.jpeg,.webp,.zip,.rar,.ai,.cdr,.psd,.svg"
+                                   class="w-full bg-slate-50 rounded-xl border border-slate-300 px-3.5 py-2 text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-purple-600 file:text-white hover:file:bg-purple-700 cursor-pointer">
+                            <p class="text-[10px] text-slate-400 mt-1">Format didukung: PDF, PNG, JPG, ZIP, AI, CDR, PSD, SVG (Maks. 10MB). Anda juga dapat menyusulkan file desain setelah PO terbit atau melalui Live Chat AkuAda.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-700 font-bold mb-1">Rincian Spesifikasi Desain (Ukuran, Warna Pantone/CMYK, Bahan, Posisi Logo):</label>
+                            <textarea name="design_specs" rows="3" placeholder="Contoh: Cetak logo perusahaan 2 warna (Biru Navy #1E3A8A & Putih) di bagian dada kiri ukuran lebar 8cm, bahan bordir komputer rapat, sertakan sample mockup sebelum produksi." class="w-full bg-slate-50 rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-purple-100 focus:border-purple-600"></textarea>
                         </div>
                     </div>
                 </div>

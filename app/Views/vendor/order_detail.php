@@ -43,6 +43,98 @@
         <?= render_order_progress_stepper($order['order_status']) ?>
     </div>
 
+    <!-- PANEL DESAIN CUSTOM DARI AKUADA & UPLOAD MOCKUP PRA-PRODUKSI (VENDOR) -->
+    <?php
+        $dStatus = $order['design_status'] ?? 'none';
+    ?>
+    <?php if ($dStatus !== 'none'): ?>
+        <div class="bg-white rounded-3xl border-2 border-blue-200 shadow-sm p-6 space-y-4 text-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
+                        <span class="material-symbols-outlined text-[22px]">palette</span>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900">Instruksi Desain Custom dari AkuAda & Upload Mockup Produksi</h3>
+                        <p class="text-[11px] text-slate-500">Seluruh koordinasi desain dan persetujuan mockup dijembatani satu pintu melalui Tim Pengadaan AkuAda.</p>
+                    </div>
+                </div>
+                <?php if ($dStatus === 'approved_by_buyer'): ?>
+                    <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 font-extrabold text-[11px]">
+                        ✅ DESAIN DI-ACC (SIAP PRODUKSI MASSAL)
+                    </span>
+                <?php elseif ($dStatus === 'revision_requested'): ?>
+                    <span class="px-3 py-1 rounded-full bg-rose-100 text-rose-900 border border-rose-300 font-extrabold text-[11px] animate-pulse">
+                        🔄 ADA PERMINTAAN REVISI MOCKUP
+                    </span>
+                <?php elseif ($dStatus === 'submitted_to_admin'): ?>
+                    <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[11px]">
+                        ⏳ File Desain Sedang Dikurasi Tim AkuAda
+                    </span>
+                <?php else: ?>
+                    <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-900 border border-blue-300 font-bold text-[11px]">
+                        Status: <?= esc(str_replace('_', ' ', strtoupper($dStatus))) ?>
+                    </span>
+                <?php endif; ?>
+            </div>
+
+            <?php if ($dStatus === 'submitted_to_admin'): ?>
+                <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 flex items-center gap-3">
+                    <span class="material-symbols-outlined text-amber-600 text-[24px]">hourglass_top</span>
+                    <div>
+                        <strong class="font-bold block">File Desain Sedang Diverifikasi oleh Tim AkuAda</strong>
+                        <p class="text-[11px] text-amber-800">Pemesan telah melampirkan detail desain untuk PO ini. Tim AkuAda sedang melakukan pengecekan standar spesifikasi sebelum meneruskannya ke dashboard Anda.</p>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+                    <!-- Kolom Kiri: Instruksi & File Desain Resmi dari AkuAda -->
+                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                        <strong class="text-slate-900 font-bold block">1. Spesifikasi & File Desain Resmi dari Tim AkuAda:</strong>
+                        <p class="text-slate-700 bg-white p-3 rounded-xl border border-slate-200 leading-relaxed">
+                            <?= !empty($order['design_notes_vendor']) ? nl2br(esc($order['design_notes_vendor'])) : (!empty($order['design_specs']) ? nl2br(esc($order['design_specs'])) : 'Ikuti lampiran file desain.') ?>
+                        </p>
+                        <?php if (!empty($order['design_file_vendor'])): ?>
+                            <a href="<?= base_url($order['design_file_vendor']) ?>" target="_blank" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm">
+                                <span class="material-symbols-outlined text-[16px]">download</span>
+                                <span>Unduh File Master Desain dari AkuAda</span>
+                            </a>
+                        <?php endif; ?>
+
+                        <?php if (!empty($order['mockup_notes'])): ?>
+                            <div class="p-3 rounded-xl <?= $dStatus === 'revision_requested' ? 'bg-rose-50 border border-rose-200 text-rose-900' : 'bg-emerald-50 border border-emerald-200 text-emerald-900' ?>">
+                                <strong class="block font-bold text-[11px]">Catatan Status Mockup / Feedback:</strong>
+                                <p class="mt-0.5"><?= nl2br(esc($order['mockup_notes'])) ?></p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Kolom Kanan: Upload Mockup Pra-Produksi ke AkuAda -->
+                    <form action="<?= base_url('vendor/orders/upload-mockup') ?>" method="POST" enctype="multipart/form-data" class="p-4 rounded-2xl bg-blue-50/40 border border-blue-200 space-y-3">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                        <strong class="text-blue-950 font-bold block">2. Kirim Gambar / File Mockup Pra-Produksi ke Tim AkuAda:</strong>
+                        <div>
+                            <label class="block text-slate-700 font-semibold mb-1 text-[11px]">Upload File Preview / Mockup (JPG, PNG, PDF, ZIP):</label>
+                            <input type="file" name="mockup_file" accept=".pdf,.png,.jpg,.jpeg,.webp,.zip" class="w-full bg-white rounded-xl border border-slate-300 px-3 py-1.5 text-[11px] file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:font-bold file:bg-blue-600 file:text-white cursor-pointer">
+                            <?php if (!empty($order['mockup_file_vendor'])): ?>
+                                <a href="<?= base_url($order['mockup_file_vendor']) ?>" target="_blank" class="text-[11px] text-blue-700 font-bold hover:underline inline-block mt-1">✓ File Mockup Anda sudah terunggah (Klik untuk lihat)</a>
+                            <?php endif; ?>
+                        </div>
+                        <div>
+                            <label class="block text-slate-700 font-semibold mb-1 text-[11px]">Keterangan Mockup untuk Tim AkuAda:</label>
+                            <textarea name="mockup_notes" rows="2" placeholder="Contoh: Berikut preview posisi cetak logo dan takaran warna sebelum naik cetak massal..." class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"></textarea>
+                        </div>
+                        <button type="submit" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center gap-1.5 shadow-sm">
+                            <span class="material-symbols-outlined text-[16px]">cloud_upload</span>
+                            <span>Kirim Mockup ke Tim AkuAda</span>
+                        </button>
+                    </form>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
     <!-- KARTU PENCAIRAN DANA VENDOR DARI AKUADA (SIMPLE SETTLEMENT) -->
     <?php
         $fee = (float)($order['total_vendor_fee'] ?? 0);

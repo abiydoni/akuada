@@ -15,7 +15,8 @@
 </div>
 
 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <form action="<?= base_url('rfq/store') ?>" method="POST" class="space-y-6">
+    <form action="<?= base_url('rfq/store') ?>" method="POST" enctype="multipart/form-data" class="space-y-6">
+        <?= csrf_field() ?>
         
         <!-- Section 1: Pengadaan Info -->
         <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4 text-xs">
@@ -51,6 +52,33 @@
                     <label class="block font-bold text-slate-700 mb-1">Catatan Tambahan & Ketentuan Tender:</label>
                     <textarea name="notes" rows="3" placeholder="Sebutkan ketentuan garansi, SLA perbaikan on-site, sertifikasi TKDN yang diperlukan, atau simulasi tempo pembayaran (TOP) yang diajukan." 
                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600 focus:ring-2 focus:ring-purple-100"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 1b: Lampiran Desain & Spesifikasi Custom (Dikurasi AkuAda) -->
+        <div class="bg-white rounded-2xl p-6 border border-purple-200 shadow-sm space-y-4 text-xs">
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-purple-600">palette</span>
+                    <h2 class="text-sm font-bold text-slate-800">Lampiran Desain / Blueprint & Spesifikasi Barang Custom (Opsional)</h2>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[13px]">shield_lock</span> Diverifikasi Tim AkuAda Sebelum ke Vendor
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Upload File Desain / Gambar Teknis / Logo:</label>
+                    <input type="file" name="design_file" accept=".pdf,.png,.jpg,.jpeg,.webp,.zip,.rar,.ai,.cdr,.psd,.svg"
+                           class="w-full px-3.5 py-2 rounded-xl border border-slate-300 bg-slate-50 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-purple-600 file:text-white hover:file:bg-purple-700 cursor-pointer">
+                    <p class="text-[10px] text-slate-400 mt-1">Format: PDF, PNG, JPG, ZIP, AI, CDR (Maks. 10MB). File akan dicek Admin AkuAda terlebih dahulu sebelum diteruskan ke vendor.</p>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Rincian Spesifikasi Desain (Dimensi, Warna, Material):</label>
+                    <textarea name="design_specs" rows="2" placeholder="Contoh: Ukuran kemasan 30x20x15cm, cetak offset full color 4 sisi, laminasi doff, ketebalan corrugated B-Flute..."
+                              class="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:border-purple-600 focus:ring-2 focus:ring-purple-100"></textarea>
                 </div>
             </div>
         </div>

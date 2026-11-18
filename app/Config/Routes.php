@@ -92,6 +92,8 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->post('orders/confirm-buyer-payment', 'AdminController::confirmBuyerPaymentDirect');
     $routes->post('orders/reject-buyer-payment', 'AdminController::rejectBuyerPaymentDirect');
     $routes->post('orders/payout-vendor-direct', 'AdminController::payoutVendorDirect');
+    $routes->post('orders/forward-design', 'AdminController::forwardDesignToVendor');
+    $routes->post('orders/forward-mockup', 'AdminController::forwardMockupToBuyer');
     $routes->get('orders/bast/(:num)', 'AdminController::bast/$1');
     $routes->get('orders/tax-invoice/(:num)', 'AdminController::taxInvoice/$1');
     $routes->get('chat', 'AdminController::chatCenter');
@@ -102,6 +104,7 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->get('rfqs', 'AdminController::rfqs');
     $routes->get('rfqs/(:num)', 'AdminController::rfqDetail/$1');
     $routes->post('rfqs/update-status', 'AdminController::updateRfqStatus');
+    $routes->post('rfqs/forward-design', 'AdminController::forwardRfqDesignToVendor');
 
     // 11. Users Management (Admin, Vendor, Customer Logins)
     $routes->get('users', 'AdminController::users');
@@ -144,6 +147,7 @@ $routes->group('vendor', ['filter' => 'auth'], function ($routes) {
     $routes->get('orders/bast/(:num)', 'VendorController::bast/$1');
     $routes->get('orders/tax-invoice/(:num)', 'VendorController::taxInvoice/$1');
     $routes->post('orders/update-shipping', 'VendorController::updateShipping');
+    $routes->post('orders/upload-mockup', 'VendorController::uploadDesignMockup');
     $routes->post('orders/review-reply', 'VendorController::replyReview');
     $routes->post('orders/return-respond', 'VendorController::respondReturn');
     $routes->get('chat', 'VendorController::chatCenter');
@@ -179,6 +183,8 @@ $routes->group('customer', ['filter' => 'auth'], function ($routes) {
     $routes->post('orders/sign-bast', 'CustomerController::signBast');
     $routes->post('orders/review', 'CustomerController::submitReview');
     $routes->post('orders/return-request', 'CustomerController::requestReturn');
+    $routes->post('orders/upload-design', 'CustomerController::uploadOrderDesign');
+    $routes->post('orders/respond-mockup', 'CustomerController::respondDesignMockup');
     $routes->get('chat', 'CustomerController::chatCenter');
     $routes->get('rfqs', 'CustomerController::rfqs');
     $routes->get('rfqs/accept/(:num)', 'CustomerController::acceptQuote/$1');

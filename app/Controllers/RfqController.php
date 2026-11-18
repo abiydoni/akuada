@@ -55,6 +55,24 @@ class RfqController extends BaseController
         $vendorId = $this->request->getPost('vendor_company_id') ?: null;
         $notes = $this->request->getPost('notes');
         $targetDate = $this->request->getPost('target_delivery_date') ?: date('Y-m-d', strtotime('+14 days'));
+        $designSpecs = trim((string)$this->request->getPost('design_specs'));
+
+        $designFileBuyer = null;
+        $fileDesign = $this->request->getFile('design_file');
+        if ($fileDesign && $fileDesign->isValid() && !$fileDesign->hasMoved()) {
+            $ext = strtolower($fileDesign->getClientExtension());
+            $allowedExts = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'zip', 'rar', 'ai', 'cdr', 'psd', 'svg'];
+            if (in_array($ext, $allowedExts)) {
+                $uploadDir = FCPATH . 'uploads/designs';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0775, true);
+                }
+                $newFileName = 'design_rfq_' . date('YmdHis') . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                $fileDesign->move($uploadDir, $newFileName);
+                $designFileBuyer = 'uploads/designs/' . $newFileName;
+            }
+        }
+        $designStatus = (!empty($designSpecs) || !empty($designFileBuyer)) ? 'submitted_to_admin' : 'none';
         
         $itemNames = $this->request->getPost('item_name') ?? [];
         $qtys = $this->request->getPost('qty') ?? [];
@@ -82,6 +100,9 @@ class RfqController extends BaseController
             'target_delivery_date' => $targetDate,
             'status'               => 'submitted',
             'total_estimate'       => $totalEstimate,
+            'design_file_buyer'    => $designFileBuyer,
+            'design_specs'         => $designSpecs ?: null,
+            'design_status'        => $designStatus,
             'created_at'           => $now,
             'updated_at'           => $now,
         ]);
