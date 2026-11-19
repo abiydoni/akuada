@@ -62,6 +62,13 @@
                         <a href="<?= base_url('vendor/orders') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'vendor/orders') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">local_shipping</span> Pesanan PO & BAST
                         </a>
+                        <a href="<?= base_url('vendor/deliveries') ?>" class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'vendor/deliveries') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
+                            <div class="flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-[18px]">two_wheeler</span>
+                                <span>Pengiriman Kurir HP</span>
+                            </div>
+                            <span class="px-1.5 py-0.2 rounded-full text-[9px] font-bold <?= str_contains(current_url(), 'vendor/deliveries') ? 'bg-blue-700 text-white' : 'bg-emerald-100 text-emerald-800' ?>">OTW</span>
+                        </a>
                         <a href="<?= base_url('vendor/settlements') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'vendor/settlements') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">payments</span> Piutang & Pencairan Dana
                         </a>

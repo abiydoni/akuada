@@ -39,6 +39,10 @@ $routes->group('auth', function ($routes) {
     $routes->get('switch-role/(:segment)', 'AuthController::switchRole/$1');
 });
 
+// 4b. Akses Khusus HP Kurir / Driver Armada Vendor (Berbasis Token Tanpa Perlu Login)
+$routes->get('delivery/(:segment)', 'DeliveryController::mobileView/$1');
+$routes->post('delivery/update/(:segment)', 'DeliveryController::mobileUpdate/$1');
+
 // 5. Dashboard Admin (Platform Superadmin)
 $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->get('/', 'AdminController::dashboard');
@@ -141,6 +145,8 @@ $routes->group('vendor', ['filter' => 'auth'], function ($routes) {
     $routes->get('/', 'VendorController::dashboard');
     $routes->get('dashboard', 'VendorController::dashboard');
     $routes->get('orders', 'VendorController::orders');
+    $routes->get('deliveries', 'VendorController::deliveries');
+    $routes->post('orders/assign-driver', 'VendorController::assignDriver');
     $routes->get('orders/(:num)', 'VendorController::orderDetail/$1');
     $routes->get('orders/vendor-invoice/(:num)', 'VendorController::vendorInvoice/$1');
     $routes->get('orders/invoice/(:num)', 'VendorController::vendorInvoice/$1');

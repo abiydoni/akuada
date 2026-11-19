@@ -515,6 +515,78 @@
                     </div>
                 </div>
             <?php else: ?>
+                <!-- Card Khusus: Pengantaran Langsung Armada Vendor / HP Driver -->
+                <?php
+                    $token = $order['delivery_token'] ?? '';
+                    $driverLink = !empty($token) ? base_url('delivery/' . $token) : '';
+                    $cleanDriverPhone = preg_replace('/[^0-9]/', '', (string)($order['driver_phone'] ?? ''));
+                    $waDriverPhone = str_starts_with($cleanDriverPhone, '0') ? ('62' . substr($cleanDriverPhone, 1)) : $cleanDriverPhone;
+                    $waDriverMsg = "Halo " . ($order['driver_name'] ?: 'Driver') . ", berikut link update pengiriman untuk PO *" . ($order['po_number'] ?? $order['order_number']) . "* tujuan *" . ($order['buyer_name'] ?? '') . "*:\n\n" . $driverLink . "\n\nSilakan klik link di atas saat berangkat (OTW), saat tiba di lokasi, dan upload foto serah terima barang.";
+                ?>
+                <div class="bg-gradient-to-br from-slate-900 to-blue-950 text-white p-5 rounded-2xl shadow-sm border border-blue-900 space-y-4">
+                    <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-blue-400">two_wheeler</span>
+                            <h3 class="font-extrabold text-xs text-white uppercase tracking-wider">Akses HP Kurir / Driver Armada Vendor</h3>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-500/30">
+                            Akses Langsung HP
+                        </span>
+                    </div>
+
+                    <p class="text-xs text-blue-200 leading-relaxed">
+                        Khusus pengantaran sendiri oleh armada vendor, bagikan tautan ini ke pengirim. Driver dapat memperbarui status OTW, Tiba di Lokasi, dan memotret bukti serah terima langsung dari HP tanpa perlu login.
+                    </p>
+
+                    <div class="p-3 rounded-xl bg-white/5 border border-white/10 grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <span class="text-[10px] text-slate-400 block">Nama Driver:</span>
+                            <strong class="text-white"><?= esc($order['driver_name'] ?: 'Belum ditentukan') ?></strong>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-400 block">No. Plat Kendaraan:</span>
+                            <strong class="font-mono text-white"><?= esc($order['vehicle_plate'] ?: '-') ?></strong>
+                        </div>
+                        <div class="col-span-2">
+                            <span class="text-[10px] text-slate-400 block">No. WhatsApp Driver:</span>
+                            <span class="font-mono text-blue-300"><?= esc($order['driver_phone'] ?: '-') ?></span>
+                        </div>
+                        <?php if (!empty($order['delivery_proof_photo'])): ?>
+                            <div class="col-span-2 pt-2 border-t border-white/10 flex items-center justify-between">
+                                <span class="text-emerald-400 font-bold text-[11px] flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[15px]">photo_camera</span>
+                                    Foto Bukti Serah Terima Tersedia
+                                </span>
+                                <a href="<?= base_url($order['delivery_proof_photo']) ?>" target="_blank" class="px-2.5 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[10px] hover:bg-emerald-600 transition">
+                                    Lihat Bukti Foto
+                                </a>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <a href="<?= $driverLink ?>" target="_blank" class="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                            <span class="material-symbols-outlined text-[16px]">smartphone</span>
+                            <span>Buka di HP Kurir</span>
+                        </a>
+                        <button type="button" onclick="navigator.clipboard.writeText('<?= $driverLink ?>'); alert('Tautan HP Kurir berhasil disalin!');" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center justify-center gap-1.5 border border-white/20 transition">
+                            <span class="material-symbols-outlined text-[16px]">content_copy</span>
+                            <span>Salin Link HP</span>
+                        </button>
+                        <?php if (!empty($waDriverPhone)): ?>
+                            <a href="https://api.whatsapp.com/send?phone=<?= $waDriverPhone ?>&text=<?= urlencode($waDriverMsg) ?>" target="_blank" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                                <span class="material-symbols-outlined text-[16px]">chat</span>
+                                <span>Kirim ke WA Driver</span>
+                            </a>
+                        <?php else: ?>
+                            <a href="https://api.whatsapp.com/send?text=<?= urlencode($waDriverMsg) ?>" target="_blank" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                                <span class="material-symbols-outlined text-[16px]">share</span>
+                                <span>Bagikan ke WA</span>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
                 <!-- Form Update Shipping (Aktif Selama Belum Selesai oleh Buyer) -->
                 <div class="bg-white p-6 rounded-2xl border border-blue-200 shadow-sm space-y-4">
                     <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
@@ -565,6 +637,28 @@
                         <div>
                             <label class="block font-bold text-slate-700 mb-1">Catatan Pengiriman / Ekspedisi / Armada:</label>
                             <textarea name="status_notes" rows="2" placeholder="Contoh: Barang dikirim via armada logistik internal / ekspedisi, no resi: JNE-1234567, estimasi tiba pukul 14:00 WIB." class="w-full px-3 py-2 rounded-xl border border-slate-300"></textarea>
+                        </div>
+
+                        <!-- Opsi Driver Armada Sendiri -->
+                        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                            <span class="text-xs font-bold text-slate-800 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[16px] text-blue-600">two_wheeler</span>
+                                <span>Informasi Pengemudi / Kurir Vendor (Khusus Diantar Sendiri):</span>
+                            </span>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Nama Driver:</label>
+                                    <input type="text" name="driver_name" value="<?= esc($order['driver_name'] ?? '') ?>" placeholder="Nama pengemudi" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">No. WA Driver:</label>
+                                    <input type="tel" name="driver_phone" value="<?= esc($order['driver_phone'] ?? '') ?>" placeholder="08123456789" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-mono">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">No. Plat Kendaraan:</label>
+                                    <input type="text" name="vehicle_plate" value="<?= esc($order['vehicle_plate'] ?? '') ?>" placeholder="B 1234 ABC" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-mono uppercase">
+                                </div>
+                            </div>
                         </div>
 
                         <button type="submit" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition flex items-center justify-center gap-1.5 shadow-sm">

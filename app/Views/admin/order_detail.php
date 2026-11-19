@@ -341,6 +341,58 @@
         </div>
     </div>
 
+    <?php if (!empty($order['driver_name']) || !empty($order['delivery_proof_photo']) || !empty($order['delivery_token'])): ?>
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 space-y-3 text-xs">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-blue-600">two_wheeler</span>
+                    <h3 class="font-bold text-slate-900 uppercase tracking-wide">Pengiriman Langsung Armada Vendor</h3>
+                </div>
+                <?php if (!empty($order['delivery_token'])): ?>
+                    <a href="<?= base_url('delivery/' . $order['delivery_token']) ?>" target="_blank" class="text-blue-600 font-bold hover:underline flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">smartphone</span>
+                        <span>Buka Tampilan HP Driver</span>
+                    </a>
+                <?php endif; ?>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div>
+                    <span class="text-slate-400 text-[11px] block">Driver / Kurir:</span>
+                    <strong class="text-slate-800"><?= esc($order['driver_name'] ?: 'Belum diisi driver') ?></strong>
+                    <?php if (!empty($order['driver_phone'])): ?>
+                        <div class="text-[11px] text-slate-500 font-mono"><?= esc($order['driver_phone']) ?></div>
+                    <?php endif; ?>
+                </div>
+
+                <div>
+                    <span class="text-slate-400 text-[11px] block">Plat Kendaraan:</span>
+                    <strong class="font-mono text-slate-800"><?= esc($order['vehicle_plate'] ?: '-') ?></strong>
+                </div>
+
+                <div>
+                    <span class="text-slate-400 text-[11px] block">Status Pengantaran:</span>
+                    <span class="font-bold text-blue-800"><?= esc(ucfirst($order['delivery_status_detail'] ?? ($order['order_status'] === 'delivered' ? 'Tuntas' : 'On The Way'))) ?></span>
+                    <?php if (!empty($order['delivered_at'])): ?>
+                        <div class="text-[10px] text-slate-400"><?= date('d M Y, H:i', strtotime($order['delivered_at'])) ?> WIB</div>
+                    <?php endif; ?>
+                </div>
+
+                <div>
+                    <span class="text-slate-400 text-[11px] block">Foto Bukti (POD):</span>
+                    <?php if (!empty($order['delivery_proof_photo'])): ?>
+                        <a href="<?= base_url($order['delivery_proof_photo']) ?>" target="_blank" class="inline-flex items-center gap-1 font-bold text-emerald-700 hover:underline">
+                            <span class="material-symbols-outlined text-[15px]">photo</span>
+                            <span>Lihat Foto Serah Terima</span>
+                        </a>
+                    <?php else: ?>
+                        <span class="text-slate-400 italic">Belum diunggah</span>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <!-- 5. Order Items Table -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6 space-y-4">
         <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">

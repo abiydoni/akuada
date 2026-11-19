@@ -502,6 +502,79 @@
         </div>
     <?php endif; ?>
 
+    <!-- Info Driver & Armada Pengantaran Vendor -->
+    <?php if (!empty($order['driver_name']) || !empty($order['delivery_proof_photo']) || !empty($order['delivery_status_detail'])): ?>
+        <div class="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-blue-600">two_wheeler</span>
+                    <h3 class="font-bold text-xs text-slate-900 uppercase tracking-wide">Informasi Pengiriman Langsung Armada Vendor</h3>
+                </div>
+                <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 text-[10px] font-bold border border-blue-200">
+                    Armada Vendor
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div>
+                    <span class="text-slate-400 text-[11px] block">Pengemudi / Driver:</span>
+                    <strong class="text-slate-900"><?= esc($order['driver_name'] ?? 'Kurir Armada') ?></strong>
+                    <?php if (!empty($order['driver_phone'])): ?>
+                        <div class="text-[11px] text-blue-700 font-mono mt-0.5">
+                            <a href="https://wa.me/<?= preg_replace('/[^0-9]/', '', (string)$order['driver_phone']) ?>" target="_blank" class="hover:underline flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[13px] text-emerald-600">chat</span>
+                                <span><?= esc($order['driver_phone']) ?></span>
+                            </a>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <div>
+                    <span class="text-slate-400 text-[11px] block">No. Plat Kendaraan:</span>
+                    <strong class="font-mono text-slate-800"><?= esc($order['vehicle_plate'] ?? '-') ?></strong>
+                </div>
+
+                <div>
+                    <span class="text-slate-400 text-[11px] block">Status Antaran Driver:</span>
+                    <?php if (($order['delivery_status_detail'] ?? '') === 'arrived'): ?>
+                        <span class="text-purple-700 font-bold flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-purple-600 animate-ping"></span>
+                            Kurir Tiba di Lokasi Anda
+                        </span>
+                    <?php elseif ($order['order_status'] === 'delivered'): ?>
+                        <span class="text-emerald-700 font-bold flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">check_circle</span>
+                            Barang Diserahkan & Sampai
+                        </span>
+                    <?php else: ?>
+                        <span class="text-blue-700 font-bold flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">local_shipping</span>
+                            Sedang Dalam Perjalanan (OTW)
+                        </span>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <?php if (!empty($order['delivery_proof_photo'])): ?>
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-emerald-600">image</span>
+                        <div class="text-xs">
+                            <strong class="text-slate-800 block">Foto Bukti Serah Terima (POD) dari Driver</strong>
+                            <span class="text-[10px] text-slate-500">
+                                <?= !empty($order['recipient_name']) ? ('Diterima oleh: ' . esc($order['recipient_name'])) : 'Diambil saat barang tiba di lokasi' ?>
+                            </span>
+                        </div>
+                    </div>
+                    <a href="<?= base_url($order['delivery_proof_photo']) ?>" target="_blank" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[15px]">zoom_in</span>
+                        <span>Lihat Foto Bukti</span>
+                    </a>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
     <!-- 3. Action Card Khusus Buyer: Penerimaan Barang & Pengesahan BAST -->
     <?php if ($order['order_status'] === 'shipped'): ?>
         <div class="p-6 rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10">

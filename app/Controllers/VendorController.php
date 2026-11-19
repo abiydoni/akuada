@@ -76,6 +76,7 @@ class VendorController extends BaseController
     public function orderDetail($id)
     {
         $orderModel = new OrderModel();
+        $orderModel->ensureOrderDeliveryToken((int)$id);
         $order = $orderModel->getOrderWithItems($id);
 
         if (!$order) {
@@ -202,11 +203,35 @@ class VendorController extends BaseController
             'shipping_amount'       => ($shippingAmount !== null && $shippingAmount !== '') ? max(0, (float)$shippingAmount) : 0,
             'updated_at'            => date('Y-m-d H:i:s')
         ];
+
+        // Capture armada vendor / driver details jika diisi di formulir
+        $driverName = trim((string)$this->request->getPost('driver_name'));
+        $driverPhone = trim((string)$this->request->getPost('driver_phone'));
+        $vehiclePlate = trim((string)$this->request->getPost('vehicle_plate'));
+        $deliveryMethod = trim((string)$this->request->getPost('delivery_method'));
+
+        if (!empty($driverName)) {
+            $updateData['driver_name'] = $driverName;
+        }
+        if (!empty($driverPhone)) {
+            $updateData['driver_phone'] = $driverPhone;
+        }
+        if (!empty($vehiclePlate)) {
+            $updateData['vehicle_plate'] = $vehiclePlate;
+        }
+        if (!empty($deliveryMethod)) {
+            $updateData['delivery_method'] = $deliveryMethod;
+        }
+
         if ($status === 'delivered' && empty($order['delivered_at'])) {
             $updateData['delivered_at'] = date('Y-m-d H:i:s');
+            if (!empty($driverName)) {
+                $updateData['delivered_by_name'] = $driverName;
+            }
         }
 
         $orderModel = new OrderModel();
+        $orderModel->ensureOrderDeliveryToken($orderId);
         $orderModel->update($orderId, $updateData);
         sync_orders_with_system_settings();
 
@@ -240,6 +265,107 @@ class VendorController extends BaseController
         }
 
         session()->setFlashdata('success', 'Status pengadaan berhasil diperbarui menjadi: ' . $statusTitle . '!');
+        return redirect()->back();
+    }
+
+    /**
+     * Halaman Khusus Monitoring Pengiriman Armada & Pembagian Link HP Driver
+     */
+    public function deliveries()
+    {
+        $companyId = (int)session('company_id');
+        $orderModel = new OrderModel();
+
+        $builder = $orderModel->select('orders.*, 
+            buyer.company_name as buyer_name, buyer.legal_type as buyer_legal_type, buyer.address as buyer_address, buyer.city as buyer_city, buyer.province as buyer_province, buyer.pic_name as buyer_pic, buyer.pic_phone as buyer_pic_phone')
+                              ->join('companies as buyer', 'buyer.id = orders.customer_company_id', 'left')
+                              ->where('orders.vendor_company_id', $companyId)
+                              ->whereIn('orders.order_status', ['shipped', 'delivered', 'in_production', 'quality_control', 'packaging', 'po_approved', 'po_issued'])
+                              ->orderBy('orders.id', 'DESC');
+
+        $filterStatus = $this->request->getGet('status');
+        if ($filterStatus === 'shipped') {
+            $builder->where('orders.order_status', 'shipped');
+        } elseif ($filterStatus === 'delivered') {
+            $builder->where('orders.order_status', 'delivered');
+        } elseif ($filterStatus === 'preparing') {
+            $builder->whereIn('orders.order_status', ['in_production', 'quality_control', 'packaging', 'po_approved', 'po_issued']);
+        }
+
+        $deliveries = $builder->findAll();
+
+        foreach ($deliveries as &$del) {
+            $del['delivery_token'] = $orderModel->ensureOrderDeliveryToken((int)$del['id']);
+            $del = recalculate_order_from_settings($del);
+        }
+        unset($del);
+
+        // Hitung statistik pengiriman
+        $allOrders = $orderModel->where('vendor_company_id', $companyId)->findAll();
+        $totalActive = 0;
+        $otwCount = 0;
+        $arrivedCount = 0;
+        $deliveredCount = 0;
+
+        foreach ($allOrders as $o) {
+            if (in_array($o['order_status'], ['shipped', 'in_production', 'quality_control', 'packaging', 'po_approved', 'po_issued'])) {
+                $totalActive++;
+            }
+            if ($o['order_status'] === 'shipped') {
+                $otwCount++;
+            }
+            if (($o['delivery_status_detail'] ?? '') === 'arrived') {
+                $arrivedCount++;
+            }
+            if ($o['order_status'] === 'delivered') {
+                $deliveredCount++;
+            }
+        }
+
+        return view('vendor/deliveries', [
+            'title'          => 'Monitoring Pengiriman Kurir Armada & Akses HP - Vendor AkuAda',
+            'deliveries'     => $deliveries,
+            'totalActive'    => $totalActive,
+            'otwCount'       => $otwCount,
+            'arrivedCount'   => $arrivedCount,
+            'deliveredCount' => $deliveredCount,
+            'currentFilter'  => $filterStatus,
+        ]);
+    }
+
+    /**
+     * Penetapan Driver & Kendaraan Armada Pengantaran Sendiri
+     */
+    public function assignDriver()
+    {
+        $orderId = (int)$this->request->getPost('order_id');
+        $companyId = (int)session('company_id');
+
+        $orderModel = new OrderModel();
+        $order = $orderModel->find($orderId);
+
+        if (!$order || $order['vendor_company_id'] != $companyId) {
+            session()->setFlashdata('error', 'Pesanan tidak ditemukan atau hak akses ditolak.');
+            return redirect()->back();
+        }
+
+        $driverName = trim((string)$this->request->getPost('driver_name'));
+        $driverPhone = trim((string)$this->request->getPost('driver_phone'));
+        $vehiclePlate = trim((string)$this->request->getPost('vehicle_plate'));
+        $deliveryMethod = trim((string)$this->request->getPost('delivery_method')) ?: 'vendor_fleet';
+
+        $token = $orderModel->ensureOrderDeliveryToken($orderId);
+
+        $orderModel->update($orderId, [
+            'driver_name'     => $driverName,
+            'driver_phone'    => $driverPhone,
+            'vehicle_plate'   => $vehiclePlate,
+            'delivery_method' => $deliveryMethod,
+            'delivery_token'  => $token,
+            'updated_at'      => date('Y-m-d H:i:s'),
+        ]);
+
+        session()->setFlashdata('success', 'Data driver armada untuk PO ' . ($order['po_number'] ?? $order['order_number']) . ' berhasil disimpan! Link HP kurir siap digunakan.');
         return redirect()->back();
     }
 
