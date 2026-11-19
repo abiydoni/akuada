@@ -27,6 +27,15 @@ $bastNo        = $order['bast_number'] ?: ('BAST/' . strtoupper($appName) . '/' 
 $doNo          = 'DO/' . date('Ym', strtotime($order['created_at'])) . '/' . str_pad($order['id'], 4, '0', STR_PAD_LEFT);
 $poNo          = $order['po_number'] ?? $order['order_number'];
 $isBastSigned  = in_array($order['order_status'], ['bast_signed', 'completed'], true);
+
+// Token & QR Code untuk Akses HP Driver Pengirim
+$deliveryToken = $order['delivery_token'] ?? '';
+if (empty($deliveryToken) && !empty($order['id'])) {
+    $orderModel = new \App\Models\OrderModel();
+    $deliveryToken = $orderModel->ensureOrderDeliveryToken((int)$order['id']);
+}
+$driverDeliveryUrl = base_url('delivery/' . $deliveryToken);
+$qrCodeDriverUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' . urlencode($driverDeliveryUrl);
 ?>
 
     <!-- Top Floating Action Bar -->
@@ -66,11 +75,19 @@ $isBastSigned  = in_array($order['order_status'], ['bast_signed', 'completed'], 
                 </p>
             </div>
 
-            <div class="text-left sm:text-right space-y-1">
-                <span class="px-2.5 py-0.5 rounded bg-slate-900 text-white text-[10px] font-extrabold uppercase tracking-widest">Berita Acara Serah Terima & Surat Jalan</span>
-                <h1 class="text-lg font-black font-mono text-purple-950 pt-1"><?= esc($bastNo) ?></h1>
-                <p class="text-[11px] font-mono text-slate-500">No. Surat Jalan: <strong><?= esc($doNo) ?></strong></p>
-                <p class="text-[11px] font-mono text-slate-500">Ref. Purchase Order: <strong><?= esc($poNo) ?></strong></p>
+            <div class="flex items-start sm:items-center gap-3.5 self-stretch sm:self-auto justify-between sm:justify-end">
+                <div class="text-left sm:text-right space-y-1">
+                    <span class="px-2.5 py-0.5 rounded bg-slate-900 text-white text-[10px] font-extrabold uppercase tracking-widest">Berita Acara Serah Terima & Surat Jalan</span>
+                    <h1 class="text-base sm:text-lg font-black font-mono text-purple-950 pt-0.5"><?= esc($bastNo) ?></h1>
+                    <p class="text-[11px] font-mono text-slate-500">No. Surat Jalan: <strong><?= esc($doNo) ?></strong></p>
+                    <p class="text-[11px] font-mono text-slate-500">Ref. Purchase Order: <strong><?= esc($poNo) ?></strong></p>
+                </div>
+
+                <!-- QR Code Khusus Kurir / Driver HP Tercetak di Surat Jalan -->
+                <div class="p-1.5 bg-white rounded-2xl border-2 border-slate-900 text-center flex flex-col items-center flex-shrink-0 shadow-sm">
+                    <img src="<?= $qrCodeDriverUrl ?>" alt="Scan QR HP Driver" class="w-16 h-16 sm:w-20 sm:h-20 object-contain">
+                    <span class="text-[7.5px] font-black text-slate-900 uppercase tracking-tight mt-0.5">Scan HP Kurir</span>
+                </div>
             </div>
         </div>
 
@@ -197,6 +214,15 @@ $isBastSigned  = in_array($order['order_status'], ['bast_signed', 'completed'], 
                     <span class="text-[10px] text-slate-500"><?= esc(get_system_setting('inv_buyer_default_title', 'Senior Procurement Manager')) ?></span>
                 </div>
             </div>
+        </div>
+
+        <!-- Panduan Pengemudi / Kurir HP Tercetak -->
+        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3 text-[10px] text-slate-600">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[16px] text-blue-600">qr_code_scanner</span>
+                <span><strong>Panduan Driver Pengantar:</strong> Arahkan kamera smartphone ke QR Code di pojok kanan atas lembar ini untuk membuka rute Google Maps, memperbarui status OTW/Tiba, dan mengunggah foto bukti serah terima (POD).</span>
+            </div>
+            <span class="font-mono text-slate-400 font-bold whitespace-nowrap">ID: #<?= esc($order['id']) ?></span>
         </div>
 
         <div class="pt-4 border-t border-slate-200 text-center text-[10px] text-slate-400">
