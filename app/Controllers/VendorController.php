@@ -12,6 +12,7 @@ use App\Models\CompanyModel;
 use App\Models\OrderReviewModel;
 use App\Models\OrderMessageModel;
 use App\Models\OrderReturnModel;
+use App\Models\OrderStatusLogModel;
 use App\Libraries\ProductExcelHelper;
 
 class VendorController extends BaseController
@@ -277,10 +278,10 @@ class VendorController extends BaseController
             }
         }
 
-        $logModel = new \App\Models\OrderStatusLogModel();
+        $logModel = new OrderStatusLogModel();
         $logModel->logStatus($orderId, $status, $statusTitle, $statusNotes, session('user_name') ?? 'Vendor Mitra');
 
-        $msgModel = new \App\Models\OrderMessageModel();
+        $msgModel = new OrderMessageModel();
         if ($status === 'shipped' && ($deliveryMethod === 'expedition' || !empty($trackingNumber))) {
             $msgModel->sendMessage(
                 $orderId,
@@ -497,7 +498,7 @@ class VendorController extends BaseController
                 'updated_at'   => $now,
             ]);
 
-            $logModel = new \App\Models\OrderStatusLogModel();
+            $logModel = new OrderStatusLogModel();
             $logModel->logStatus(
                 $orderId,
                 'replacement_shipped',
@@ -530,7 +531,7 @@ class VendorController extends BaseController
                 'updated_at'   => $now,
             ]);
 
-            $logModel = new \App\Models\OrderStatusLogModel();
+            $logModel = new OrderStatusLogModel();
             $logModel->logStatus(
                 $orderId,
                 'return_completed',
@@ -569,7 +570,7 @@ class VendorController extends BaseController
                 'updated_at'   => $now,
             ]);
 
-            $logModel = new \App\Models\OrderStatusLogModel();
+            $logModel = new OrderStatusLogModel();
             $logModel->logStatus(
                 $orderId,
                 'return_rejected',
@@ -1175,7 +1176,7 @@ class VendorController extends BaseController
         $messageModel = new OrderMessageModel();
         $threads = $messageModel->getConversationsList('vendor', $vendorId);
         // Sembunyikan semua buyer: Vendor hanya berkomunikasi terpusat dengan tim AkuAda
-        $orders = (new \App\Models\OrderModel())->where('vendor_company_id', $vendorId)->orderBy('id', 'DESC')->findAll(30);
+        $orders = (new OrderModel())->where('vendor_company_id', $vendorId)->orderBy('id', 'DESC')->findAll(30);
 
         return view('vendor/chat', [
             'title'   => 'Pusat Pesan & Chat - Mitra Vendor AkuAda',
@@ -1212,7 +1213,7 @@ class VendorController extends BaseController
             'updated_at'           => $now,
         ]);
 
-        $logModel = new \App\Models\OrderStatusLogModel();
+        $logModel = new OrderStatusLogModel();
         $logModel->logStatus(
             $orderId,
             $order['order_status'],
@@ -1265,7 +1266,7 @@ class VendorController extends BaseController
             'updated_at'         => date('Y-m-d H:i:s'),
         ]);
 
-        $logModel = new \App\Models\OrderStatusLogModel();
+        $logModel = new OrderStatusLogModel();
         $logModel->logStatus(
             $orderId,
             $order['order_status'],
