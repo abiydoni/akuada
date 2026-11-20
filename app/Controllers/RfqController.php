@@ -142,4 +142,77 @@ class RfqController extends BaseController
             'rfq'   => $rfq
         ]);
     }
+
+    /**
+     * Download Surat Penawaran Resmi dari RFQ yang diajukan
+     */
+    public function quotation($id)
+    {
+        $rfqModel = new RfqModel();
+        $rfq = $rfqModel->getRfqWithItems($id);
+
+        if (!$rfq) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('RFQ tidak ditemukan');
+        }
+
+        $companyModel = new CompanyModel();
+        $buyer = $companyModel->find($rfq['customer_company_id']);
+        $vendor = $rfq['vendor_company_id'] ? $companyModel->find($rfq['vendor_company_id']) : null;
+
+        $quotationItems = [];
+        $subtotal = 0;
+        $ppnTotal = 0;
+
+        foreach ($rfq['items'] as $item) {
+            $unitPrice = (float)($item['offered_unit_price'] ?? $item['target_unit_price'] ?? 0);
+            $qty = (int)$item['qty'];
+            $itemSubtotal = $unitPrice * $qty;
+            $itemPpn = round($itemSubtotal * (get_ppn_rate() / 100), 2);
+
+            $quotationItems[] = [
+                'product_id'   => $item['product_id'],
+                'name'         => $item['item_name'],
+                'sku'          => 'SKU-RFQ-' . str_pad((string)$item['id'], 4, '0', STR_PAD_LEFT),
+                'brand'        => 'Custom / Standard',
+                'spec_details' => $item['notes'] ?? '',
+                'uom'          => $item['uom'] ?? 'Pcs',
+                'qty'          => $qty,
+                'unit_price'   => $unitPrice,
+                'subtotal'     => $itemSubtotal,
+                'ppn_amount'   => $itemPpn,
+                'vendor_name'  => $vendor['company_name'] ?? 'Mitra Vendor AkuAda',
+                'image_url'    => '',
+            ];
+
+            $subtotal += $itemSubtotal;
+            $ppnTotal += $itemPpn;
+        }
+
+        $shippingAmount = (float)get_system_setting('default_shipping_amount', 0);
+        $grandTotal = $subtotal + $ppnTotal + $shippingAmount;
+
+        $quotationNumber = 'QUO-RFQ/' . date('Ym', strtotime($rfq['created_at'])) . '/' . str_replace('RFQ-', '', $rfq['rfq_number']);
+        $validUntil = date('Y-m-d', strtotime($rfq['created_at'] . ' +14 days'));
+
+        return view('marketplace/quotation', [
+            'title'           => 'Surat Penawaran Harga RFQ #' . $rfq['rfq_number'] . ' - AkuAda B2B',
+            'quotationNumber' => $quotationNumber,
+            'quotationDate'   => date('Y-m-d', strtotime($rfq['created_at'])),
+            'validUntil'      => $validUntil,
+            'rfqRef'          => $rfq['rfq_number'],
+            'items'           => $quotationItems,
+            'subtotal'        => $subtotal,
+            'ppnTotal'        => $ppnTotal,
+            'shippingAmount'  => $shippingAmount,
+            'grandTotal'      => $grandTotal,
+            'buyer'           => [
+                'company_name' => $buyer['company_name'] ?? 'Corporate Buyer',
+                'pic_name'     => $buyer['pic_name'] ?? 'Procurement Officer',
+                'position'     => $buyer['position'] ?? 'Procurement Manager',
+                'phone'        => $buyer['pic_phone'] ?? '-',
+                'email'        => $buyer['email'] ?? '-',
+                'address'      => $buyer['address'] ?? '-',
+            ],
+        ]);
+    }
 }

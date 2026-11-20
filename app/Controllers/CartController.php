@@ -135,6 +135,121 @@ class CartController extends BaseController
         return redirect()->to('/cart');
     }
 
+    /**
+     * Generate & Download Surat Penawaran Harga Resmi (Official B2B Quotation)
+     * Dibuat otomatis berdasarkan item-item yang dipilih oleh Buyer di keranjang.
+     */
+    public function quotation()
+    {
+        $cart = session('cart') ?? [];
+        if (empty($cart)) {
+            session()->setFlashdata('error', 'Keranjang pengadaan Anda masih kosong. Silakan tambahkan barang terlebih dahulu.');
+            return redirect()->to('/cart');
+        }
+
+        // Selected items can come from POST (array selected_items) or GET (comma-separated string or array)
+        $selectedIds = $this->request->getPost('selected_items') ?? $this->request->getGet('items');
+        if (is_string($selectedIds)) {
+            $selectedIds = explode(',', $selectedIds);
+        }
+        $selectedIds = is_array($selectedIds) ? array_map('intval', array_filter($selectedIds)) : [];
+
+        // Filter cart items
+        $quotationItems = [];
+        $subtotal = 0;
+        $ppnTotal = 0;
+
+        $companyModel = new CompanyModel();
+        $productModel = new ProductModel();
+
+        foreach ($cart as $productId => $item) {
+            if (empty($selectedIds) || in_array((int)$productId, $selectedIds, true)) {
+                $vendorName = 'Mitra Pemasok AkuAda';
+                if (!empty($item['vendor_company_id'])) {
+                    $vComp = $companyModel->find($item['vendor_company_id']);
+                    if ($vComp && !empty($vComp['company_name'])) {
+                        $vendorName = $vComp['company_name'];
+                    }
+                }
+
+                $pData = $productModel->find($productId);
+                $brand = $pData['brand'] ?? 'Generic';
+                $spec = $pData['spec_details'] ?? '';
+
+                $itemSubtotal = (float)$item['subtotal'];
+                $itemPpn = round($itemSubtotal * (get_ppn_rate() / 100), 2);
+
+                $quotationItems[] = [
+                    'product_id'   => $productId,
+                    'name'         => $item['name'],
+                    'sku'          => $item['sku'],
+                    'brand'        => $brand,
+                    'spec_details' => $spec,
+                    'uom'          => $item['uom'],
+                    'qty'          => (int)$item['qty'],
+                    'unit_price'   => (float)$item['unit_price'],
+                    'subtotal'     => $itemSubtotal,
+                    'ppn_amount'   => $itemPpn,
+                    'vendor_name'  => $vendorName,
+                    'image_url'    => $item['image_url'] ?? '',
+                ];
+
+                $subtotal += $itemSubtotal;
+                $ppnTotal += $itemPpn;
+            }
+        }
+
+        if (empty($quotationItems)) {
+            session()->setFlashdata('error', 'Pilih minimal satu barang di keranjang untuk membuat Surat Penawaran Resmi.');
+            return redirect()->to('/cart');
+        }
+
+        $shippingAmount = (float)get_system_setting('default_shipping_amount', 0);
+        $grandTotal = $subtotal + $ppnTotal + $shippingAmount;
+
+        // Buyer Info
+        $buyer = null;
+        if (session('is_logged_in') && session('company_id')) {
+            $buyer = $companyModel->find(session('company_id'));
+        }
+
+        $buyerName = $this->request->getPost('buyer_company_name') 
+            ?: ($buyer['company_name'] ?? session('company_name') ?? 'PT Pelanggan Korporat Indonesia');
+        $picName = $this->request->getPost('buyer_pic_name') 
+            ?: ($buyer['pic_name'] ?? session('user_name') ?? 'Tim Procurement & Pengadaan');
+        $picPosition = $this->request->getPost('buyer_position') 
+            ?: ($buyer['position'] ?? 'Procurement Manager');
+        $buyerPhone = $this->request->getPost('buyer_phone') 
+            ?: ($buyer['pic_phone'] ?? '(021) 500-1234');
+        $buyerEmail = $this->request->getPost('buyer_email') 
+            ?: ($buyer['email'] ?? session('user_email') ?? 'procurement@perusahaan.co.id');
+        $buyerAddress = $this->request->getPost('buyer_address') 
+            ?: ($buyer['address'] ?? 'Gedung Perkantoran B2B, Jakarta');
+
+        $quotationNumber = 'QUO/' . date('Ym') . '/' . sprintf('%04d', rand(100, 9999));
+        $validUntil = date('Y-m-d', strtotime('+14 days'));
+
+        return view('marketplace/quotation', [
+            'title'           => 'Surat Penawaran Harga Resmi #' . $quotationNumber . ' - AkuAda B2B',
+            'quotationNumber' => $quotationNumber,
+            'quotationDate'   => date('Y-m-d'),
+            'validUntil'      => $validUntil,
+            'items'           => $quotationItems,
+            'subtotal'        => $subtotal,
+            'ppnTotal'        => $ppnTotal,
+            'shippingAmount'  => $shippingAmount,
+            'grandTotal'      => $grandTotal,
+            'buyer'           => [
+                'company_name' => $buyerName,
+                'pic_name'     => $picName,
+                'position'     => $picPosition,
+                'phone'        => $buyerPhone,
+                'email'        => $buyerEmail,
+                'address'      => $buyerAddress,
+            ],
+        ]);
+    }
+
     public function checkout()
     {
         $cart = session('cart') ?? [];

@@ -18,6 +18,7 @@ $routes->get('cart', 'CartController::index');
 $routes->post('cart/add', 'CartController::add');
 $routes->post('cart/update', 'CartController::update');
 $routes->get('cart/remove/(:num)', 'CartController::remove/$1');
+$routes->match(['get', 'post'], 'cart/quotation', 'CartController::quotation');
 $routes->get('checkout', 'CartController::checkout');
 $routes->post('checkout/process', 'CartController::processCheckout');
 
@@ -26,6 +27,7 @@ $routes->get('rfq', 'RfqController::index');
 $routes->get('rfq/create', 'RfqController::create');
 $routes->post('rfq/store', 'RfqController::store');
 $routes->get('rfq/(:num)', 'RfqController::detail/$1');
+$routes->get('rfq/quotation/(:num)', 'RfqController::quotation/$1');
 
 // 4. Authentication & Quick Role Switcher
 $routes->group('auth', function ($routes) {

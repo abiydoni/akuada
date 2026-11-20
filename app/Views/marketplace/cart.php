@@ -33,16 +33,25 @@
             
             <!-- Left Items Table (8 Cols) -->
             <div class="lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                    <span class="text-xs font-bold text-slate-700">Daftar Barang (<?= count($cart) ?> Item)</span>
+                <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <input type="checkbox" id="selectAllCart" checked onchange="toggleSelectAllCart(this)"
+                               class="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-slate-300 cursor-pointer">
+                        <label for="selectAllCart" class="text-xs font-bold text-slate-700 cursor-pointer select-none">
+                            Pilih Semua Barang (<span id="selectedCountDisplay"><?= count($cart) ?></span>/<?= count($cart) ?>)
+                        </label>
+                    </div>
                     <span class="text-[11px] text-pink-600 font-semibold">*Harga otomatis menyesuaikan tier volume</span>
                 </div>
 
                 <div class="divide-y divide-slate-100">
                     <?php foreach ($cart as $productId => $item): ?>
-                        <div class="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            <!-- Product Info -->
-                            <div class="flex items-start gap-4 flex-1">
+                        <div class="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cart-row" data-subtotal="<?= $item['subtotal'] ?>" data-product-id="<?= $productId ?>">
+                            <!-- Checkbox & Product Info -->
+                            <div class="flex items-start gap-3.5 flex-1">
+                                <input type="checkbox" name="selected_items[]" value="<?= $productId ?>" checked
+                                       class="cart-item-checkbox mt-2 w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-slate-300 cursor-pointer"
+                                       onchange="updateCartSelection()">
                                 <img src="<?= esc($item['image_url']) ?>" alt="<?= esc($item['name']) ?>" class="w-20 h-20 object-cover rounded-xl border border-slate-200 flex-shrink-0">
                                 <div class="space-y-1">
                                     <span class="text-[10px] font-mono text-purple-700 font-bold">SKU: <?= esc($item['sku']) ?></span>
@@ -90,7 +99,7 @@
             </div>
 
             <!-- Right Summary Box (4 Cols) -->
-            <div class="lg:col-span-4 bg-white rounded-2xl p-6 border border-purple-200 shadow-xl shadow-purple-900/5 space-y-5 sticky top-24">
+            <div class="lg:col-span-4 bg-white rounded-2xl p-6 border border-purple-200 shadow-xl shadow-purple-900/5 space-y-4 sticky top-24">
                 <h3 class="text-sm font-bold text-slate-900 pb-3 border-b border-slate-100">Ringkasan Pengadaan PO</h3>
 
                 <div class="space-y-3 text-xs">
@@ -120,14 +129,83 @@
                     <p class="text-purple-700">Dapat dibayar tempo <?= get_min_top_days() ?>-<?= get_max_top_days() ?> hari kalender setelah Berita Acara Serah Terima (BAST) diterbitkan.</p>
                 </div>
 
-                <a href="<?= base_url('checkout') ?>" class="w-full btn-akuada-primary py-3 text-sm flex items-center justify-center gap-2">
+                <!-- Tombol Penerbitan PO / Checkout -->
+                <a href="<?= base_url('checkout') ?>" class="w-full btn-akuada-primary py-3 text-sm flex items-center justify-center gap-2 shadow-md">
                     <span class="material-symbols-outlined text-[20px]">assignment_turned_in</span>
                     <span>Lanjut ke Penerbitan PO & Checkout</span>
                 </a>
+
+                <!-- Tombol Unduh Surat Penawaran Resmi (Quotation PDF) -->
+                <div class="pt-2 border-t border-slate-100 space-y-1.5">
+                    <button type="button" onclick="downloadSelectedQuotation()" 
+                            class="w-full py-2.5 px-4 rounded-xl border-2 border-purple-600 bg-white hover:bg-purple-50 text-purple-800 font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition">
+                        <span class="material-symbols-outlined text-purple-700 text-[18px]">request_quote</span>
+                        <span>📄 Unduh Penawaran Resmi (Quotation)</span>
+                    </button>
+                    <p class="text-[10px] text-slate-400 text-center leading-relaxed">
+                        Cetak surat penawaran harga resmi ber-KOP & bertandatangan untuk approval internal perusahaan Anda.
+                    </p>
+                </div>
+
+                <!-- Hidden Form for Quotation Generation -->
+                <form id="quotationForm" action="<?= base_url('cart/quotation') ?>" method="POST" target="_blank" class="hidden">
+                    <?= csrf_field() ?>
+                    <div id="quotationHiddenInputs"></div>
+                </form>
             </div>
 
         </div>
     <?php endif; ?>
 </div>
+
+<script>
+function toggleSelectAllCart(masterCb) {
+    const itemCbs = document.querySelectorAll('.cart-item-checkbox');
+    itemCbs.forEach(cb => {
+        cb.checked = masterCb.checked;
+    });
+    updateCartSelection();
+}
+
+function updateCartSelection() {
+    const itemCbs = document.querySelectorAll('.cart-item-checkbox');
+    const checkedCbs = document.querySelectorAll('.cart-item-checkbox:checked');
+    const masterCb = document.getElementById('selectAllCart');
+    const countDisplay = document.getElementById('selectedCountDisplay');
+
+    if (countDisplay) {
+        countDisplay.textContent = checkedCbs.length;
+    }
+
+    if (masterCb) {
+        masterCb.checked = (checkedCbs.length === itemCbs.length && itemCbs.length > 0);
+        masterCb.indeterminate = (checkedCbs.length > 0 && checkedCbs.length < itemCbs.length);
+    }
+}
+
+function downloadSelectedQuotation() {
+    const checkedCbs = document.querySelectorAll('.cart-item-checkbox:checked');
+    const form = document.getElementById('quotationForm');
+    const container = document.getElementById('quotationHiddenInputs');
+
+    if (!form || !container) return;
+    container.innerHTML = '';
+
+    if (checkedCbs.length === 0) {
+        alert('Silakan pilih minimal 1 barang di keranjang untuk membuat Surat Penawaran Resmi.');
+        return;
+    }
+
+    checkedCbs.forEach(cb => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_items[]';
+        input.value = cb.value;
+        container.appendChild(input);
+    });
+
+    form.submit();
+}
+</script>
 
 <?= $this->endSection() ?>

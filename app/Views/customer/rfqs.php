@@ -44,7 +44,12 @@
                             Target Serah Terima: <strong><?= date('d M Y', strtotime($rfq['target_delivery_date'])) ?></strong>
                         </p>
                     </div>
-                    <div>
+                    <div class="flex items-center gap-2 self-start sm:self-auto">
+                        <a href="<?= base_url('rfq/quotation/' . $rfq['id']) ?>" target="_blank"
+                           class="px-3 py-1.5 rounded-xl border border-purple-200 bg-white hover:bg-purple-50 text-purple-800 text-[11px] font-bold flex items-center gap-1 shadow-xs transition" title="Unduh Lembar Penawaran Resmi">
+                            <span class="material-symbols-outlined text-[15px] text-purple-600">request_quote</span>
+                            <span>Cetak Penawaran (PDF)</span>
+                        </a>
                         <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider <?= $rfq['status'] === 'approved' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-purple-100 text-purple-800 border border-purple-200' ?>">
                             Status: <?= strtoupper(esc($rfq['status'])) ?>
                         </span>

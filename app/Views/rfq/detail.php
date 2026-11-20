@@ -13,6 +13,10 @@
             <h1 class="text-2xl font-extrabold text-slate-900"><?= esc($rfq['title']) ?></h1>
         </div>
         <div class="flex items-center gap-2">
+            <a href="<?= base_url('rfq/quotation/' . $rfq['id']) ?>" target="_blank" class="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-purple-800 border border-purple-200 text-xs font-bold transition flex items-center gap-1.5 shadow-xs">
+                <span class="material-symbols-outlined text-[16px] text-purple-600">request_quote</span>
+                <span>Cetak / Unduh Penawaran (PDF)</span>
+            </a>
             <span class="px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-purple-100 text-purple-800">
                 Status: <?= esc($rfq['status']) ?>
             </span>
@@ -117,6 +121,17 @@
                 <div class="space-y-1 pt-3 border-t border-slate-100">
                     <span class="text-slate-400 text-[11px] block">Target Serah Terima:</span>
                     <strong class="text-slate-900 block"><?= date('d F Y', strtotime($rfq['target_delivery_date'])) ?></strong>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 space-y-1.5">
+                    <a href="<?= base_url('rfq/quotation/' . $rfq['id']) ?>" target="_blank"
+                       class="w-full py-2.5 px-4 rounded-xl border-2 border-purple-600 bg-purple-50/60 hover:bg-purple-100 text-purple-900 font-extrabold text-xs flex items-center justify-center gap-2 shadow-xs transition">
+                        <span class="material-symbols-outlined text-purple-700 text-[18px]">request_quote</span>
+                        <span>📄 Unduh Dokumen Penawaran Resmi</span>
+                    </a>
+                    <p class="text-[10px] text-slate-400 text-center leading-relaxed">
+                        Dokumen penawaran resmi ber-KOP & bertandatangan untuk approval internal perusahaan.
+                    </p>
                 </div>
             </div>
         </div>
