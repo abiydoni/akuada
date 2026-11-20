@@ -115,6 +115,29 @@ $qrCodeDriverUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&dat
             </div>
         </div>
 
+        <!-- Rincian Metode & Jalur Pengiriman -->
+        <?php 
+            $isExpeditionDoc = (($order['delivery_method'] ?? '') === 'expedition') || !empty($order['tracking_number']);
+        ?>
+        <div class="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px] text-purple-700">local_shipping</span>
+                <span><strong>Metode Pengiriman:</strong> 
+                    <?php if ($isExpeditionDoc): ?>
+                        Ekspedisi / Logistik Kargo: <strong class="text-slate-900"><?= esc($order['courier_name'] ?: 'Ekspedisi') ?></strong> <?= !empty($order['expedition_service']) ? '('.esc($order['expedition_service']).')' : '' ?>
+                    <?php else: ?>
+                        Armada Vendor Sendiri (Driver: <strong class="text-slate-900"><?= esc($order['driver_name'] ?: '-') ?></strong> | Plat: <strong class="font-mono"><?= esc($order['vehicle_plate'] ?: '-') ?></strong>)
+                    <?php endif; ?>
+                </span>
+            </div>
+            <?php if ($isExpeditionDoc && !empty($order['tracking_number'])): ?>
+                <div class="flex items-center gap-2">
+                    <span class="text-slate-500">Nomor Resi / AWB:</span>
+                    <span class="font-mono font-black text-purple-950 px-2 py-0.5 rounded bg-purple-100 border border-purple-200"><?= esc($order['tracking_number']) ?></span>
+                </div>
+            <?php endif; ?>
+        </div>
+
         <!-- Tabel Rincian Barang yang Diserahterimakan -->
         <div class="space-y-2">
             <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">Daftar Pemeriksaan Fisik & Kuantitas Barang yang Diserahterimakan:</h3>
@@ -219,8 +242,8 @@ $qrCodeDriverUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&dat
         <!-- Panduan Pengemudi / Kurir HP Tercetak -->
         <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3 text-[10px] text-slate-600">
             <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-[16px] text-blue-600">qr_code_scanner</span>
-                <span><strong>Panduan Driver Pengantar:</strong> Arahkan kamera smartphone ke QR Code di pojok kanan atas lembar ini untuk membuka rute Google Maps, memperbarui status OTW/Tiba, dan mengunggah foto bukti serah terima (POD).</span>
+                <span class="material-symbols-outlined text-[16px] text-blue-600"><?= $isExpeditionDoc ? 'local_shipping' : 'qr_code_scanner' ?></span>
+                <span><strong>Catatan Logistik:</strong> <?= $isExpeditionDoc ? ('Pengiriman diserahkan ke kurir ekspedisi ' . esc($order['courier_name'] ?: 'Logistik') . (!empty($order['tracking_number']) ? ' dengan No. Resi: ' . esc($order['tracking_number']) : '') . '. Serah terima divalidasi saat barang tiba di lokasi pemesan.') : 'Arahkan kamera smartphone ke QR Code di pojok kanan atas lembar ini untuk membuka rute Google Maps, memperbarui status OTW/Tiba, dan mengunggah foto bukti serah terima (POD).' ?></span>
             </div>
             <span class="font-mono text-slate-400 font-bold whitespace-nowrap">ID: #<?= esc($order['id']) ?></span>
         </div>

@@ -341,7 +341,66 @@
         </div>
     </div>
 
-    <?php if (!empty($order['driver_name']) || !empty($order['delivery_proof_photo']) || !empty($order['delivery_token'])): ?>
+    <?php 
+        $isAdminExpedition = (($order['delivery_method'] ?? '') === 'expedition') || !empty($order['tracking_number']);
+    ?>
+
+    <?php if ($isAdminExpedition): ?>
+        <div class="bg-white rounded-2xl border border-amber-200/90 shadow-sm p-5 space-y-3 text-xs">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-amber-600">local_shipping</span>
+                    <h3 class="font-bold text-slate-900 uppercase tracking-wide">Pengiriman Ekspedisi / Kargo (Resi 3PL)</h3>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[10px] font-bold border border-amber-200">
+                    Ekspedisi Eksternal
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div>
+                    <span class="text-slate-400 text-[11px] block">Kurir / Ekspedisi:</span>
+                    <strong class="text-slate-800 font-bold"><?= esc($order['courier_name'] ?: 'Ekspedisi') ?></strong>
+                    <?php if (!empty($order['expedition_service'])): ?>
+                        <div class="text-[10px] text-amber-800 font-medium"><?= esc($order['expedition_service']) ?></div>
+                    <?php endif; ?>
+                </div>
+
+                <div>
+                    <span class="text-slate-400 text-[11px] block">Nomor Resi / AWB:</span>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                        <strong class="font-mono text-blue-900 font-black text-xs"><?= esc($order['tracking_number'] ?: 'Belum diisi') ?></strong>
+                        <?php if (!empty($order['tracking_number'])): ?>
+                            <button type="button" onclick="navigator.clipboard.writeText('<?= esc($order['tracking_number']) ?>'); alert('Resi disalin: <?= esc($order['tracking_number']) ?>');" class="text-slate-400 hover:text-slate-600" title="Salin">
+                                <span class="material-symbols-outlined text-[14px]">content_copy</span>
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="text-slate-400 text-[11px] block">Waktu Kirim / Diserahkan:</span>
+                    <span class="text-slate-700 font-medium">
+                        <?= !empty($order['shipped_at']) ? (date('d M Y, H:i', strtotime($order['shipped_at'])) . ' WIB') : '-' ?>
+                    </span>
+                </div>
+
+                <div>
+                    <span class="text-slate-400 text-[11px] block">Aksi Lacak Resi:</span>
+                    <?php if (!empty($order['tracking_number'])): ?>
+                        <a href="<?= get_expedition_tracking_url($order['courier_name'] ?? '', $order['tracking_number'] ?? '') ?>" target="_blank" class="inline-flex items-center gap-1 font-bold text-amber-700 hover:text-amber-800 hover:underline">
+                            <span class="material-symbols-outlined text-[15px]">travel_explore</span>
+                            <span>Cek Status di CekResi ↗</span>
+                        </a>
+                    <?php else: ?>
+                        <span class="text-slate-400 italic">Belum ada resi</span>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!$isAdminExpedition && (!empty($order['driver_name']) || !empty($order['delivery_proof_photo']) || !empty($order['delivery_token']))): ?>
         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 space-y-3 text-xs">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <div class="flex items-center gap-2">

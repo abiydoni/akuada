@@ -209,7 +209,22 @@ class VendorController extends BaseController
         $driverPhone = trim((string)$this->request->getPost('driver_phone'));
         $vehiclePlate = trim((string)$this->request->getPost('vehicle_plate'));
         $deliveryMethod = trim((string)$this->request->getPost('delivery_method'));
+        $courierName = trim((string)$this->request->getPost('courier_name'));
+        $trackingNumber = trim((string)$this->request->getPost('tracking_number'));
+        $expeditionService = trim((string)$this->request->getPost('expedition_service'));
 
+        if (!empty($deliveryMethod)) {
+            $updateData['delivery_method'] = $deliveryMethod;
+        }
+        if (!empty($courierName) || $deliveryMethod === 'expedition') {
+            $updateData['courier_name'] = $courierName;
+        }
+        if (!empty($trackingNumber) || $deliveryMethod === 'expedition') {
+            $updateData['tracking_number'] = $trackingNumber;
+        }
+        if (!empty($expeditionService) || $deliveryMethod === 'expedition') {
+            $updateData['expedition_service'] = $expeditionService;
+        }
         if (!empty($driverName)) {
             $updateData['driver_name'] = $driverName;
         }
@@ -219,14 +234,19 @@ class VendorController extends BaseController
         if (!empty($vehiclePlate)) {
             $updateData['vehicle_plate'] = $vehiclePlate;
         }
-        if (!empty($deliveryMethod)) {
-            $updateData['delivery_method'] = $deliveryMethod;
+
+        if ($status === 'shipped') {
+            if (empty($order['shipped_at'])) {
+                $updateData['shipped_at'] = date('Y-m-d H:i:s');
+            }
         }
 
         if ($status === 'delivered' && empty($order['delivered_at'])) {
             $updateData['delivered_at'] = date('Y-m-d H:i:s');
             if (!empty($driverName)) {
                 $updateData['delivered_by_name'] = $driverName;
+            } elseif (!empty($courierName)) {
+                $updateData['delivered_by_name'] = $courierName;
             }
         }
 
@@ -248,13 +268,28 @@ class VendorController extends BaseController
             'cancelled'       => 'Pesanan Dibatalkan',
         ];
         $statusTitle = $statusLabels[$status] ?? ucfirst($status);
-        $statusNotes = $this->request->getPost('status_notes') ?: ('Status pengiriman diperbarui oleh ' . (session('company_name') ?? 'Vendor') . '.');
+        $statusNotes = trim((string)$this->request->getPost('status_notes'));
+        if (empty($statusNotes)) {
+            if ($status === 'shipped' && ($deliveryMethod === 'expedition' || !empty($trackingNumber))) {
+                $statusNotes = 'Pesanan dikirim via Ekspedisi ' . ($courierName ?: 'Ekspedisi') . (!empty($expeditionService) ? ' (' . $expeditionService . ')' : '') . (!empty($trackingNumber) ? ' dengan No. Resi: ' . $trackingNumber : '') . '.';
+            } else {
+                $statusNotes = 'Status pengiriman diperbarui oleh ' . (session('company_name') ?? 'Vendor') . '.';
+            }
+        }
 
         $logModel = new \App\Models\OrderStatusLogModel();
         $logModel->logStatus($orderId, $status, $statusTitle, $statusNotes, session('user_name') ?? 'Vendor Mitra');
 
-        if ($status === 'delivered') {
-            $msgModel = new \App\Models\OrderMessageModel();
+        $msgModel = new \App\Models\OrderMessageModel();
+        if ($status === 'shipped' && ($deliveryMethod === 'expedition' || !empty($trackingNumber))) {
+            $msgModel->sendMessage(
+                $orderId,
+                (int)session('user_id'),
+                session('user_name') ?? 'Vendor Logistik',
+                'vendor',
+                "🚚 Pesanan Anda telah dikirim via Ekspedisi " . ($courierName ?: 'Ekspedisi') . (!empty($expeditionService) ? " ({$expeditionService})" : "") . (!empty($trackingNumber) ? " dengan No. Resi: {$trackingNumber}" : "") . ". Anda dapat melacak posisi resi pengiriman langsung melalui detail pesanan."
+            );
+        } elseif ($status === 'delivered') {
             $msgModel->sendMessage(
                 $orderId,
                 (int)session('user_id'),
@@ -353,19 +388,34 @@ class VendorController extends BaseController
         $driverPhone = trim((string)$this->request->getPost('driver_phone'));
         $vehiclePlate = trim((string)$this->request->getPost('vehicle_plate'));
         $deliveryMethod = trim((string)$this->request->getPost('delivery_method')) ?: 'vendor_fleet';
+        $courierName = trim((string)$this->request->getPost('courier_name'));
+        $trackingNumber = trim((string)$this->request->getPost('tracking_number'));
+        $expeditionService = trim((string)$this->request->getPost('expedition_service'));
 
         $token = $orderModel->ensureOrderDeliveryToken($orderId);
 
-        $orderModel->update($orderId, [
-            'driver_name'     => $driverName,
-            'driver_phone'    => $driverPhone,
-            'vehicle_plate'   => $vehiclePlate,
-            'delivery_method' => $deliveryMethod,
-            'delivery_token'  => $token,
-            'updated_at'      => date('Y-m-d H:i:s'),
-        ]);
+        $updateFields = [
+            'delivery_method'    => $deliveryMethod,
+            'driver_name'        => $driverName,
+            'driver_phone'       => $driverPhone,
+            'vehicle_plate'      => $vehiclePlate,
+            'courier_name'       => $courierName,
+            'tracking_number'    => $trackingNumber,
+            'expedition_service' => $expeditionService,
+            'delivery_token'     => $token,
+            'updated_at'         => date('Y-m-d H:i:s'),
+        ];
+        if (!empty($trackingNumber) && empty($order['shipped_at'])) {
+            $updateFields['shipped_at'] = date('Y-m-d H:i:s');
+        }
 
-        session()->setFlashdata('success', 'Data driver armada untuk PO ' . ($order['po_number'] ?? $order['order_number']) . ' berhasil disimpan! Link HP kurir siap digunakan.');
+        $orderModel->update($orderId, $updateFields);
+
+        $msg = ($deliveryMethod === 'expedition')
+            ? ('Data pengiriman ekspedisi (' . ($courierName ?: 'Ekspedisi') . (!empty($trackingNumber) ? ' - Resi: ' . $trackingNumber : '') . ') untuk PO ' . ($order['po_number'] ?? $order['order_number']) . ' berhasil disimpan!')
+            : ('Data driver armada untuk PO ' . ($order['po_number'] ?? $order['order_number']) . ' berhasil disimpan! Link HP kurir siap digunakan.');
+
+        session()->setFlashdata('success', $msg);
         return redirect()->back();
     }
 

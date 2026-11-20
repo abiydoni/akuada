@@ -24,7 +24,8 @@ class OrderModel extends Model
         'design_status', 'mockup_file_vendor', 'mockup_file_buyer', 'mockup_notes',
         'delivery_method', 'delivery_token', 'driver_name', 'driver_phone', 'vehicle_plate',
         'delivery_status_detail', 'delivery_proof_photo', 'recipient_name', 'recipient_phone',
-        'delivery_latitude', 'delivery_longitude'
+        'delivery_latitude', 'delivery_longitude',
+        'courier_name', 'tracking_number', 'expedition_service', 'shipped_at'
     ];
     protected $useTimestamps = true;
 
@@ -105,6 +106,15 @@ class OrderModel extends Model
                     ADD INDEX `idx_delivery_token` (`delivery_token`)
                 ");
                 $this->db->query("UPDATE `orders` SET `delivery_token` = MD5(CONCAT('akuada_deliv_', id, '_', UNIX_TIMESTAMP(IFNULL(created_at, NOW())))) WHERE `delivery_token` IS NULL OR `delivery_token` = ''");
+            }
+            if (!$this->db->fieldExists('tracking_number', 'orders')) {
+                $this->db->query("ALTER TABLE `orders`
+                    ADD COLUMN `courier_name` VARCHAR(100) NULL DEFAULT NULL,
+                    ADD COLUMN `tracking_number` VARCHAR(100) NULL DEFAULT NULL,
+                    ADD COLUMN `expedition_service` VARCHAR(100) NULL DEFAULT NULL,
+                    ADD COLUMN `shipped_at` DATETIME NULL DEFAULT NULL,
+                    ADD INDEX `idx_tracking_number` (`tracking_number`)
+                ");
             }
             if (function_exists('sync_orders_with_system_settings')) {
                 sync_orders_with_system_settings();

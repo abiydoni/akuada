@@ -176,80 +176,152 @@
                                 </div>
                             </div>
 
-                            <!-- Kolom 2: Info Driver Armada -->
-                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 min-w-[280px] lg:max-w-[320px] space-y-2 text-xs">
-                                <div class="flex items-center justify-between border-b border-slate-200 pb-1.5">
-                                    <div class="flex items-center gap-1.5 font-bold text-slate-800 text-[11px]">
-                                        <span class="material-symbols-outlined text-[16px] text-blue-600">badge</span>
-                                        <span>Data Driver Armada</span>
+                            <?php
+                                $isExpedition = (($del['delivery_method'] ?? '') === 'expedition') || !empty($del['tracking_number']);
+                            ?>
+                            <?php if ($isExpedition): ?>
+                                <!-- Kolom 2: Info Ekspedisi / Kargo -->
+                                <div class="p-3.5 rounded-xl bg-amber-50/50 border border-amber-200 min-w-[280px] lg:max-w-[320px] space-y-2 text-xs">
+                                    <div class="flex items-center justify-between border-b border-amber-200 pb-1.5">
+                                        <div class="flex items-center gap-1.5 font-bold text-amber-900 text-[11px]">
+                                            <span class="material-symbols-outlined text-[16px] text-amber-600">local_shipping</span>
+                                            <span>Ekspedisi / Kargo</span>
+                                        </div>
+                                        <button type="button" 
+                                                onclick="openAssignDriverModal(<?= $del['id'] ?>, '<?= esc($del['po_number'] ?? $del['order_number']) ?>', '', '', '', 'expedition', '<?= esc($del['courier_name'] ?? '') ?>', '<?= esc($del['tracking_number'] ?? '') ?>', '<?= esc($del['expedition_service'] ?? '') ?>')"
+                                                class="text-amber-800 hover:text-amber-950 font-bold text-[10px] flex items-center gap-0.5">
+                                            <span class="material-symbols-outlined text-[13px]">edit</span>
+                                            <span>Ubah Resi</span>
+                                        </button>
                                     </div>
+
+                                    <div class="space-y-1.5 text-[11px]">
+                                        <div>
+                                            <span class="text-slate-500 text-[10px] block">Kurir / Ekspedisi:</span>
+                                            <strong class="text-slate-900 font-bold text-xs"><?= esc($del['courier_name'] ?: 'Ekspedisi Logistik') ?></strong>
+                                            <?php if (!empty($del['expedition_service'])): ?>
+                                                <span class="text-[10px] text-amber-800 block font-semibold"><?= esc($del['expedition_service']) ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div>
+                                            <span class="text-slate-500 text-[10px] block">Nomor Resi / AWB:</span>
+                                            <strong class="font-mono text-blue-900 font-extrabold text-xs block"><?= esc($del['tracking_number'] ?: 'Belum diinput') ?></strong>
+                                        </div>
+                                        <?php if (!empty($del['shipped_at'])): ?>
+                                            <div>
+                                                <span class="text-slate-500 text-[10px] block">Waktu Kirim:</span>
+                                                <span class="text-slate-600 font-mono text-[10px]"><?= date('d M Y, H:i', strtotime($del['shipped_at'])) ?> WIB</span>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+
+                                <!-- Kolom 3: Aksi Lacak Resi Ekspedisi -->
+                                <div class="flex flex-col sm:flex-row lg:flex-col gap-1.5 min-w-[200px] justify-center">
+                                    <?php if (!empty($del['tracking_number'])): ?>
+                                        <a href="<?= get_expedition_tracking_url($del['courier_name'] ?? '', $del['tracking_number'] ?? '') ?>" target="_blank" 
+                                           class="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
+                                            <span class="material-symbols-outlined text-[16px]">travel_explore</span>
+                                            <span>Lacak di CekResi ↗</span>
+                                        </a>
+
+                                        <button type="button" 
+                                                onclick="navigator.clipboard.writeText('<?= esc($del['tracking_number']) ?>'); alert('Nomor Resi <?= esc($del['tracking_number']) ?> berhasil disalin ke clipboard!');" 
+                                                class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-300 transition">
+                                            <span class="material-symbols-outlined text-[16px] text-slate-600">content_copy</span>
+                                            <span>Salin Resi</span>
+                                        </button>
+                                    <?php else: ?>
+                                        <button type="button" 
+                                                onclick="openAssignDriverModal(<?= $del['id'] ?>, '<?= esc($del['po_number'] ?? $del['order_number']) ?>', '', '', '', 'expedition', '<?= esc($del['courier_name'] ?? '') ?>', '', '')" 
+                                                class="px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
+                                            <span class="material-symbols-outlined text-[16px]">add_circle</span>
+                                            <span>Input Nomor Resi</span>
+                                        </button>
+                                    <?php endif; ?>
+
+                                    <a href="<?= base_url('vendor/orders/' . $del['id']) ?>" 
+                                       class="px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold text-[11px] flex items-center justify-center gap-1 transition">
+                                        <span class="material-symbols-outlined text-[15px]">visibility</span>
+                                        <span>Detail Pesanan</span>
+                                    </a>
+                                </div>
+                            <?php else: ?>
+                                <!-- Kolom 2: Info Driver Armada -->
+                                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 min-w-[280px] lg:max-w-[320px] space-y-2 text-xs">
+                                    <div class="flex items-center justify-between border-b border-slate-200 pb-1.5">
+                                        <div class="flex items-center gap-1.5 font-bold text-slate-800 text-[11px]">
+                                            <span class="material-symbols-outlined text-[16px] text-blue-600">badge</span>
+                                            <span>Data Driver Armada</span>
+                                        </div>
+                                        <button type="button" 
+                                                onclick="openAssignDriverModal(<?= $del['id'] ?>, '<?= esc($del['po_number'] ?? $del['order_number']) ?>', '<?= esc($del['driver_name'] ?? '') ?>', '<?= esc($del['driver_phone'] ?? '') ?>', '<?= esc($del['vehicle_plate'] ?? '') ?>', '<?= esc($del['delivery_method'] ?? 'vendor_fleet') ?>', '', '', '')"
+                                                class="text-blue-600 hover:text-blue-800 font-bold text-[10px] flex items-center gap-0.5">
+                                            <span class="material-symbols-outlined text-[13px]">edit</span>
+                                            <span>Ubah Driver</span>
+                                        </button>
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-1.5 text-[11px]">
+                                        <div>
+                                            <span class="text-slate-400 text-[10px] block">Nama Driver:</span>
+                                            <strong class="text-slate-800"><?= esc($del['driver_name'] ?: 'Belum ditentukan') ?></strong>
+                                        </div>
+                                        <div>
+                                            <span class="text-slate-400 text-[10px] block">No. Plat:</span>
+                                            <strong class="font-mono text-slate-800"><?= esc($del['vehicle_plate'] ?: '-') ?></strong>
+                                        </div>
+                                        <div class="col-span-2">
+                                            <span class="text-slate-400 text-[10px] block">No. WhatsApp Driver:</span>
+                                            <span class="font-mono text-slate-700"><?= esc($del['driver_phone'] ?: '-') ?></span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Foto Bukti Pengiriman jika ada -->
+                                    <?php if (!empty($del['delivery_proof_photo'])): ?>
+                                        <div class="pt-1.5 border-t border-slate-200 flex items-center justify-between">
+                                            <span class="text-[10px] font-bold text-emerald-700 flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-[14px]">photo_camera</span>
+                                                Foto Bukti Tersedia
+                                            </span>
+                                            <a href="<?= base_url($del['delivery_proof_photo']) ?>" target="_blank" class="px-2 py-0.5 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold text-[10px] transition">
+                                                Buka Foto
+                                            </a>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+
+                                <!-- Kolom 3: Aksi Akses HP Kurir & WA -->
+                                <div class="flex flex-col sm:flex-row lg:flex-col gap-1.5 min-w-[200px] justify-center">
+                                    <a href="<?= $driverLink ?>" target="_blank" 
+                                       class="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
+                                        <span class="material-symbols-outlined text-[16px]">smartphone</span>
+                                        <span>Buka Tampilan HP</span>
+                                    </a>
+
                                     <button type="button" 
-                                            onclick="openAssignDriverModal(<?= $del['id'] ?>, '<?= esc($del['po_number'] ?? $del['order_number']) ?>', '<?= esc($del['driver_name'] ?? '') ?>', '<?= esc($del['driver_phone'] ?? '') ?>', '<?= esc($del['vehicle_plate'] ?? '') ?>', '<?= esc($del['delivery_method'] ?? 'vendor_fleet') ?>')"
-                                            class="text-blue-600 hover:text-blue-800 font-bold text-[10px] flex items-center gap-0.5">
-                                        <span class="material-symbols-outlined text-[13px]">edit</span>
-                                        <span>Ubah Driver</span>
+                                            onclick="copyDriverLink('<?= $driverLink ?>')" 
+                                            class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-300 transition">
+                                        <span class="material-symbols-outlined text-[16px] text-slate-600">content_copy</span>
+                                        <span>Salin Link HP</span>
+                                    </button>
+
+                                    <?php if (!empty($waDriverPhone)): ?>
+                                        <a href="https://api.whatsapp.com/send?phone=<?= $waDriverPhone ?>&text=<?= urlencode($waDriverMsg) ?>" target="_blank"
+                                           class="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-emerald-300 transition">
+                                            <span class="material-symbols-outlined text-[16px] text-emerald-600">chat</span>
+                                            <span>Kirim ke WA Driver</span>
+                                        </a>
+                                    <?php endif; ?>
+
+                                    <button type="button" 
+                                            onclick="openQrModal('<?= esc($del['po_number'] ?? $del['order_number']) ?>', '<?= $driverLink ?>')" 
+                                            class="px-3 py-1.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 font-semibold text-[11px] flex items-center justify-center gap-1 transition">
+                                        <span class="material-symbols-outlined text-[15px]">qr_code_2</span>
+                                        <span>Scan QR Code</span>
                                     </button>
                                 </div>
-
-                                <div class="grid grid-cols-2 gap-1.5 text-[11px]">
-                                    <div>
-                                        <span class="text-slate-400 text-[10px] block">Nama Driver:</span>
-                                        <strong class="text-slate-800"><?= esc($del['driver_name'] ?: 'Belum ditentukan') ?></strong>
-                                    </div>
-                                    <div>
-                                        <span class="text-slate-400 text-[10px] block">No. Plat:</span>
-                                        <strong class="font-mono text-slate-800"><?= esc($del['vehicle_plate'] ?: '-') ?></strong>
-                                    </div>
-                                    <div class="col-span-2">
-                                        <span class="text-slate-400 text-[10px] block">No. WhatsApp Driver:</span>
-                                        <span class="font-mono text-slate-700"><?= esc($del['driver_phone'] ?: '-') ?></span>
-                                    </div>
-                                </div>
-
-                                <!-- Foto Bukti Pengiriman jika ada -->
-                                <?php if (!empty($del['delivery_proof_photo'])): ?>
-                                    <div class="pt-1.5 border-t border-slate-200 flex items-center justify-between">
-                                        <span class="text-[10px] font-bold text-emerald-700 flex items-center gap-1">
-                                            <span class="material-symbols-outlined text-[14px]">photo_camera</span>
-                                            Foto Bukti Tersedia
-                                        </span>
-                                        <a href="<?= base_url($del['delivery_proof_photo']) ?>" target="_blank" class="px-2 py-0.5 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold text-[10px] transition">
-                                            Buka Foto
-                                        </a>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-
-                            <!-- Kolom 3: Aksi Akses HP Kurir & WA -->
-                            <div class="flex flex-col sm:flex-row lg:flex-col gap-1.5 min-w-[200px] justify-center">
-                                <a href="<?= $driverLink ?>" target="_blank" 
-                                   class="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
-                                    <span class="material-symbols-outlined text-[16px]">smartphone</span>
-                                    <span>Buka Tampilan HP</span>
-                                </a>
-
-                                <button type="button" 
-                                        onclick="copyDriverLink('<?= $driverLink ?>')" 
-                                        class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-300 transition">
-                                    <span class="material-symbols-outlined text-[16px] text-slate-600">content_copy</span>
-                                    <span>Salin Link HP</span>
-                                </button>
-
-                                <?php if (!empty($waDriverPhone)): ?>
-                                    <a href="https://api.whatsapp.com/send?phone=<?= $waDriverPhone ?>&text=<?= urlencode($waDriverMsg) ?>" target="_blank"
-                                       class="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-emerald-300 transition">
-                                        <span class="material-symbols-outlined text-[16px] text-emerald-600">chat</span>
-                                        <span>Kirim ke WA Driver</span>
-                                    </a>
-                                <?php endif; ?>
-
-                                <button type="button" 
-                                        onclick="openQrModal('<?= esc($del['po_number'] ?? $del['order_number']) ?>', '<?= $driverLink ?>')" 
-                                        class="px-3 py-1.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 font-semibold text-[11px] flex items-center justify-center gap-1 transition">
-                                    <span class="material-symbols-outlined text-[15px]">qr_code_2</span>
-                                    <span>Scan QR Code</span>
-                                </button>
-                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -282,23 +354,23 @@
 
             <div>
                 <label class="block font-bold text-slate-700 mb-1">Metode Pengiriman:</label>
-                <select name="delivery_method" id="assign_delivery_method" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-600 bg-white font-bold">
+                <select name="delivery_method" id="assign_delivery_method" onchange="toggleModalDeliveryMethod(this.value)" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-600 bg-white font-bold">
                     <option value="vendor_fleet">Armada / Kurir Vendor Sendiri (Rekomendasi)</option>
-                    <option value="courier_service">Ekspedisi Kargo / 3PL Eksternal</option>
-                    <option value="pickup">Pengambilan Mandiri oleh Buyer (Self Pick-up)</option>
+                    <option value="expedition">Ekspedisi Logistik / Kargo (JNE, J&T, SiCepat, dll.)</option>
                 </select>
             </div>
 
-            <div class="space-y-3">
+            <!-- Bagian Armada Driver Vendor -->
+            <div id="modal_fleet_fields" class="space-y-3">
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Nama Driver / Kurir: <span class="text-rose-500">*</span></label>
-                    <input type="text" name="driver_name" id="assign_driver_name" required placeholder="Contoh: Budi Santoso" 
+                    <label class="block font-bold text-slate-700 mb-1">Nama Driver: <span class="text-rose-500">*</span></label>
+                    <input type="text" name="driver_name" id="assign_driver_name" placeholder="Contoh: Budi Santoso" 
                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-600 font-semibold">
                 </div>
 
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Nomor WhatsApp Driver: <span class="text-rose-500">*</span></label>
-                    <input type="tel" name="driver_phone" id="assign_driver_phone" required placeholder="08123456789" 
+                    <input type="tel" name="driver_phone" id="assign_driver_phone" placeholder="08123456789" 
                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-600 font-mono">
                     <span class="text-[10px] text-slate-400 mt-0.5 block">Digunakan untuk mengirim link update HP langsung ke WhatsApp driver.</span>
                 </div>
@@ -310,12 +382,39 @@
                 </div>
             </div>
 
+            <!-- Bagian Ekspedisi / Kargo -->
+            <div id="modal_expedition_fields" class="hidden space-y-3">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Nama Ekspedisi / Kurir: <span class="text-rose-500">*</span></label>
+                    <input type="text" list="modal_expedition_list" name="courier_name" id="assign_courier_name" placeholder="Pilih atau ketik ekspedisi (e.g. JNE, J&T Cargo, SiCepat)" 
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-600 font-semibold">
+                    <datalist id="modal_expedition_list">
+                        <?php foreach (get_popular_expeditions() as $eCode => $eLabel): ?>
+                            <option value="<?= esc($eCode) ?>"><?= esc($eLabel) ?></option>
+                        <?php endforeach; ?>
+                    </datalist>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-blue-900 mb-1">Nomor Resi / AWB: <span class="text-rose-500">*</span></label>
+                    <input type="text" name="tracking_number" id="assign_tracking_number" placeholder="Contoh: JNE0192837465 / JNT123456" 
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-blue-400 bg-blue-50/30 focus:border-blue-600 font-mono font-bold text-blue-900 uppercase">
+                    <span class="text-[10px] text-slate-400 mt-0.5 block">Nomor resi ini akan dapat dilacak langsung oleh Buyer dan Admin.</span>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Jenis Layanan (Opsional):</label>
+                    <input type="text" name="expedition_service" id="assign_expedition_service" placeholder="Contoh: Reguler / Kargo Trucking / Next Day" 
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-600">
+                </div>
+            </div>
+
             <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                 <button type="button" onclick="closeAssignDriverModal()" class="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-bold transition">
                     Batal
                 </button>
-                <button type="submit" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-sm">
-                    Simpan Data Driver
+                <button type="submit" id="btn_submit_shipping" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-sm">
+                    Simpan Pengiriman
                 </button>
             </div>
         </form>
@@ -357,13 +456,48 @@
         });
     }
 
-    function openAssignDriverModal(orderId, poNumber, driverName, driverPhone, vehiclePlate, deliveryMethod) {
+    function toggleModalDeliveryMethod(method) {
+        const fleetDiv = document.getElementById('modal_fleet_fields');
+        const expDiv = document.getElementById('modal_expedition_fields');
+        const driverName = document.getElementById('assign_driver_name');
+        const driverPhone = document.getElementById('assign_driver_phone');
+        const courierName = document.getElementById('assign_courier_name');
+        const trackingNum = document.getElementById('assign_tracking_number');
+        const submitBtn = document.getElementById('btn_submit_shipping');
+
+        if (method === 'expedition') {
+            fleetDiv.classList.add('hidden');
+            expDiv.classList.remove('hidden');
+            driverName.required = false;
+            driverPhone.required = false;
+            courierName.required = true;
+            trackingNum.required = true;
+            submitBtn.innerText = 'Simpan Resi Ekspedisi';
+        } else {
+            fleetDiv.classList.remove('hidden');
+            expDiv.classList.add('hidden');
+            driverName.required = true;
+            driverPhone.required = true;
+            courierName.required = false;
+            trackingNum.required = false;
+            submitBtn.innerText = 'Simpan Data Driver';
+        }
+    }
+
+    function openAssignDriverModal(orderId, poNumber, driverName, driverPhone, vehiclePlate, deliveryMethod, courierName, trackingNumber, expeditionService) {
         document.getElementById('assign_order_id').value = orderId;
         document.getElementById('assign_po_number').innerText = poNumber;
         document.getElementById('assign_driver_name').value = driverName || '';
         document.getElementById('assign_driver_phone').value = driverPhone || '';
         document.getElementById('assign_vehicle_plate').value = vehiclePlate || '';
-        document.getElementById('assign_delivery_method').value = deliveryMethod || 'vendor_fleet';
+        document.getElementById('assign_courier_name').value = courierName || '';
+        document.getElementById('assign_tracking_number').value = trackingNumber || '';
+        document.getElementById('assign_expedition_service').value = expeditionService || '';
+
+        const method = (deliveryMethod === 'expedition') ? 'expedition' : 'vendor_fleet';
+        document.getElementById('assign_delivery_method').value = method;
+        toggleModalDeliveryMethod(method);
+
         document.getElementById('assignDriverModal').classList.remove('hidden');
     }
 

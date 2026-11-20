@@ -1012,3 +1012,44 @@ if (!function_exists('render_aging_table')) {
         return $html;
     }
 }
+
+if (!function_exists('get_popular_expeditions')) {
+    /**
+     * Daftar nama ekspedisi / kurir logistik populer untuk pengiriman pengadaan B2B & umum
+     */
+    function get_popular_expeditions(): array
+    {
+        return [
+            'JNE'           => 'JNE Express (Reguler, YES, JTR / Trucking)',
+            'J&T Express'   => 'J&T Express (EZ / Super)',
+            'J&T Cargo'     => 'J&T Cargo (Kargo & Logistik Partai Besar)',
+            'SiCepat'       => 'SiCepat Express (GOKIL / Kargo / Reguler)',
+            'Anteraja'      => 'Anteraja (Reguler, Next Day, Cargo)',
+            'Indah Logistik'=> 'Indah Logistik Cargo (Darat, Laut, Udara, Trucking)',
+            'Dakota Cargo'  => 'Dakota Cargo (Logistik & Ekspedisi Partai)',
+            'Pos Indonesia' => 'Pos Indonesia (Pos Kilat Khusus / Pos Jumbo)',
+            'Lion Parcel'   => 'Lion Parcel (BIGPACK / REPACK)',
+            'Wahana'        => 'Wahana Express / Kargo',
+            'Ninja Xpress'  => 'Ninja Xpress',
+            'ID Express'    => 'ID Express',
+            'TIKI'          => 'TIKI (REG, ONS, Trucking)',
+            'Sentral Cargo' => 'Sentral Cargo (Kargo Udara / Darat)',
+            'Lainnya'       => 'Ekspedisi / Mitra Logistik Lainnya'
+        ];
+    }
+}
+
+if (!function_exists('get_expedition_tracking_url')) {
+    /**
+     * Dapatkan URL pelacakan resi ekspedisi otomatis (CekResi & link direct)
+     */
+    function get_expedition_tracking_url(?string $courier, ?string $trackingNumber): string
+    {
+        if (empty($trackingNumber)) {
+            return '#';
+        }
+        $cleanResi = urlencode(trim($trackingNumber));
+        return 'https://cekresi.com/?noresi=' . $cleanResi;
+    }
+}
+

@@ -502,8 +502,81 @@
         </div>
     <?php endif; ?>
 
+    <!-- Info Pengiriman Ekspedisi & Lacak Resi -->
+    <?php if ((($order['delivery_method'] ?? '') === 'expedition') || !empty($order['tracking_number'])): ?>
+        <div class="p-6 rounded-3xl bg-white border border-amber-200/90 shadow-md space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-[22px]">local_shipping</span>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-sm text-slate-900 uppercase tracking-wide">Pelacakan Ekspedisi & Logistik Kargo</h3>
+                        <p class="text-[11px] text-slate-500">Pesanan dikirimkan via jasa kurir / kargo logistik terpercaya</p>
+                    </div>
+                </div>
+                <span class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 text-[11px] font-bold border border-amber-200 flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    Ekspedisi / 3PL
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <div>
+                    <span class="text-slate-400 text-[11px] block">Kurir / Ekspedisi:</span>
+                    <strong class="text-slate-900 text-sm font-extrabold block mt-0.5"><?= esc($order['courier_name'] ?: 'Ekspedisi Rekanan') ?></strong>
+                    <?php if (!empty($order['expedition_service'])): ?>
+                        <span class="text-[11px] text-amber-800 font-semibold block mt-0.5"><?= esc($order['expedition_service']) ?></span>
+                    <?php endif; ?>
+                </div>
+
+                <div>
+                    <span class="text-slate-400 text-[11px] block">Nomor Resi Pengiriman (AWB):</span>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <strong class="font-mono text-base text-blue-900 font-black tracking-wider"><?= esc($order['tracking_number'] ?: 'Resi belum diinput') ?></strong>
+                        <?php if (!empty($order['tracking_number'])): ?>
+                            <button type="button" 
+                                    onclick="navigator.clipboard.writeText('<?= esc($order['tracking_number']) ?>'); alert('Nomor Resi <?= esc($order['tracking_number']) ?> berhasil disalin!');" 
+                                    class="p-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 shadow-2xs transition" 
+                                    title="Salin Resi">
+                                <span class="material-symbols-outlined text-[16px] block">content_copy</span>
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="text-slate-400 text-[11px] block">Waktu Diserahkan ke Ekspedisi:</span>
+                    <span class="text-slate-800 font-bold text-xs block mt-0.5">
+                        <?= !empty($order['shipped_at']) ? (date('d M Y, H:i', strtotime($order['shipped_at'])) . ' WIB') : (!empty($order['updated_at']) ? (date('d M Y, H:i', strtotime($order['updated_at'])) . ' WIB') : '-') ?>
+                    </span>
+                    <span class="text-[11px] text-slate-500">Estimasi sesuai jadwal kurir</span>
+                </div>
+            </div>
+
+            <?php if (!empty($order['tracking_number'])): ?>
+                <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+                    <p class="text-xs text-slate-600 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[18px] text-emerald-600">verified</span>
+                        <span>Klik tombol pelacakan untuk mengecek status pergerakan paket secara langsung.</span>
+                    </p>
+                    <div class="flex items-center gap-2">
+                        <a href="<?= get_expedition_tracking_url($order['courier_name'] ?? '', $order['tracking_number'] ?? '') ?>" target="_blank" class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition">
+                            <span class="material-symbols-outlined text-[18px]">travel_explore</span>
+                            <span>Lacak Status Resi di CekResi ↗</span>
+                        </a>
+                        <button type="button" onclick="navigator.clipboard.writeText('<?= esc($order['tracking_number']) ?>'); alert('Nomor Resi <?= esc($order['tracking_number']) ?> berhasil disalin ke clipboard!');" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 border border-slate-300 transition">
+                            <span class="material-symbols-outlined text-[16px]">content_copy</span>
+                            <span>Salin Resi</span>
+                        </button>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
     <!-- Info Driver & Armada Pengantaran Vendor -->
-    <?php if (!empty($order['driver_name']) || !empty($order['delivery_proof_photo']) || !empty($order['delivery_status_detail'])): ?>
+    <?php if ((($order['delivery_method'] ?? '') !== 'expedition') && (!empty($order['driver_name']) || !empty($order['delivery_proof_photo']) || !empty($order['delivery_status_detail']))): ?>
         <div class="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <div class="flex items-center gap-2">
