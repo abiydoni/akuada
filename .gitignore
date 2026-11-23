@@ -46,8 +46,9 @@ $RECYCLE.BIN/
 .vagrant
 Vagrantfile
 
-#-------------------------
-# Temporary Files
+# User Uploads
+public/uploads/designs/*
+!public/uploads/designs/.gitkeep
 #-------------------------
 /writable/cache/*
 !/writable/cache/index.html
