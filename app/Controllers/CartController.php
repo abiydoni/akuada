@@ -441,17 +441,29 @@ class CartController extends BaseController
         $shippingAddress = trim((string)$this->request->getPost('shipping_address'));
         $designSpecs = trim((string)$this->request->getPost('design_specs'));
 
-        // Fallback default alamat pengiriman kantor jika kosong
-        if (empty($shippingAddress) && $buyerCompanyId) {
-            $buyerComp = (new CompanyModel())->find($buyerCompanyId);
-            if ($buyerComp) {
-                $addrParts = array_filter([
-                    $buyerComp['address'] ?? '',
-                    $buyerComp['city'] ?? '',
-                    $buyerComp['province'] ?? '',
-                ], function($v) { return !empty(trim((string)$v)); });
-                $shippingAddress = implode(', ', $addrParts);
+        $isLoggedInCustomer = !empty(session('user_id')) && (session('user_role') === 'customer' || session('role') === 'customer');
+        $buyerCompanyId = $isLoggedInCustomer ? (int)session('company_id') : null;
+        $companyModel = new CompanyModel();
+        $buyerCompany = null;
+        $hasCompany = false;
+        $isVerified = false;
+
+        if ($buyerCompanyId) {
+            $buyerCompany = $companyModel->find($buyerCompanyId);
+            if ($buyerCompany && $buyerCompany['type'] === 'buyer') {
+                $hasCompany = true;
+                $isVerified = ((int)$buyerCompany['is_verified'] === 1);
             }
+        }
+
+        // Fallback default alamat pengiriman kantor jika kosong
+        if (empty($shippingAddress) && $buyerCompany) {
+            $addrParts = array_filter([
+                $buyerCompany['address'] ?? '',
+                $buyerCompany['city'] ?? '',
+                $buyerCompany['province'] ?? '',
+            ], function($v) { return !empty(trim((string)$v)); });
+            $shippingAddress = implode(', ', $addrParts);
         }
 
         // Handle optional design file upload from Buyer
@@ -471,40 +483,6 @@ class CartController extends BaseController
             }
         }
         $designStatus = (!empty($designSpecs) || !empty($designFileBuyer)) ? 'submitted_to_admin' : 'none';
-
-        $isLoggedInCustomer = !empty(session('user_id')) && (session('user_role') === 'customer' || session('role') === 'customer');
-        $buyerCompanyId = $isLoggedInCustomer ? (int)session('company_id') : null;
-        $companyModel = new CompanyModel();
-        $buyerCompany = null;
-        $hasCompany = false;
-        $isVerified = false;
-
-        $defaultCreditLimit = (float)get_system_setting('default_credit_limit', 100000000);
-        $maxUnpaidLimit = get_max_unpaid_notes_limit();
-        $unpaidNotesCount = 0;
-        $isSufficientCredit = true;
-
-        if ($buyerCompanyId) {
-            $buyerCompany = $companyModel->find($buyerCompanyId);
-            if ($buyerCompany && $buyerCompany['type'] === 'buyer') {
-                $hasCompany = true;
-                $isVerified = ((int)$buyerCompany['is_verified'] === 1);
-                if ($isVerified) {
-                    $unpaidNotesCount = get_buyer_unpaid_notes_count($buyerCompanyId);
-                    $creditLimit = (float)(!empty($buyerCompany['credit_limit_top']) && $buyerCompany['credit_limit_top'] > 0 
-                        ? $buyerCompany['credit_limit_top'] 
-                        : $defaultCreditLimit);
-                    $creditUsed = (float)($buyerCompany['credit_used_top'] ?? 0);
-                    $availableCredit = max(0, $creditLimit - $creditUsed);
-
-                    $isNotesSufficient = ($unpaidNotesCount < $maxUnpaidLimit);
-                    $isAmountSufficient = ($grandTotal <= $availableCredit);
-                    $isSufficientCredit = $isNotesSufficient && $isAmountSufficient;
-                }
-            }
-        }
-
-        $isRegistered = $isVerified;
 
         // Group cart by vendor if multiple, or take vendor of first item
         $firstItem = reset($cart);
@@ -546,7 +524,30 @@ class CartController extends BaseController
         $shippingAmount = (float)get_system_setting('default_shipping_amount', 0);
         $grandTotal = $subtotal + $ppnTotal + $shippingAmount;
 
-        // Aturan Keras: Jika buyer belum diverifikasi legalitasnya oleh Superadmin, tidak bisa membayar PO dengan fasilitas kredit (TOP / Corporate PO / Over-limit)
+        // Credit limit check
+        $defaultCreditLimit = (float)get_system_setting('default_credit_limit', 100000000);
+        $maxUnpaidLimit = get_max_unpaid_notes_limit();
+        $unpaidNotesCount = 0;
+        $isNotesSufficient = true;
+        $isAmountSufficient = true;
+        $isSufficientCredit = true;
+
+        if ($isVerified && $buyerCompanyId && $buyerCompany) {
+            $unpaidNotesCount = get_buyer_unpaid_notes_count($buyerCompanyId);
+            $creditLimit = (float)(!empty($buyerCompany['credit_limit_top']) && $buyerCompany['credit_limit_top'] > 0 
+                ? $buyerCompany['credit_limit_top'] 
+                : $defaultCreditLimit);
+            $creditUsed = (float)($buyerCompany['credit_used_top'] ?? 0);
+            $availableCredit = max(0, $creditLimit - $creditUsed);
+
+            $isNotesSufficient = ($unpaidNotesCount < $maxUnpaidLimit);
+            $isAmountSufficient = ($grandTotal <= $availableCredit);
+            $isSufficientCredit = $isNotesSufficient && $isAmountSufficient;
+        }
+
+        $isRegistered = $isVerified;
+
+        // Aturan Keras: Jika buyer belum diverifikasi legalitasnya oleh Superadmin, tidak bisa membayar PO dengan fasilitas kredit (TOP / Over-limit)
         $isOverlimitRequest = ($paymentMethod === 'overlimit_top');
         if ($isOverlimitRequest) {
             if (!$isVerified) {
@@ -557,9 +558,9 @@ class CartController extends BaseController
             $paymentMethod = 'top_' . $overlimitDays;
             $reason = trim((string)($this->request->getPost('overlimit_reason') ?: 'Pengajuan ekstra nota kredit'));
             $customerNotes = trim("[OVER-LIMIT REQUEST: Batas {$maxUnpaidLimit} Nota Tercapai ({$unpaidNotesCount} Nota Belum Lunas) | Alasan: {$reason}] " . $customerNotes);
-        } elseif (str_starts_with($paymentMethod, 'top_') || $paymentMethod === 'corporate_po') {
+        } elseif (str_starts_with($paymentMethod, 'top_')) {
             if (!$isVerified) {
-                session()->setFlashdata('error', 'Dokumen legalitas perusahaan Anda belum disetujui oleh Superadmin AkuAda. Pembayaran PO tidak dapat menggunakan kredit tempo (TOP 14-90 Hari / Corporate PO). Silakan pilih metode pembayaran Bank Virtual Account (Non-Kredit) untuk melanjutkan transaksi pengadaan.');
+                session()->setFlashdata('error', 'Dokumen legalitas perusahaan Anda belum disetujui oleh Superadmin AkuAda. Pembayaran PO tidak dapat menggunakan kredit tempo (TOP 7-30 Hari). Silakan pilih metode pembayaran Bank Virtual Account (Non-Kredit) untuk melanjutkan transaksi pengadaan.');
                 return redirect()->to('/checkout');
             }
 
