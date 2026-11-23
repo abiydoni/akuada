@@ -84,6 +84,12 @@ class VendorController extends BaseController
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Pesanan tidak ditemukan');
         }
 
+        // Saring status_logs agar informasi internal buyer (misal plafon over-limit) tidak tampak ke Vendor
+        if (!empty($order['status_logs'])) {
+            $logModel = new \App\Models\OrderStatusLogModel();
+            $order['status_logs'] = $logModel->filterLogsForVendor($order['status_logs']);
+        }
+
         $reviewModel = new OrderReviewModel();
         $review = $reviewModel->getByOrder((int)$id);
 

@@ -68,6 +68,12 @@ class CustomerController extends BaseController
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Purchase Order tidak ditemukan');
         }
 
+        // Saring status_logs agar pencairan settlement/payout platform ke vendor tidak bocor ke Buyer
+        if (!empty($order['status_logs'])) {
+            $logModel = new \App\Models\OrderStatusLogModel();
+            $order['status_logs'] = $logModel->filterLogsForBuyer($order['status_logs']);
+        }
+
         $reviewModel = new OrderReviewModel();
         $review = $reviewModel->getByOrder((int)$id);
 

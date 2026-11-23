@@ -572,6 +572,25 @@
                 
                 <div class="relative pl-6 space-y-4 before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-gradient-to-b before:from-purple-600 before:via-blue-500 before:to-pink-500">
                     <?php foreach ($order['status_logs'] as $log): ?>
+                        <?php
+                            $titleLower = strtolower($log['title'] ?? '');
+                            $descLower  = strtolower($log['description'] ?? '');
+                            // Double protection: dilarang menampilkan log internal pencairan settlement hutang platform ke vendor ke Buyer
+                            if (
+                                str_contains($titleLower, 'settlement') ||
+                                str_contains($titleLower, 'payout') ||
+                                str_contains($titleLower, 'pencairan dana') ||
+                                str_contains($titleLower, 'pencairan hak') ||
+                                str_contains($titleLower, 'hak bersih') ||
+                                str_contains($titleLower, 'bagi hasil') ||
+                                str_contains($descLower, 'hak bersih vendor') ||
+                                str_contains($descLower, 'rekening vendor') ||
+                                str_contains($descLower, 'settle-') ||
+                                str_contains($descLower, 'payout-')
+                            ) {
+                                continue;
+                            }
+                        ?>
                         <div class="relative flex items-start gap-3 text-xs">
                             <div class="absolute -left-6 top-1 w-5 h-5 rounded-full bg-white border-2 border-purple-600 flex items-center justify-center">
                                 <div class="w-2 h-2 rounded-full bg-pink-500"></div>

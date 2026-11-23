@@ -182,7 +182,7 @@ class OrderModel extends Model
             $order['items'] = $itemModel->where('order_id', $order['id'])->findAll();
 
             $logModel = new OrderStatusLogModel();
-            $order['status_logs'] = $logModel->getLogsByOrder($order['id']);
+            $order['status_logs'] = $logModel->filterLogsForDriver($logModel->getLogsByOrder($order['id']));
 
             $order = recalculate_order_from_settings($order);
         }

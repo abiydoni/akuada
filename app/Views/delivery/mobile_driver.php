@@ -400,6 +400,23 @@
 
                 <div class="space-y-2.5">
                     <?php foreach ($order['status_logs'] as $log): ?>
+                        <?php
+                            $titleLower = strtolower($log['title'] ?? '');
+                            $descLower  = strtolower($log['description'] ?? '');
+                            if (
+                                str_contains($titleLower, 'settlement') ||
+                                str_contains($titleLower, 'payout') ||
+                                str_contains($titleLower, 'pencairan') ||
+                                str_contains($titleLower, 'piutang') ||
+                                str_contains($titleLower, 'pelunasan') ||
+                                str_contains($titleLower, 'pembayaran') ||
+                                str_contains($descLower, 'settle-') ||
+                                str_contains($descLower, 'payout-') ||
+                                str_contains($descLower, 'rp ')
+                            ) {
+                                continue;
+                            }
+                        ?>
                         <div class="text-xs pl-3 border-l-2 border-blue-500 space-y-0.5">
                             <div class="flex items-center justify-between">
                                 <strong class="font-bold text-slate-900"><?= esc($log['title']) ?></strong>

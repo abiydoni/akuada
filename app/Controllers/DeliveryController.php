@@ -25,6 +25,11 @@ class DeliveryController extends BaseController
             return $this->showInvalidToken();
         }
 
+        if (!empty($order['status_logs'])) {
+            $logModel = new OrderStatusLogModel();
+            $order['status_logs'] = $logModel->filterLogsForDriver($order['status_logs']);
+        }
+
         return view('delivery/mobile_driver', [
             'title' => 'Kurir Pengantaran PO ' . ($order['po_number'] ?? $order['order_number']) . ' - AkuAda Logistics',
             'order' => $order,
