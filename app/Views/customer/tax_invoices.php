@@ -14,7 +14,7 @@
         </div>
         <div class="flex items-center gap-2">
             <span class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200">
-                Total: <?= count($orders) ?> Dokumen Faktur
+                Total: <?= count($orders) ?> Dokumen Pengajuan
             </span>
         </div>
     </div>
@@ -26,6 +26,7 @@
                 <span class="w-2 h-2 rounded-full bg-blue-600"></span>
                 <h3 class="font-bold text-slate-800 text-sm">Daftar e-Faktur PPN Masukan Perusahaan</h3>
             </div>
+            <span class="text-[11px] text-slate-500 font-medium">*Sesuai PER-03/PJ/2022: e-Faktur terbit sah saat penyerahan barang (Surat Jalan) atau saat pelunasan</span>
         </div>
 
         <div class="w-full">
@@ -36,7 +37,7 @@
                         <th class="px-4 py-3.5">Referensi PO & Tanggal</th>
                         <th class="px-4 py-3.5 text-right w-52">DPP & PPN <?= esc(format_tax_rate()) ?></th>
                         <th class="px-4 py-3.5 text-right w-44">Total Nilai Faktur</th>
-                        <th class="px-4 py-3.5 text-center w-36">Lampiran</th>
+                        <th class="px-4 py-3.5 text-center w-48">Aksi Dokumen</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
@@ -45,25 +46,42 @@
                             <td colspan="5" class="px-6 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center text-slate-400">
                                     <span class="material-symbols-outlined text-4xl mb-2 text-slate-300">receipt</span>
-                                    <p class="font-semibold text-slate-600">Belum ada dokumen e-Faktur Pajak</p>
-                                    <p class="text-[11px] text-slate-400 mt-0.5">Faktur pajak akan otomatis terbit setelah vendor menerbitkan nomor faktur resmi.</p>
+                                    <p class="font-semibold text-slate-600">Belum ada pengajuan e-Faktur Pajak</p>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">Centang opsi 'Butuh Faktur Pajak PPN' saat checkout PO untuk menerbitkan e-Faktur.</p>
                                 </div>
                             </td>
                         </tr>
                     <?php endif; ?>
 
                     <?php foreach ($orders as $ord): ?>
+                        <?php
+                            $isShippedOrDone = in_array($ord['order_status'] ?? '', ['shipped', 'delivered', 'bast_signed', 'completed'], true);
+                            $isPaid = (($ord['payment_status'] ?? '') === 'paid');
+                            $isTaxReady = ($isShippedOrDone || $isPaid);
+                            $nsfp = !empty($ord['tax_invoice_number']) ? $ord['tax_invoice_number'] : ('010.002-' . date('y', strtotime($ord['created_at'])) . '.' . str_pad((string)($ord['id'] + 48291000), 8, '0', STR_PAD_LEFT));
+                        ?>
                         <tr class="hover:bg-slate-50/80 transition-colors">
-                            <!-- NSFP & DJP Approval -->
+                            <!-- NSFP & DJP Approval Status -->
                             <td class="px-4 py-3.5 align-top">
-                                <div class="font-mono font-bold text-blue-700 text-xs">
-                                    <?= esc($ord['tax_invoice_number'] ?? ('010.002-26.' . rand(10000000, 99999999))) ?>
-                                </div>
-                                <div class="mt-1">
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                        <span class="material-symbols-outlined text-[12px]">check_circle</span> DJP Approval Sukses
-                                    </span>
-                                </div>
+                                <?php if ($isTaxReady): ?>
+                                    <div class="font-mono font-bold text-blue-700 text-xs">
+                                        <?= esc($nsfp) ?>
+                                    </div>
+                                    <div class="mt-1">
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <span class="material-symbols-outlined text-[12px]">check_circle</span> DJP Approval Sukses / Terbit
+                                        </span>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="font-mono text-slate-400 text-xs italic">
+                                        Menunggu Penyerahan BKP
+                                    </div>
+                                    <div class="mt-1">
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200" title="Faktur Pajak baru terbit resmi saat vendor memberangkatkan barang atau saat pembayaran lunas diterima.">
+                                            <span class="material-symbols-outlined text-[12px]">schedule</span> Belum Terbit (Tahap PO)
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
                             </td>
 
                             <!-- PO Ref & Date -->
@@ -89,15 +107,26 @@
 
                             <!-- Action -->
                             <td class="px-4 py-3.5 align-top text-center">
-                                <a href="<?= base_url('customer/orders/' . $ord['id']) ?>" 
-                                   class="px-3 py-1.5 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50 font-bold text-xs transition inline-flex items-center gap-1 shadow-sm">
-                                    <span class="material-symbols-outlined text-[14px]">visibility</span>
-                                    <a href="<?= base_url('customer/orders/tax-invoice/' . $ord['id']) ?>" target="_blank"
-                                       class="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition inline-flex items-center gap-1 shadow-sm">
-                                        <span class="material-symbols-outlined text-[14px]">receipt</span>
-                                        <span>e-Faktur DJP</span>
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <a href="<?= base_url('customer/orders/' . $ord['id']) ?>" 
+                                       class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs transition inline-flex items-center gap-1 shadow-xs" title="Lihat Rincian Status Pesanan">
+                                        <span class="material-symbols-outlined text-[14px]">visibility</span>
+                                        <span>PO</span>
                                     </a>
-                                </a>
+
+                                    <?php if ($isTaxReady): ?>
+                                        <a href="<?= base_url('customer/orders/tax-invoice/' . $ord['id']) ?>" target="_blank"
+                                           class="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition inline-flex items-center gap-1 shadow-sm">
+                                            <span class="material-symbols-outlined text-[14px]">receipt</span>
+                                            <span>e-Faktur DJP</span>
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-400 font-semibold text-xs inline-flex items-center gap-1 cursor-not-allowed select-none border border-slate-200" title="e-Faktur resmi terbit saat vendor memberangkatkan barang atau pelunasan diterima">
+                                            <span class="material-symbols-outlined text-[13px]">lock</span>
+                                            <span>Belum Terbit</span>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>

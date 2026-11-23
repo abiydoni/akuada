@@ -640,13 +640,13 @@ class CustomerController extends BaseController
     {
         $buyerId = $this->getBuyerCompanyId();
         $companyModel = new CompanyModel();
-        $company = $companyModel->find($buyerId);
+        $company = $buyerId ? $companyModel->find($buyerId) : null;
 
         $withdrawalModel = new \App\Models\BuyerWithdrawalModel();
-        $withdrawals = $withdrawalModel->getWithdrawalsWithCompany($buyerId);
+        $withdrawals = $buyerId ? $withdrawalModel->getWithdrawalsWithCompany($buyerId) : [];
 
         $mutationModel = new \App\Models\BuyerCashbackMutationModel();
-        $mutations = $mutationModel->getCompanyMutations($buyerId);
+        $mutations = $buyerId ? $mutationModel->getCompanyMutations($buyerId) : [];
 
         $cashbackBalance = (float)($company['cashback_balance'] ?? 0);
         $totalEarned = 0;
@@ -666,7 +666,7 @@ class CustomerController extends BaseController
             }
         }
 
-        $cashbackRate = get_buyer_cashback_rate($buyerCompanyId);
+        $cashbackRate = get_buyer_cashback_rate($buyerId);
 
         return view('customer/cashback', [
             'title'             => 'Saldo Cashback & Penarikan Dana - AkuAda B2B',

@@ -189,7 +189,7 @@
 
     <?php if ($payStatus === 'paid'): ?>
         <!-- State 1: SUDAH LUNAS -->
-        <div class="bg-gradient-to-r from-emerald-50 via-teal-50 to-white rounded-3xl border-2 border-emerald-300 p-6 shadow-md">
+        <div class="bg-gradient-to-r from-emerald-50 via-teal-50 to-white rounded-3xl border-2 border-emerald-300 p-6 shadow-md no-print">
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div class="flex items-center gap-3.5">
                     <div class="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-md">
@@ -214,9 +214,50 @@
             </div>
         </div>
 
+    <?php elseif ($isTopMethod): ?>
+        <!-- State 2: PEMBAYARAN KREDIT / TEMPO (TERM OF PAYMENT / TOP) -->
+        <div class="bg-gradient-to-r from-purple-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-7 text-white shadow-xl space-y-4 no-print">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-white/10">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-0.5 rounded-full bg-purple-500 text-white text-[10px] font-black uppercase tracking-wider">Fasilitas Kredit B2B</span>
+                        <span class="text-xs text-purple-200">Termin: <strong class="font-bold text-white">Tempo <?= esc(str_replace('top_', '', $paymentMethod)) ?> Hari Kalender</strong></span>
+                    </div>
+                    <h3 class="text-base sm:text-lg font-black tracking-tight text-white">Fasilitas Pembayaran Tempo Aktif (Tanpa Transfer di Awal)</h3>
+                    <p class="text-xs text-purple-200 leading-relaxed max-w-2xl">
+                        <?php if (!$isCompletedStage): ?>
+                            Pesanan PO ini diproses menggunakan plafon kredit tempo perusahaan Anda. <strong>Anda tidak perlu melakukan pembayaran atau mengunggah bukti transfer saat ini.</strong> Barang akan dipersiapkan dan dikirimkan oleh rekanan. Tagihan resmi baru mulai jatuh tempo <?= esc(str_replace('top_', '', $paymentMethod)) ?> hari kalender setelah Berita Acara Serah Terima (BAST) fisik disahkan.
+                        <?php else: ?>
+                            Barang pesanan telah diterima dan dokumen BAST telah disahkan. Tagihan Purchase Order ini jatuh tempo pada <strong class="text-yellow-300 font-mono"><?= !empty($order['due_date']) ? date('d M Y', strtotime($order['due_date'])) : (esc(str_replace('top_', '', $paymentMethod)) . ' Hari Setelah BAST') ?></strong>. Silakan lakukan pelunasan sebelum batas waktu melalui menu Hutang Dagang atau transfer rekening escrow.
+                        <?php endif; ?>
+                    </p>
+                </div>
+
+                <!-- Total Amount Box -->
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 text-left md:text-right min-w-[200px] flex-shrink-0">
+                    <span class="text-[10px] uppercase font-bold text-purple-200 tracking-wider block">Total Nilai Tagihan PO</span>
+                    <span class="text-2xl font-black font-mono text-white block mt-0.5"><?= format_rupiah($order['total_amount']) ?></span>
+                    <span class="text-[10px] text-purple-300 block mt-0.5">Metode: TOP <?= esc(str_replace('top_', '', $paymentMethod)) ?> Hari (Setelah BAST)</span>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs">
+                <div class="flex items-center gap-2 text-purple-200 text-[11px]">
+                    <span class="material-symbols-outlined text-emerald-400 text-[16px]">verified</span>
+                    <span>Plafon kredit korporat Anda telah disetujui & aktif untuk pesanan ini.</span>
+                </div>
+                <?php if ($isCompletedStage): ?>
+                    <a href="<?= base_url('customer/payables') ?>" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-sm">
+                        <span class="material-symbols-outlined text-[16px]">payments</span>
+                        <span>Pelunasan Tagihan Tempo &rarr;</span>
+                    </a>
+                <?php endif; ?>
+            </div>
+        </div>
+
     <?php elseif ($payStatus === 'pending_approval'): ?>
-        <!-- State 2: MENUNGGU VERIFIKASI -->
-        <div class="bg-gradient-to-r from-blue-50 via-indigo-50 to-white rounded-3xl border-2 border-blue-300 p-6 shadow-md">
+        <!-- State 3: MENUNGGU VERIFIKASI (Khusus Transfer Manual CBD yang sudah upload bukti) -->
+        <div class="bg-gradient-to-r from-blue-50 via-indigo-50 to-white rounded-3xl border-2 border-blue-300 p-6 shadow-md no-print">
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div class="flex items-center gap-3.5">
                     <div class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-md">
@@ -228,7 +269,7 @@
                             <span class="px-2.5 py-0.5 rounded-full bg-blue-200 text-blue-900 text-[10px] font-black uppercase animate-pulse">Menunggu Verifikasi</span>
                         </div>
                         <p class="text-xs text-blue-800 mt-0.5">
-                            Konfirmasi pembayaran sebesar <strong><?= format_rupiah($order['total_amount']) ?></strong> ke <strong><?= esc($order['buyer_payment_bank'] ?? 'Rekening AkuAda') ?></strong> telah diterima. Tim Finance AkuAda sedang memverifikasi mutasi rekening koran.
+                            Konfirmasi transfer pembayaran sebesar <strong><?= format_rupiah($order['total_amount']) ?></strong> ke <strong><?= esc($order['buyer_payment_bank'] ?? 'Rekening AkuAda') ?></strong> telah diterima. Tim Finance AkuAda sedang memverifikasi mutasi rekening koran.
                         </p>
                     </div>
                 </div>
@@ -248,8 +289,8 @@
         </div>
 
     <?php else: ?>
-        <!-- State 3: BELUM BAYAR (UNPAID / OVERDUE) - TAMPILKAN INSTRUKSI TRANSFER SANGAT JELAS -->
-        <div class="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-7 text-white shadow-xl space-y-5">
+        <!-- State 4: BELUM BAYAR (TRANSFER MANUAL CBD - BUKAN TOP) -->
+        <div class="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-7 text-white shadow-xl space-y-5 no-print">
             <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-white/10">
                 <div class="space-y-1">
                     <div class="flex items-center gap-2">
@@ -1011,12 +1052,18 @@
                 </div>
 
                 <div class="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-2">
-                    <span class="text-[10px] uppercase font-bold text-blue-700 block tracking-wider">Penyedia (Mitra Vendor):</span>
-                    <strong class="text-slate-900 block text-sm"><?= esc($order['vendor_name']) ?></strong>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] uppercase font-bold text-blue-700 block tracking-wider">Penyedia Pengadaan:</span>
+                        <span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[9px] font-bold border border-blue-200">Mitra Rekanan Resmi</span>
+                    </div>
+                    <strong class="text-slate-900 block text-sm">
+                        <?= esc($order['vendor_name']) ?>
+                        <span class="text-[10px] font-mono text-slate-400 font-normal">(Fulfillment Hub)</span>
+                    </strong>
                     <div class="space-y-0.5 text-slate-600 text-[11px]">
-                        <p>NPWP: <span class="font-mono"><?= esc($order['vendor_npwp'] ?? '-') ?></span></p>
-                        <p>PIC: <?= esc($order['vendor_pic'] ?? 'Sales B2B') ?></p>
-                        <p>Alamat: <?= esc($order['vendor_address'] ?? 'Pusat Distribusi Vendor') ?></p>
+                        <p>Asal Pengiriman: <strong><?= esc($order['vendor_city'] ?? 'Gudang Mitra Penyedia') ?>, <?= esc($order['vendor_province'] ?? 'Indonesia') ?></strong></p>
+                        <p>Layanan & Bantuan: <strong class="text-purple-700 font-mono"><?= esc(parse_url(base_url(), PHP_URL_HOST) ?: 'akuada.appsbee.my.id') ?></strong></p>
+                        <p class="text-[10px] text-slate-400 pt-0.5">Seluruh pemrosesan, garansi fisik, dan penyelesaian PO dilindungi Escrow B2B AkuAda.</p>
                     </div>
                 </div>
             </div>
@@ -1083,11 +1130,11 @@
                 <!-- Signatures -->
                 <div class="grid grid-cols-2 gap-3 text-center">
                     <div class="border border-slate-200 p-3 rounded-xl space-y-6">
-                        <span class="text-[9px] text-slate-400 uppercase font-bold block">Penyedia (Vendor)</span>
+                        <span class="text-[9px] text-slate-400 uppercase font-bold block">Penyedia (Mitra Rekanan)</span>
                         <div class="h-6"></div>
                         <div>
                             <strong class="block text-slate-900 underline text-xs"><?= esc($order['vendor_name']) ?></strong>
-                            <span class="text-[9px] text-slate-400"><?= esc(get_system_setting('inv_vendor_default_title', 'Head of Corporate Sales')) ?></span>
+                            <span class="text-[9px] text-slate-400">Mitra Fulfillment Resmi AkuAda</span>
                         </div>
                     </div>
 
