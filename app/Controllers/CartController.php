@@ -207,10 +207,18 @@ class CartController extends BaseController
         $shippingAmount = (float)get_system_setting('default_shipping_amount', 0);
         $grandTotal = $subtotal + $ppnTotal + $shippingAmount;
 
-        // Buyer Info
+        // Buyer Info dari tabel companies & session
         $buyer = null;
-        if (session('is_logged_in') && session('company_id')) {
-            $buyer = $companyModel->find(session('company_id'));
+        $buyerCompanyId = (int)(session('company_id') ?: 0);
+        if (!$buyerCompanyId && session('user_id')) {
+            $userModel = new UserModel();
+            $u = $userModel->find(session('user_id'));
+            if ($u && !empty($u['company_id'])) {
+                $buyerCompanyId = (int)$u['company_id'];
+            }
+        }
+        if ($buyerCompanyId) {
+            $buyer = $companyModel->find($buyerCompanyId);
         }
 
         $buyerName = $this->request->getPost('buyer_company_name') 
@@ -219,12 +227,44 @@ class CartController extends BaseController
             ?: ($buyer['pic_name'] ?? session('user_name') ?? 'Tim Procurement & Pengadaan');
         $picPosition = $this->request->getPost('buyer_position') 
             ?: ($buyer['position'] ?? 'Procurement Manager');
-        $buyerPhone = $this->request->getPost('buyer_phone') 
-            ?: ($buyer['pic_phone'] ?? '(021) 500-1234');
         $buyerEmail = $this->request->getPost('buyer_email') 
             ?: ($buyer['email'] ?? session('user_email') ?? 'procurement@perusahaan.co.id');
-        $buyerAddress = $this->request->getPost('buyer_address') 
-            ?: ($buyer['address'] ?? 'Gedung Perkantoran B2B, Jakarta');
+
+        // Alamat Pengiriman Kebutuhan: ambil data riil dari tabel companies (address, city, province)
+        $buyerAddress = '';
+        if ($buyer) {
+            $addrParts = array_filter([
+                $buyer['address'] ?? '',
+                $buyer['city'] ?? '',
+                $buyer['province'] ?? '',
+            ], function($v) { return !empty(trim((string)$v)); });
+            
+            $buyerAddress = implode(', ', $addrParts);
+        }
+
+        // Jika di profil belum ada alamat, gunakan alamat pengiriman terakhir dari tabel orders
+        if (empty($buyerAddress) && !empty($buyer['id'])) {
+            $orderModel = new OrderModel();
+            $lastOrder = $orderModel->where('customer_company_id', $buyer['id'])
+                                   ->where('shipping_address IS NOT NULL')
+                                   ->where("shipping_address != ''")
+                                   ->orderBy('id', 'DESC')
+                                   ->first();
+            if ($lastOrder && !empty($lastOrder['shipping_address'])) {
+                $buyerAddress = $lastOrder['shipping_address'];
+            }
+        }
+
+        if ($this->request->getPost('buyer_address')) {
+            $buyerAddress = trim((string)$this->request->getPost('buyer_address'));
+        }
+
+        if (empty($buyerAddress)) {
+            $buyerAddress = 'Alamat kantor / gudang belum dikonfigurasi di Profil Perusahaan (Silakan lengkapi di Menu Profil Legalitas)';
+        }
+
+        // Sembunyikan nomor HP, arahkan komunikasi resmi ke Live Chat Web
+        $buyerPhone = 'Live Chat Web Resmi (Terverifikasi)';
 
         $quotationNumber = 'QUO/' . date('Ym') . '/' . sprintf('%04d', rand(100, 9999));
         $validUntil = date('Y-m-d', strtotime('+14 days'));

@@ -194,6 +194,20 @@ class RfqController extends BaseController
         $quotationNumber = 'QUO-RFQ/' . date('Ym', strtotime($rfq['created_at'])) . '/' . str_replace('RFQ-', '', $rfq['rfq_number']);
         $validUntil = date('Y-m-d', strtotime($rfq['created_at'] . ' +14 days'));
 
+        $buyerAddress = '';
+        if ($buyer) {
+            $addrParts = array_filter([
+                $buyer['address'] ?? '',
+                $buyer['city'] ?? '',
+                $buyer['province'] ?? '',
+            ], function($v) { return !empty(trim((string)$v)); });
+            
+            $buyerAddress = implode(', ', $addrParts);
+        }
+        if (empty($buyerAddress)) {
+            $buyerAddress = 'Alamat kantor / gudang belum dikonfigurasi di Profil Perusahaan';
+        }
+
         return view('marketplace/quotation', [
             'title'           => 'Surat Penawaran Harga RFQ #' . $rfq['rfq_number'] . ' - AkuAda B2B',
             'quotationNumber' => $quotationNumber,
@@ -209,9 +223,9 @@ class RfqController extends BaseController
                 'company_name' => $buyer['company_name'] ?? 'Corporate Buyer',
                 'pic_name'     => $buyer['pic_name'] ?? 'Procurement Officer',
                 'position'     => $buyer['position'] ?? 'Procurement Manager',
-                'phone'        => $buyer['pic_phone'] ?? '-',
+                'phone'        => 'Live Chat Web Resmi (Terverifikasi)',
                 'email'        => $buyer['email'] ?? '-',
-                'address'      => $buyer['address'] ?? '-',
+                'address'      => $buyerAddress,
             ],
         ]);
     }

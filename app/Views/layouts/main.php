@@ -8,7 +8,10 @@ $appSubtitle   = get_system_setting('app_subtitle', 'B2B E-Procurement');
 $appDesc       = get_system_setting('app_description', 'AkuAda hadir memastikan setiap kebutuhan operasional perusahaan Anda terpenuhi dengan tepat, cepat, dan transparan. E-Procurement B2B terpercaya di Indonesia dengan fleksibilitas TOP, harga bertingkat grosir korporat, dan kelengkapan faktur pajak resmi.');
 $contactPhone  = get_system_setting('contact_phone', '(021) 5088-9900');
 $contactEmail  = get_system_setting('contact_email', 'b2b@akuada.co.id');
-$officeAddress = get_system_setting('inv_issuer_address', 'Gedung AkuAda Procurement Tower Lt. 18, Jakarta Selatan');
+$officeAddress = get_system_setting('inv_issuer_address') ?: trim(get_system_setting('inv_issuer_address_1', '') . ', ' . get_system_setting('inv_issuer_address_2', ''), ', ');
+if (empty($officeAddress)) {
+    $officeAddress = 'Randuares Kel. Kumpulrejo, Kec. Argomulyo, Kota Salatiga 50734';
+}
 $maxCreditLim  = (float)get_system_setting('max_credit_limit', 500000000);
 $minTopDays    = get_min_top_days();
 $maxTopDays    = get_max_top_days();
@@ -34,8 +37,8 @@ $ppnLabel      = format_tax_rate();
                 <span class="material-symbols-outlined text-[15px]">help_center</span> Panduan Pengadaan PO
             </a>
             <span class="text-slate-300">|</span>
-            <a href="<?= base_url('page/kontak-b2b') ?>" class="hover:text-purple-600 transition flex items-center gap-1">
-                <span class="material-symbols-outlined text-[15px]">call</span> Call Center: <?= esc($contactPhone) ?>
+            <a href="<?= base_url('chat') ?>" class="hover:text-purple-600 transition flex items-center gap-1">
+                <span class="material-symbols-outlined text-[15px]">forum</span> Bantuan &amp; Live Chat Resmi Web
             </a>
         </div>
     </div>
@@ -250,7 +253,7 @@ $ppnLabel      = format_tax_rate();
             </p>
             <div class="text-xs space-y-1 text-slate-400">
                 <p>📍 <?= esc($officeAddress) ?></p>
-                <p>📞 Phone: <?= esc($contactPhone) ?> | ✉️ Email: <?= esc($contactEmail) ?></p>
+                <p>🌐 Web Resmi: www.akuada.com | 💬 Live Chat Web Terpadu | ✉️ Email: <?= esc($contactEmail) ?></p>
             </div>
         </div>
 

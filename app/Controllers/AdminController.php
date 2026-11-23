@@ -1459,6 +1459,13 @@ class AdminController extends BaseController
             }
         }
 
+        // Sinkronisasi otomatis alamat kantor pusat AkuAda ke seluruh dokumen & footer
+        if (!empty($posts['inv_issuer_address_1']) || !empty($posts['inv_issuer_address_2'])) {
+            $fullAddr = trim(($posts['inv_issuer_address_1'] ?? '') . ', ' . ($posts['inv_issuer_address_2'] ?? ''), ', ');
+            $settingModel->updateValue('inv_issuer_address', $fullAddr, 'invoice');
+            $settingModel->updateValue('office_address', $fullAddr, 'general');
+        }
+
         if ($orderId > 0 && $orderShipAmt !== null && $orderShipAmt !== '') {
             $orderModel = new OrderModel();
             $orderModel->update($orderId, ['shipping_amount' => max(0, (float)$orderShipAmt)]);

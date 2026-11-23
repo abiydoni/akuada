@@ -759,15 +759,13 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                 <div>
                     <span class="text-slate-400 text-[11px] block">Pengemudi / Driver:</span>
-                    <strong class="text-slate-900"><?= esc($order['driver_name'] ?? 'Kurir Armada') ?></strong>
-                    <?php if (!empty($order['driver_phone'])): ?>
-                        <div class="text-[11px] text-blue-700 font-mono mt-0.5">
-                            <a href="https://wa.me/<?= preg_replace('/[^0-9]/', '', (string)$order['driver_phone']) ?>" target="_blank" class="hover:underline flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[13px] text-emerald-600">chat</span>
-                                <span><?= esc($order['driver_phone']) ?></span>
-                            </a>
-                        </div>
-                    <?php endif; ?>
+                    <strong class="text-slate-900"><?= esc($order['driver_name'] ?? 'Kurir Armada Vendor') ?></strong>
+                    <div class="text-[11px] text-purple-700 font-semibold mt-0.5">
+                        <a href="<?= base_url('customer/chat?order_id=' . $order['id']) ?>" class="hover:underline flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[13px] text-purple-600">forum</span>
+                            <span>Koordinasi Driver via Chat Web</span>
+                        </a>
+                    </div>
                 </div>
 
                 <div>

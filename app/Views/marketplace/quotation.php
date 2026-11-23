@@ -91,7 +91,7 @@
                 </div>
                 <p class="text-xs text-slate-600 max-w-lg pt-1 leading-relaxed">
                     <?= esc($issuerAddr1) ?>, <?= esc($issuerAddr2) ?><br>
-                    <strong>NPWP:</strong> <?= esc($issuerNpwp) ?> &bull; <strong>NIB:</strong> <?= esc($issuerNib) ?> &bull; <strong>Hotline:</strong> <?= esc($billingPhone) ?> &bull; <strong>Email:</strong> <?= esc($billingEmail) ?>
+                    <strong>NPWP:</strong> <?= esc($issuerNpwp) ?> &bull; <strong>NIB:</strong> <?= esc($issuerNib) ?> &bull; <strong>Web Resmi:</strong> www.akuada.com &bull; <strong>Layanan:</strong> Live Chat Web Platform &bull; <strong>Email:</strong> <?= esc($billingEmail) ?>
                 </p>
             </div>
 
@@ -133,7 +133,7 @@
                 <h3 class="text-sm font-black text-slate-900"><?= esc($buyer['company_name'] ?? 'Corporate Buyer') ?></h3>
                 <p class="text-slate-600 leading-snug">
                     <strong>UP:</strong> <?= esc($buyer['pic_name'] ?? 'Bpk/Ibu Pimpinan Procurement') ?> (<?= esc($buyer['position'] ?? 'Procurement Officer') ?>)<br>
-                    <strong>Email:</strong> <?= esc($buyer['email'] ?? '-') ?> &bull; <strong>Telp:</strong> <?= esc($buyer['phone'] ?? '-') ?>
+                    <strong>Email:</strong> <?= esc($buyer['email'] ?? '-') ?> &bull; <strong>Saluran Koordinasi:</strong> Live Chat Portal AkuAda (Terverifikasi)
                 </p>
             </div>
             <div class="space-y-1 sm:border-l sm:border-slate-200 sm:pl-4">
@@ -225,7 +225,7 @@
                         <li><strong>Faktur Pajak e-Faktur:</strong> Harga barang dikenakan PPN <?= esc($ppnRateLabel) ?> resmi DJP dan faktur pajak elektronik akan diterbitkan atas nama perusahaan pemesan.</li>
                         <li><strong>Fasilitas Kredit TOP:</strong> Bagi Corporate Buyer terverifikasi, pembayaran dapat menggunakan fasilitas Term of Payment (TOP 14 / 30 / 60 / 90 hari) terhitung sejak Berita Acara Serah Terima (BAST) ditandatangani.</li>
                         <li><strong>Rekening Escrow Resmi:</strong> Pembayaran sah ditransfer ke rekening penampung resmi: <strong>Bank Mandiri (122-00-1122334-5) a/n AkuAda</strong> atau <strong>Bank BCA (535-088-9900)</strong>.</li>
-                        <li><strong>Konfirmasi Pemesanan:</strong> Untuk melanjutkan penawaran ini menjadi pesanan resmi, silakan klik tombol <em>Lanjut Terbitkan PO</em> atau hubungi Account Manager Anda.</li>
+                        <li><strong>Konfirmasi Pemesanan:</strong> Untuk melanjutkan penawaran ini menjadi pesanan resmi, silakan klik tombol <em>Lanjut Terbitkan PO</em> atau hubungi tim via fitur Live Chat resmi di portal web AkuAda (https://akuada.com). Seluruh komunikasi &amp; negosiasi diproses melalui sistem chat terpadu platform.</li>
                     </ol>
                 </div>
             </div>

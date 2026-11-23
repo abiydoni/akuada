@@ -110,6 +110,36 @@
                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600 font-mono">
                 </div>
 
+                <!-- Alamat Kantor Pusat Operasional AkuAda -->
+                <div class="md:col-span-2 p-4 bg-purple-50/60 rounded-2xl border-2 border-purple-200/80 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-purple-700 text-[20px]">location_on</span>
+                            <span class="text-xs font-bold text-slate-900 uppercase tracking-wide">Alamat Kantor Pusat Operasional AkuAda (Head Office & Surat-Menyurat)</span>
+                        </div>
+                        <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-purple-200 text-purple-900 font-bold">Kop Surat &amp; Footer</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Alamat Gedung / Jalan (Baris 1):</label>
+                            <input type="text" name="inv_issuer_address_1" id="gen_inv_issuer_address_1" 
+                                   value="<?= esc($val($inv, 'inv_issuer_address_1', 'Randuares Kel. Kumpulrejo, Kec. Argomulyo')) ?>"
+                                   class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600 bg-white"
+                                   placeholder="Contoh: Randuares Kel. Kumpulrejo, Kec. Argomulyo">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Kota &amp; Kode Pos (Baris 2):</label>
+                            <input type="text" name="inv_issuer_address_2" id="gen_inv_issuer_address_2" 
+                                   value="<?= esc($val($inv, 'inv_issuer_address_2', 'Kota Salatiga 50734')) ?>"
+                                   class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600 bg-white"
+                                   placeholder="Contoh: Kota Salatiga 50734">
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-slate-500">
+                        Alamat ini otomatis ditampilkan pada footer website, kop surat resmi penawaran harga (Quotation), Faktur Invoice komersial, Faktur Pajak, Surat Jalan, dan BAST.
+                    </p>
+                </div>
+
                 <div class="md:col-span-2">
                     <label class="block font-bold text-slate-700 mb-1">Jam Operasional Layanan B2B:</label>
                     <input type="text" name="contact_hours" value="<?= esc($val($gen, 'contact_hours', 'Senin - Jumat, 08:30 - 17:30 WIB')) ?>"
@@ -476,15 +506,17 @@
                         <input type="text" name="inv_billing_phone" value="<?= esc($val($inv, 'inv_billing_phone', '(021) 5088-9900')) ?>"
                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600 font-mono">
                     </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Alamat Kantor Baris 1:</label>
-                        <input type="text" name="inv_issuer_address_1" value="<?= esc($val($inv, 'inv_issuer_address_1', 'Sahid Sudirman Center Lt. 28, Jl. Jend. Sudirman Kav. 86')) ?>"
-                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Alamat Kantor Baris 2:</label>
-                        <input type="text" name="inv_issuer_address_2" value="<?= esc($val($inv, 'inv_issuer_address_2', 'Karet Tengsin, Tanah Abang, Jakarta Pusat 10220')) ?>"
-                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600">
+                    <div class="md:col-span-2 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex items-center justify-between">
+                        <div>
+                            <span class="font-bold text-slate-800 block">Alamat Kantor Pusat Penerbit (Kop Surat &amp; Footer):</span>
+                            <span class="text-slate-600 text-[11px]">
+                                <?= esc($val($inv, 'inv_issuer_address_1', 'Randuares Kel. Kumpulrejo, Kec. Argomulyo')) ?>, <?= esc($val($inv, 'inv_issuer_address_2', 'Kota Salatiga 50734')) ?>
+                            </span>
+                        </div>
+                        <button type="button" onclick="switchSettingsTab('tab-general')" class="px-3 py-1.5 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold text-[11px] flex items-center gap-1 transition">
+                            <span class="material-symbols-outlined text-[14px]">edit</span>
+                            <span>Ubah di Tab 1</span>
+                        </button>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
