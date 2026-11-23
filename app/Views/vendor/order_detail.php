@@ -142,23 +142,37 @@
         $totalReceive = $netDpp + (float)($order['ppn_amount'] ?? 0);
         $vPayoutStatus = $order['vendor_payout_status'] ?? 'unpaid';
         $canRequest = in_array($order['order_status'], ['delivered', 'bast_signed', 'completed']);
+        $isTop = str_starts_with($order['payment_method'] ?? '', 'top_');
+        $topDays = $isTop ? (int)str_replace('top_', '', $order['payment_method']) : 30;
     ?>
     <div class="bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-7 text-white shadow-xl space-y-5">
         <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-white/10">
             <div class="space-y-1">
                 <div class="flex items-center gap-2">
-                    <span class="px-2.5 py-0.5 rounded-full bg-blue-500 text-white text-[10px] font-black uppercase tracking-wider">Settlement & Pembayaran</span>
+                    <?php if ($canRequest): ?>
+                        <span class="px-2.5 py-0.5 rounded-full bg-blue-500 text-white text-[10px] font-black uppercase tracking-wider">Settlement & Pembayaran</span>
+                    <?php else: ?>
+                        <span class="px-2.5 py-0.5 rounded-full bg-purple-500 text-white text-[10px] font-black uppercase tracking-wider">Pesanan PO Masuk (<?= $isTop ? 'TOP ' . $topDays . ' Hari' : 'Kredit AkuAda' ?>)</span>
+                    <?php endif; ?>
                     <span class="text-xs text-blue-200">Faktur Tagihan: <strong class="font-mono text-white"><?= esc($order['vendor_invoice_number'] ?? ('VINV/' . date('Ym') . '/' . $order['id'])) ?></strong></span>
                 </div>
-                <h3 class="text-lg font-black tracking-tight text-white">Hak Bersih Penjualan & Pencairan Dana dari AkuAda</h3>
+                <h3 class="text-lg font-black tracking-tight text-white">
+                    <?= $canRequest ? 'Hak Bersih Penjualan & Pencairan Dana dari AkuAda' : 'Penerbitan PO Resmi & Jaminan Pembayaran AkuAda' ?>
+                </h3>
                 <p class="text-xs text-blue-200">
-                    AkuAda menjamin pembayaran hak bersih hasil penjualan Anda langsung ke rekening bank resmi perusahaan vendor.
+                    <?php if ($canRequest): ?>
+                        AkuAda menjamin pembayaran hak bersih hasil penjualan Anda langsung ke rekening bank resmi perusahaan vendor.
+                    <?php else: ?>
+                        Pembeli menggunakan metode tempo (TOP <?= $topDays ?> Hari) tanpa uang muka (DP 0%). Hak bersih penjualan Anda dijamin 100% aman oleh AkuAda dan akan dicairkan setelah barang tiba & BAST disahkan.
+                    <?php endif; ?>
                 </p>
             </div>
 
             <!-- Total Hak Bersih Box -->
             <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 text-left md:text-right min-w-[240px]">
-                <span class="text-[10px] uppercase font-bold text-blue-200 tracking-wider block">Dana Bersih yang Diterima Vendor</span>
+                <span class="text-[10px] uppercase font-bold text-blue-200 tracking-wider block">
+                    <?= $canRequest ? 'Dana Bersih yang Diterima Vendor' : 'Estimasi Hak Bersih yang Akan Diterima' ?>
+                </span>
                 <span class="text-2xl font-black font-mono text-emerald-300 block mt-0.5"><?= format_rupiah($totalReceive) ?></span>
                 <span class="text-[10px] text-blue-200 block mt-0.5">(DPP: <?= format_rupiah($order['subtotal']) ?> - Fee: <?= format_rupiah($fee) ?> + PPN)</span>
             </div>
@@ -196,13 +210,21 @@
                             <p class="text-[11px] text-amber-200 mt-2">
                                 Permohonan pencairan dana telah diterima. Tim Finance AkuAda sedang memproses transfer ke rekening Anda.
                             </p>
+                        <?php elseif (!$canRequest): ?>
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-700/80 text-blue-200 font-bold text-xs border border-white/20">
+                                <span class="material-symbols-outlined text-[16px]">lock_clock</span>
+                                <span>MENUNGGU PENGIRIMAN & BAST</span>
+                            </span>
+                            <p class="text-[11px] text-blue-200 mt-2 leading-relaxed">
+                                Pesanan masih dalam proses pemenuhan barang. Pembeli menggunakan fasilitas kredit tempo (TOP <?= $topDays ?> Hari). Pencairan dana sebesar <strong class="text-white"><?= format_rupiah($totalReceive) ?></strong> akan dibuka segera setelah barang tiba di lokasi pembeli & BAST fisik disahkan.
+                            </p>
                         <?php else: ?>
                             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/80 text-white font-bold text-xs">
                                 <span class="material-symbols-outlined text-[16px]">schedule</span>
-                                <span>MENUNGGU PENCAIRAN</span>
+                                <span>SIAP DICAIRKAN</span>
                             </span>
                             <p class="text-[11px] text-blue-200 mt-2">
-                                <?= $canRequest ? 'Barang telah diterima pembeli. Anda dapat langsung mengajukan pencairan dana ke rekening Anda.' : 'Pencairan dana dapat diajukan setelah barang pesanan tiba di lokasi pembeli & BAST disahkan.' ?>
+                                Barang telah diterima pembeli & BAST telah disahkan. Anda dapat langsung mengajukan pencairan dana ke rekening Anda di bawah.
                             </p>
                         <?php endif; ?>
                     </div>

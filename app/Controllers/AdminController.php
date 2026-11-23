@@ -1606,7 +1606,18 @@ class AdminController extends BaseController
         $orderModel = new OrderModel();
         $order = $orderModel->find($orderId);
 
-        if ($order && ($order['vendor_payout_status'] ?? 'unpaid') !== 'paid') {
+        if (!$order) {
+            session()->setFlashdata('error', 'Pesanan tidak ditemukan.');
+            return redirect()->back();
+        }
+
+        // Validasi Keras: Pencairan hutang ke vendor HANYA BOLEH dilakukan setelah barang diterima & BAST disahkan
+        if (!in_array($order['order_status'], ['delivered', 'bast_signed', 'completed'], true)) {
+            session()->setFlashdata('error', 'Pencairan dana hak vendor belum dapat dilakukan! Barang pesanan PO #' . ($order['po_number'] ?? $order['id']) . ' belum diserahterimakan ke pembeli (Status: ' . $order['order_status'] . ') dan BAST fisik belum disahkan.');
+            return redirect()->back();
+        }
+
+        if (($order['vendor_payout_status'] ?? 'unpaid') !== 'paid') {
             $now = date('Y-m-d H:i:s');
             $fee = (float)($order['total_vendor_fee'] ?? 0);
             $netTotal = (float)($order['vendor_net_payout'] ?? ($order['subtotal'] - $fee)) + (float)($order['ppn_amount'] ?? 0);

@@ -374,13 +374,22 @@
                                     <?php endif; ?>
                                 </td>
                                 <td class="px-4 py-3.5 align-top text-center">
+                                    <?php 
+                                        $canSettle = in_array($o['order_status'] ?? '', ['delivered', 'bast_signed', 'completed'], true);
+                                    ?>
                                     <?php if (!$vPaid): ?>
-                                        <button type="button"
-                                                onclick="openPayVendorModal(<?= $o['id'] ?>, '<?= esc($o['po_number'] ?? $o['order_number']) ?>', '<?= esc($o['vendor_name']) ?>', '<?= esc(format_rupiah($totalPayableToVendor)) ?>', '<?= esc($vBank) ?>')"
-                                                class="w-full px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition inline-flex items-center justify-center gap-1 shadow-sm">
-                                            <span class="material-symbols-outlined text-[15px]">send_money</span>
-                                            <span>Bayar ke Vendor</span>
-                                        </button>
+                                        <?php if ($canSettle): ?>
+                                            <button type="button"
+                                                    onclick="openPayVendorModal(<?= $o['id'] ?>, '<?= esc($o['po_number'] ?? $o['order_number']) ?>', '<?= esc($o['vendor_name']) ?>', '<?= esc(format_rupiah($totalPayableToVendor)) ?>', '<?= esc($vBank) ?>')"
+                                                    class="w-full px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition inline-flex items-center justify-center gap-1 shadow-sm">
+                                                <span class="material-symbols-outlined text-[15px]">send_money</span>
+                                                <span>Bayar ke Vendor</span>
+                                            </button>
+                                        <?php else: ?>
+                                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 text-[11px] font-semibold border border-slate-200 block" title="Barang belum diterima pembeli & BAST belum disahkan (Status: <?= esc($o['order_status']) ?>)">
+                                                ⏳ Menunggu BAST
+                                            </span>
+                                        <?php endif; ?>
                                     <?php else: ?>
                                         <a href="<?= base_url('admin/orders/invoice-vendor/' . $o['id']) ?>" target="_blank" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs inline-flex items-center gap-1">
                                             <span class="material-symbols-outlined text-[14px]">receipt_long</span>
