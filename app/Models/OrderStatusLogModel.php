@@ -71,7 +71,9 @@ class OrderStatusLogModel extends Model
             if (
                 str_contains($title, 'over-limit') ||
                 str_contains($title, 'plafon kredit') ||
-                str_contains($desc, 'plafon kredit buyer')
+                str_contains($desc, 'plafon kredit buyer') ||
+                str_contains($title, 'pelunasan piutang buyer') ||
+                str_contains($desc, 'plafon top buyer dipulihkan')
             ) {
                 return false;
             }
