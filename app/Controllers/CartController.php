@@ -163,13 +163,20 @@ class CartController extends BaseController
         $companyModel = new CompanyModel();
         $productModel = new ProductModel();
 
+        $vendorList = [];
+        $primaryVendor = null;
+
         foreach ($cart as $productId => $item) {
             if (empty($selectedIds) || in_array((int)$productId, $selectedIds, true)) {
                 $vendorName = 'Mitra Pemasok AkuAda';
                 if (!empty($item['vendor_company_id'])) {
                     $vComp = $companyModel->find($item['vendor_company_id']);
                     if ($vComp && !empty($vComp['company_name'])) {
-                        $vendorName = $vComp['company_name'];
+                        $vendorName = (!empty($vComp['legal_type']) ? $vComp['legal_type'] . ' ' : '') . $vComp['company_name'];
+                        if (!$primaryVendor) {
+                            $primaryVendor = $vComp;
+                        }
+                        $vendorList[$vComp['id']] = $vendorName;
                     }
                 }
 
@@ -279,6 +286,13 @@ class CartController extends BaseController
         $quotationNumber = 'QUO/' . date('Ym') . '/' . sprintf('%04d', rand(100, 9999));
         $validUntil = date('Y-m-d', strtotime('+14 days'));
 
+        if (!$primaryVendor) {
+            $primaryVendor = $companyModel->where('type', 'vendor')->first();
+        }
+        $vendorDisplayName = !empty($vendorList) 
+            ? implode(', ', array_unique($vendorList))
+            : ($primaryVendor ? ((!empty($primaryVendor['legal_type']) ? $primaryVendor['legal_type'] . ' ' : '') . ($primaryVendor['company_name'] ?? 'Mitra Vendor Pemasok AkuAda')) : 'Mitra Vendor Pemasok AkuAda');
+
         return view('marketplace/quotation', [
             'title'           => 'Surat Penawaran Harga Resmi #' . $quotationNumber . ' - AkuAda B2B',
             'quotationNumber' => $quotationNumber,
@@ -289,6 +303,13 @@ class CartController extends BaseController
             'ppnTotal'        => $ppnTotal,
             'shippingAmount'  => $shippingAmount,
             'grandTotal'      => $grandTotal,
+            'vendor'          => [
+                'id'           => $primaryVendor['id'] ?? null,
+                'company_name' => $vendorDisplayName,
+                'city'         => $primaryVendor['city'] ?? '',
+                'province'     => $primaryVendor['province'] ?? '',
+                'address'      => $primaryVendor['address'] ?? '',
+            ],
             'buyer'           => [
                 'company_name' => $buyerName,
                 'pic_name'     => $picName,

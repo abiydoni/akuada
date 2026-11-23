@@ -217,6 +217,13 @@ class RfqController extends BaseController
             $user = $userModel->find(session('user_id'));
         }
 
+        if (!$vendor) {
+            $vendor = $companyModel->where('type', 'vendor')->first();
+        }
+        $vendorDisplayName = $vendor 
+            ? ((!empty($vendor['legal_type']) ? $vendor['legal_type'] . ' ' : '') . ($vendor['company_name'] ?? 'Mitra Vendor Pemasok AkuAda'))
+            : 'Mitra Vendor Pemasok AkuAda';
+
         return view('marketplace/quotation', [
             'title'           => 'Surat Penawaran Harga RFQ #' . $rfq['rfq_number'] . ' - AkuAda B2B',
             'quotationNumber' => $quotationNumber,
@@ -228,6 +235,13 @@ class RfqController extends BaseController
             'ppnTotal'        => $ppnTotal,
             'shippingAmount'  => $shippingAmount,
             'grandTotal'      => $grandTotal,
+            'vendor'          => [
+                'id'           => $vendor['id'] ?? null,
+                'company_name' => $vendorDisplayName,
+                'city'         => $vendor['city'] ?? '',
+                'province'     => $vendor['province'] ?? '',
+                'address'      => $vendor['address'] ?? '',
+            ],
             'buyer'           => [
                 'company_name' => $buyer['company_name'] ?? 'Perusahaan Pembeli',
                 'pic_name'     => $user['name'] ?? ($buyer['pic_name'] ?? 'Bpk/Ibu Pimpinan'),

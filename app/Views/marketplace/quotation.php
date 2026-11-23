@@ -142,9 +142,10 @@
             </div>
             <div class="space-y-1 sm:border-l sm:border-slate-200 sm:pl-4">
                 <span class="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider block">Alamat Pengiriman Kebutuhan:</span>
-                <p class="text-slate-700 font-medium leading-relaxed">
-                    <?= nl2br(esc($buyer['address'] ?? 'Kantor / Gudang Operasional Perusahaan')) ?>
-                </p>
+                <h4 class="text-sm font-black text-slate-900 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px] text-purple-600">storefront</span>
+                    <span><?= esc($vendor['company_name'] ?? ($items[0]['vendor_name'] ?? 'Mitra Vendor Pemasok AkuAda')) ?></span>
+                </h4>
                 <div class="pt-1 text-[11px] text-purple-700 font-bold flex items-center gap-1">
                     <span class="material-symbols-outlined text-[14px]">local_shipping</span>
                     <span>Wilayah Layanan: <?= esc(get_system_setting('free_shipping_region', 'Jabodetabek & Nasional')) ?></span>
