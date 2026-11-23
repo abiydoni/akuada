@@ -8,10 +8,15 @@ $maxTopDays         = get_max_top_days();
 $shipAmt            = (float)($shippingAmount ?? get_system_setting('default_shipping_amount', 0));
 $freeRegion         = get_system_setting('free_shipping_region', 'Corporate Jabodetabek');
 
-$creditLimit        = (float)($buyerCompany['credit_limit_top'] ?? 0);
-$creditUsed         = (float)($buyerCompany['credit_used_top'] ?? 0);
+$defaultCreditLimit = (float)get_system_setting('default_credit_limit', 100000000);
+$creditLimit        = (float)(!empty($buyerCompany['credit_limit_top']) && $buyerCompany['credit_limit_top'] > 0 
+                        ? $buyerCompany['credit_limit_top'] 
+                        : ($creditLimit ?? $defaultCreditLimit));
+$creditUsed         = (float)($buyerCompany['credit_used_top'] ?? ($creditUsed ?? 0));
 $availableCredit    = max(0, $creditLimit - $creditUsed);
-$isSufficientCredit = !empty($isRegistered) && ($grandTotal <= $availableCredit);
+$isNotesSufficient  = isset($isNotesSufficient) ? $isNotesSufficient : ($unpaidNotesCount < $maxUnpaidLimit);
+$isAmountSufficient = isset($isAmountSufficient) ? $isAmountSufficient : ($grandTotal <= $availableCredit);
+$isSufficientCredit = !empty($isRegistered) && $isNotesSufficient && $isAmountSufficient;
 $creditShortfall    = max(0, $grandTotal - $availableCredit);
 ?>
 
@@ -183,7 +188,7 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                             <div class="flex items-center gap-2 text-[11px]">
                                 <span class="text-slate-500">Kuota Kredit Bulan Ini:</span>
                                 <strong class="px-2 py-0.5 rounded font-mono <?= $isSufficientCredit ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200' ?>">
-                                    <?= (int)($unpaidNotesCount ?? 0) ?> / <?= (int)($maxUnpaidLimit ?? 3) ?> Nota Belum Lunas
+                                    <?= (int)($unpaidNotesCount ?? 0) ?> / <?= (int)($maxUnpaidLimit ?? 3) ?> Nota Belum Lunas (Sisa Kuota: <?= (int)($remainingNotes ?? 0) ?> Nota)
                                 </strong>
                             </div>
                         <?php elseif (!empty($hasCompany)): ?>
@@ -197,20 +202,31 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                         <?php endif; ?>
                     </div>
 
-                    <!-- Visual Indicator Box When Registered Buyer Has Reached Unpaid Notes Limit -->
+                    <!-- Visual Indicator Box When Registered Buyer Has Insufficient Credit (Notes Limit or Amount Limit) -->
                     <?php if (!empty($isVerified) && !$isSufficientCredit): ?>
                         <div class="p-4 rounded-2xl bg-rose-50/90 border-2 border-rose-300 text-xs space-y-3">
                             <div class="flex items-start gap-3">
                                 <span class="material-symbols-outlined text-rose-600 text-2xl mt-0.5">warning</span>
                                 <div class="flex-1 space-y-1">
                                     <div class="flex flex-wrap items-center justify-between gap-2">
-                                        <strong class="text-rose-950 font-extrabold text-sm">Batas Kredit Nota Tercapai (<?= (int)$unpaidNotesCount ?> dari <?= (int)$maxUnpaidLimit ?> Nota Belum Lunas)</strong>
-                                        <span class="px-2.5 py-0.5 rounded-full bg-rose-600 text-white font-mono font-bold text-[11px]">
-                                            Maksimal <?= (int)$maxUnpaidLimit ?> Nota / Bulan
-                                        </span>
+                                        <?php if (!$isNotesSufficient): ?>
+                                            <strong class="text-rose-950 font-extrabold text-sm">Batas Kredit Nota Tercapai (<?= (int)$unpaidNotesCount ?> dari <?= (int)$maxUnpaidLimit ?> Nota Belum Lunas)</strong>
+                                            <span class="px-2.5 py-0.5 rounded-full bg-rose-600 text-white font-mono font-bold text-[11px]">
+                                                Maksimal <?= (int)$maxUnpaidLimit ?> Nota / Bulan
+                                            </span>
+                                        <?php else: ?>
+                                            <strong class="text-rose-950 font-extrabold text-sm">Plafon Kredit Nominal Tidak Mencukupi (Sisa Plafon: <?= format_rupiah($availableCredit) ?>)</strong>
+                                            <span class="px-2.5 py-0.5 rounded-full bg-rose-600 text-white font-mono font-bold text-[11px]">
+                                                Total Tagihan: <?= format_rupiah($grandTotal) ?>
+                                            </span>
+                                        <?php endif; ?>
                                     </div>
                                     <p class="text-rose-800 leading-relaxed">
-                                        Sesuai kebijakan kredit tempo AkuAda, batas kredit diatur maksimal <strong><?= (int)$maxUnpaidLimit ?> nota yang belum terbayarkan dalam sebulan</strong>. Perusahaan Anda saat ini memiliki <strong><?= (int)$unpaidNotesCount ?> nota aktif yang belum lunas</strong>.
+                                        <?php if (!$isNotesSufficient): ?>
+                                            Sesuai kebijakan kredit tempo AkuAda, batas kredit diatur maksimal <strong><?= (int)$maxUnpaidLimit ?> nota yang belum terbayarkan dalam sebulan</strong>. Perusahaan Anda saat ini memiliki <strong><?= (int)$unpaidNotesCount ?> nota aktif yang belum lunas</strong>.
+                                        <?php else: ?>
+                                            Total nilai tagihan pengadaan saat ini (<strong><?= format_rupiah($grandTotal) ?></strong>) melebihi sisa plafon kredit aktif perusahaan Anda (<strong><?= format_rupiah($availableCredit) ?></strong> dari total limit <?= format_rupiah($creditLimit) ?>).
+                                        <?php endif; ?>
                                     </p>
                                 </div>
                             </div>
@@ -226,7 +242,7 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                                 </div>
                                 <div class="p-2.5 rounded-xl bg-rose-100/80 border border-rose-300">
                                     <span class="text-rose-700 font-semibold block">Sisa Kuota Kredit:</span>
-                                    <strong class="font-mono text-rose-900">0 Nota (Terkunci)</strong>
+                                    <strong class="font-mono text-rose-900"><?= (int)$remainingNotes ?> Nota</strong>
                                 </div>
                             </div>
 
@@ -268,7 +284,11 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                                         <div class="flex flex-wrap items-center justify-between gap-1">
                                             <span class="font-bold text-slate-500 text-xs line-through">Term of Payment <?= $topDay ?> Hari (TOP <?= $topDay ?> Reguler)</span>
                                             <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-300 text-[10px] font-bold">
-                                                ⚠️ Batas <?= (int)$maxUnpaidLimit ?> Nota Tercapai (<?= (int)$unpaidNotesCount ?> Belum Lunas)
+                                                <?php if (!$isNotesSufficient): ?>
+                                                    ⚠️ Batas <?= (int)$maxUnpaidLimit ?> Nota Tercapai (<?= (int)$unpaidNotesCount ?> Belum Lunas)
+                                                <?php else: ?>
+                                                    ⚠️ Melebihi Plafon (Defisit <?= format_rupiah($creditShortfall) ?>)
+                                                <?php endif; ?>
                                             </span>
                                         </div>
                                         <p class="text-[11px] text-rose-600/80 mt-0.5">Gunakan opsi <strong>Tetap Open PO (Pengajuan Over-Limit)</strong> di bawah jika ingin tetap menerbitkan PO dengan kredit tempo.</p>
@@ -384,13 +404,14 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                 <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
                     <div class="flex items-center gap-2 pb-3 border-b border-slate-100">
                         <span class="material-symbols-outlined text-pink-600">local_shipping</span>
-                        <h2 class="text-sm font-bold text-slate-800">3. Alamat Pengiriman Kantor / Gudang Logistik</h2>
+                        <h2 class="text-sm font-bold text-slate-800">3. Alamat Tujuan Pengiriman (Kantor / Gudang Logistik Buyer)</h2>
                     </div>
 
                     <div class="space-y-3 text-xs">
                         <div>
-                            <label class="block text-slate-600 font-semibold mb-1">Alamat Lengkap Pengiriman:</label>
-                            <textarea name="shipping_address" rows="3" required class="w-full bg-slate-50 rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-purple-100 focus:border-purple-600"><?= esc($buyerCompany['address'] ?? get_system_setting('inv_issuer_address', 'Jakarta Selatan')) ?></textarea>
+                            <label class="block text-slate-600 font-semibold mb-1">Alamat Lengkap Tujuan Pengiriman (Penerima Barang):</label>
+                            <textarea name="shipping_address" rows="3" required placeholder="Tuliskan alamat lengkap kantor, cabang, atau gudang perusahaan Anda tempat barang akan diantar..." class="w-full bg-slate-50 rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-purple-100 focus:border-purple-600"><?= esc($buyerCompany['address'] ?? '') ?></textarea>
+                            <p class="text-[11px] text-slate-500 mt-1">Alamat ini adalah lokasi kantor / gudang perusahaan Anda tempat barang pesanan akan dikirimkan oleh pihak vendor atau armada kurir logistik.</p>
                         </div>
 
                         <div>
@@ -399,14 +420,16 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                         </div>
 
                         <!-- Faktur Pajak Toggle -->
-                        <div class="p-3 bg-blue-50/60 rounded-xl border border-blue-200 flex items-center justify-between">
+                        <div class="p-3 bg-blue-50/60 rounded-xl border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div class="flex items-center gap-2">
                                 <input type="checkbox" id="tax_invoice_required" name="tax_invoice_required" value="1" checked class="rounded text-blue-600 focus:ring-blue-500">
                                 <label for="tax_invoice_required" class="font-bold text-blue-900 cursor-pointer">
                                     Terbitkan e-Faktur Pajak PPN <?= esc(format_tax_rate()) ?> Resmi DJP
                                 </label>
                             </div>
-                            <span class="text-[11px] text-blue-700 font-semibold">Tercatat ke NPWP Badan</span>
+                            <span class="text-[11px] text-blue-700 font-semibold flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">shield</span> Tercatat ke NPWP Badan untuk Kredit Pajak Masukan
+                            </span>
                         </div>
                     </div>
                 </div>

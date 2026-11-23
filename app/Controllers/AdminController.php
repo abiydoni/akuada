@@ -410,10 +410,14 @@ class AdminController extends BaseController
         $buyer = $companyModel->find($id);
         if ($buyer && $buyer['type'] === 'buyer') {
             $newStatus = $buyer['is_verified'] ? 0 : 1;
-            $companyModel->update($id, [
+            $updateData = [
                 'is_verified' => $newStatus,
                 'updated_at'  => date('Y-m-d H:i:s'),
-            ]);
+            ];
+            if ($newStatus && (float)($buyer['credit_limit_top'] ?? 0) <= 0) {
+                $updateData['credit_limit_top'] = (float)get_system_setting('default_credit_limit', 100000000);
+            }
+            $companyModel->update($id, $updateData);
             $msg = $newStatus 
                 ? 'Status legalitas ' . $buyer['company_name'] . ' berhasil diverifikasi dan disahkan! Buyer kini resmi terverifikasi.' 
                 : 'Status verifikasi legalitas ' . $buyer['company_name'] . ' telah dinonaktifkan.';

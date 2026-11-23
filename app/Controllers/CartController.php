@@ -346,9 +346,15 @@ class CartController extends BaseController
         $hasCompany = false;
         $isVerified = false;
 
+        $defaultCreditLimit = (float)get_system_setting('default_credit_limit', 100000000);
         $maxUnpaidLimit = get_max_unpaid_notes_limit();
         $unpaidNotesCount = 0;
         $remainingNotes = $maxUnpaidLimit;
+        $creditLimit = $defaultCreditLimit;
+        $creditUsed = 0.0;
+        $availableCredit = $defaultCreditLimit;
+        $isNotesSufficient = true;
+        $isAmountSufficient = true;
         $isSufficientCredit = true;
 
         if ($buyerCompanyId) {
@@ -359,7 +365,15 @@ class CartController extends BaseController
                 if ($isVerified) {
                     $unpaidNotesCount = get_buyer_unpaid_notes_count($buyerCompanyId);
                     $remainingNotes = max(0, $maxUnpaidLimit - $unpaidNotesCount);
-                    $isSufficientCredit = ($unpaidNotesCount < $maxUnpaidLimit);
+                    $creditLimit = (float)(!empty($buyerCompany['credit_limit_top']) && $buyerCompany['credit_limit_top'] > 0 
+                        ? $buyerCompany['credit_limit_top'] 
+                        : $defaultCreditLimit);
+                    $creditUsed = (float)($buyerCompany['credit_used_top'] ?? 0);
+                    $availableCredit = max(0, $creditLimit - $creditUsed);
+
+                    $isNotesSufficient = ($unpaidNotesCount < $maxUnpaidLimit);
+                    $isAmountSufficient = ($grandTotal <= $availableCredit);
+                    $isSufficientCredit = $isNotesSufficient && $isAmountSufficient;
                 }
             }
         }
@@ -380,6 +394,11 @@ class CartController extends BaseController
             'maxUnpaidLimit'     => $maxUnpaidLimit,
             'unpaidNotesCount'   => $unpaidNotesCount,
             'remainingNotes'     => $remainingNotes,
+            'creditLimit'        => $creditLimit,
+            'creditUsed'         => $creditUsed,
+            'availableCredit'    => $availableCredit,
+            'isNotesSufficient'  => $isNotesSufficient,
+            'isAmountSufficient' => $isAmountSufficient,
             'isSufficientCredit' => $isSufficientCredit,
         ]);
     }
@@ -423,6 +442,7 @@ class CartController extends BaseController
         $hasCompany = false;
         $isVerified = false;
 
+        $defaultCreditLimit = (float)get_system_setting('default_credit_limit', 100000000);
         $maxUnpaidLimit = get_max_unpaid_notes_limit();
         $unpaidNotesCount = 0;
         $isSufficientCredit = true;
@@ -434,7 +454,15 @@ class CartController extends BaseController
                 $isVerified = ((int)$buyerCompany['is_verified'] === 1);
                 if ($isVerified) {
                     $unpaidNotesCount = get_buyer_unpaid_notes_count($buyerCompanyId);
-                    $isSufficientCredit = ($unpaidNotesCount < $maxUnpaidLimit);
+                    $creditLimit = (float)(!empty($buyerCompany['credit_limit_top']) && $buyerCompany['credit_limit_top'] > 0 
+                        ? $buyerCompany['credit_limit_top'] 
+                        : $defaultCreditLimit);
+                    $creditUsed = (float)($buyerCompany['credit_used_top'] ?? 0);
+                    $availableCredit = max(0, $creditLimit - $creditUsed);
+
+                    $isNotesSufficient = ($unpaidNotesCount < $maxUnpaidLimit);
+                    $isAmountSufficient = ($grandTotal <= $availableCredit);
+                    $isSufficientCredit = $isNotesSufficient && $isAmountSufficient;
                 }
             }
         }
