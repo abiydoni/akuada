@@ -7,6 +7,7 @@ use App\Models\ProductPriceTierModel;
 use App\Models\OrderModel;
 use App\Models\OrderItemModel;
 use App\Models\CompanyModel;
+use App\Models\UserModel;
 
 class CartController extends BaseController
 {

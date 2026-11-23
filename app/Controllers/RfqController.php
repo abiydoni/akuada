@@ -6,6 +6,7 @@ use App\Models\RfqModel;
 use App\Models\RfqItemModel;
 use App\Models\CompanyModel;
 use App\Models\ProductModel;
+use App\Models\UserModel;
 
 class RfqController extends BaseController
 {

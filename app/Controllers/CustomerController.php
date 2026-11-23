@@ -8,6 +8,7 @@ use App\Models\CompanyModel;
 use App\Models\OrderReviewModel;
 use App\Models\OrderMessageModel;
 use App\Models\OrderReturnModel;
+use App\Models\UserModel;
 
 class CustomerController extends BaseController
 {
