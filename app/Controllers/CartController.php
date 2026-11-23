@@ -380,17 +380,41 @@ class CartController extends BaseController
 
         $isRegistered = $isVerified;
 
+        // Alamat pengiriman kantor dibuat default sesuai alamat lengkap buyer
+        $defaultShippingAddress = '';
+        if ($buyerCompany) {
+            $addrParts = array_filter([
+                $buyerCompany['address'] ?? '',
+                $buyerCompany['city'] ?? '',
+                $buyerCompany['province'] ?? '',
+            ], function($v) { return !empty(trim((string)$v)); });
+            $defaultShippingAddress = implode(', ', $addrParts);
+        }
+
+        if (empty($defaultShippingAddress) && !empty($buyerCompanyId)) {
+            $orderModel = new OrderModel();
+            $lastOrder = $orderModel->where('customer_company_id', $buyerCompanyId)
+                                   ->where('shipping_address IS NOT NULL')
+                                   ->where("shipping_address != ''")
+                                   ->orderBy('id', 'DESC')
+                                   ->first();
+            if ($lastOrder && !empty($lastOrder['shipping_address'])) {
+                $defaultShippingAddress = $lastOrder['shipping_address'];
+            }
+        }
+
         return view('marketplace/checkout', [
-            'title'              => 'Checkout Pengadaan B2B - AkuAda',
-            'cart'               => $cart,
-            'subtotal'           => $subtotal,
-            'ppnTotal'           => $ppnTotal,
-            'shippingAmount'     => $shippingAmount,
-            'grandTotal'         => $grandTotal,
-            'buyerCompany'       => $buyerCompany,
-            'hasCompany'         => $hasCompany,
-            'isVerified'         => $isVerified,
-            'isRegistered'       => $isRegistered,
+            'title'                  => 'Checkout Pengadaan B2B - AkuAda',
+            'cart'                   => $cart,
+            'subtotal'               => $subtotal,
+            'ppnTotal'               => $ppnTotal,
+            'shippingAmount'         => $shippingAmount,
+            'grandTotal'             => $grandTotal,
+            'buyerCompany'           => $buyerCompany,
+            'hasCompany'             => $hasCompany,
+            'isVerified'             => $isVerified,
+            'isRegistered'           => $isRegistered,
+            'defaultShippingAddress' => $defaultShippingAddress,
             'maxUnpaidLimit'     => $maxUnpaidLimit,
             'unpaidNotesCount'   => $unpaidNotesCount,
             'remainingNotes'     => $remainingNotes,
@@ -414,8 +438,21 @@ class CartController extends BaseController
         $paymentMethod = $this->request->getPost('payment_method') ?: 'top_30';
         $taxInvoiceRequired = $this->request->getPost('tax_invoice_required') ? 1 : 0;
         $customerNotes = $this->request->getPost('customer_notes');
-        $shippingAddress = $this->request->getPost('shipping_address');
+        $shippingAddress = trim((string)$this->request->getPost('shipping_address'));
         $designSpecs = trim((string)$this->request->getPost('design_specs'));
+
+        // Fallback default alamat pengiriman kantor jika kosong
+        if (empty($shippingAddress) && $buyerCompanyId) {
+            $buyerComp = (new CompanyModel())->find($buyerCompanyId);
+            if ($buyerComp) {
+                $addrParts = array_filter([
+                    $buyerComp['address'] ?? '',
+                    $buyerComp['city'] ?? '',
+                    $buyerComp['province'] ?? '',
+                ], function($v) { return !empty(trim((string)$v)); });
+                $shippingAddress = implode(', ', $addrParts);
+            }
+        }
 
         // Handle optional design file upload from Buyer
         $designFileBuyer = null;

@@ -404,14 +404,19 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                 <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
                     <div class="flex items-center gap-2 pb-3 border-b border-slate-100">
                         <span class="material-symbols-outlined text-pink-600">local_shipping</span>
-                        <h2 class="text-sm font-bold text-slate-800">3. Alamat Tujuan Pengiriman (Kantor / Gudang Logistik Buyer)</h2>
+                        <h2 class="text-sm font-bold text-slate-800">3. Alamat Pengiriman Kantor / Gudang Logistik</h2>
                     </div>
 
                     <div class="space-y-3 text-xs">
                         <div>
-                            <label class="block text-slate-600 font-semibold mb-1">Alamat Lengkap Tujuan Pengiriman (Penerima Barang):</label>
-                            <textarea name="shipping_address" rows="3" required placeholder="Tuliskan alamat lengkap kantor, cabang, atau gudang perusahaan Anda tempat barang akan diantar..." class="w-full bg-slate-50 rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-purple-100 focus:border-purple-600"><?= esc($buyerCompany['address'] ?? '') ?></textarea>
-                            <p class="text-[11px] text-slate-500 mt-1">Alamat ini adalah lokasi kantor / gudang perusahaan Anda tempat barang pesanan akan dikirimkan oleh pihak vendor atau armada kurir logistik.</p>
+                            <label class="block text-slate-600 font-semibold mb-1">Alamat Lengkap Pengiriman Kantor:</label>
+                            <?php
+                                $shippingValue = !empty($defaultShippingAddress) 
+                                    ? $defaultShippingAddress 
+                                    : (!empty($buyerCompany['address']) ? $buyerCompany['address'] : '');
+                            ?>
+                            <textarea name="shipping_address" rows="3" required placeholder="Tuliskan alamat lengkap kantor, cabang, atau gudang perusahaan Anda tempat barang akan diantar..." class="w-full bg-slate-50 rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-purple-100 focus:border-purple-600"><?= esc($shippingValue) ?></textarea>
+                            <p class="text-[11px] text-slate-500 mt-1">Alamat pengiriman dibuat default sesuai alamat kantor pembeli yang terdaftar di profil perusahaan. Anda dapat mengubahnya jika barang akan dikirim ke gudang/cabang lain.</p>
                         </div>
 
                         <div>
