@@ -29,7 +29,7 @@ class PageController extends BaseController
                 'icon'  => 'help_center',
                 'body'  => "Alur pengadaan di platform {$appName} dirancang transparan, akuntabel, dan sesuai standar audit perusahaan:
                 \n1. Pemilihan Barang & Kuantitas: Pilih barang kebutuhan operasional dari katalog atau ajukan RFQ untuk barang spesifik.
-                \n2. Penerbitan PO Resmi: Masukkan nomor Purchase Order (PO) internal dan pilih metode pembayaran (Term of Payment {$minTop}-{$maxTop} hari, On-Account, atau Virtual Account).
+                \n2. Penerbitan PO Resmi: Masukkan nomor Purchase Order (PO) internal dan pilih metode pembayaran (Term of Payment {$minTop}-{$maxTop} hari atau Virtual Account).
                 \n3. Pengiriman & Surat Jalan: Vendor menyiapkan barang dengan Surat Jalan resmi.
                 \n4. Pengesahan BAST & e-Faktur: Saat barang diterima dan diperiksa staf logistik, sahkan Berita Acara Serah Terima (BAST) di dashboard pembeli. Tanggal jatuh tempo TOP resmi berjalan sejak BAST disahkan."
             ],

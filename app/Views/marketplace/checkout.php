@@ -308,43 +308,6 @@ $creditShortfall    = max(0, $grandTotal - $availableCredit);
                             <?php endif; ?>
                         <?php endforeach; ?>
 
-                        <!-- Corporate PO On-Account -->
-                        <?php if (!empty($isVerified) && $isSufficientCredit): ?>
-                            <label class="flex items-start gap-3 p-4 rounded-xl border border-slate-200 hover:border-purple-300 cursor-pointer transition">
-                                <input type="radio" name="payment_method" value="corporate_po" onchange="toggleOverlimitBox()" class="mt-1 text-purple-600 focus:ring-purple-500">
-                                <div class="flex-1">
-                                    <div class="flex items-center justify-between">
-                                        <span class="font-bold text-slate-900 text-xs">Corporate Purchase Order (PO) On-Account</span>
-                                        <span class="px-2 py-0.5 rounded bg-pink-100 text-pink-700 text-[10px] font-bold">On-Account</span>
-                                    </div>
-                                    <p class="text-[11px] text-slate-500 mt-0.5">Penagihan faktur bulanan gabungan (Monthly Statement) langsung ke Finance Departemen.</p>
-                                </div>
-                            </label>
-                        <?php elseif (!empty($isVerified) && !$isSufficientCredit): ?>
-                            <div class="flex items-start gap-3 p-3.5 rounded-xl border border-rose-200 bg-rose-50/40 opacity-75 cursor-not-allowed">
-                                <input type="radio" disabled class="mt-1 text-rose-300 cursor-not-allowed">
-                                <div class="flex-1">
-                                    <div class="flex flex-wrap items-center justify-between gap-1">
-                                        <span class="font-bold text-slate-500 text-xs line-through">Corporate Purchase Order (PO) On-Account</span>
-                                        <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-300 text-[10px] font-bold">
-                                            ⚠️ Batas <?= (int)$maxUnpaidLimit ?> Nota Tercapai (<?= (int)$unpaidNotesCount ?> Belum Lunas)
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php else: ?>
-                            <div class="flex items-start gap-3 p-4 rounded-xl border border-slate-200 bg-slate-50/70 opacity-60 cursor-not-allowed">
-                                <input type="radio" disabled class="mt-1 text-slate-300 cursor-not-allowed">
-                                <div class="flex-1">
-                                    <div class="flex items-center justify-between">
-                                        <span class="font-bold text-slate-500 text-xs line-through">Corporate Purchase Order (PO) On-Account</span>
-                                        <span class="px-2 py-0.5 rounded bg-slate-200 text-slate-600 text-[10px] font-bold">🔒 Butuh Verifikasi Legalitas</span>
-                                    </div>
-                                    <p class="text-[11px] text-slate-400 mt-0.5"><?= !empty($hasCompany) ? 'Fasilitas on-account akan aktif setelah akun disetujui Superadmin.' : 'Penagihan on-account hanya untuk perusahaan yang telah diverifikasi Superadmin.' ?></p>
-                                </div>
-                            </div>
-                        <?php endif; ?>
-
                         <!-- SPECIAL OPTION WHEN OVER-LIMIT: Tetap Open PO dengan Pengajuan Over-Limit TOP -->
                         <?php if (!empty($isVerified) && !$isSufficientCredit): ?>
                             <div class="rounded-2xl border-2 border-amber-500 bg-amber-50/50 p-4 space-y-3 shadow-sm">
