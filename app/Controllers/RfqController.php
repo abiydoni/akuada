@@ -208,6 +208,14 @@ class RfqController extends BaseController
             $buyerAddress = 'Alamat kantor / gudang belum dikonfigurasi di Profil Perusahaan';
         }
 
+        $userModel = new UserModel();
+        $user = null;
+        if (!empty($rfq['user_id'])) {
+            $user = $userModel->find($rfq['user_id']);
+        } elseif (session('user_id')) {
+            $user = $userModel->find(session('user_id'));
+        }
+
         return view('marketplace/quotation', [
             'title'           => 'Surat Penawaran Harga RFQ #' . $rfq['rfq_number'] . ' - AkuAda B2B',
             'quotationNumber' => $quotationNumber,
@@ -220,11 +228,11 @@ class RfqController extends BaseController
             'shippingAmount'  => $shippingAmount,
             'grandTotal'      => $grandTotal,
             'buyer'           => [
-                'company_name' => $buyer['company_name'] ?? 'Corporate Buyer',
-                'pic_name'     => $buyer['pic_name'] ?? 'Procurement Officer',
-                'position'     => $buyer['position'] ?? 'Procurement Manager',
+                'company_name' => $buyer['company_name'] ?? 'Perusahaan Pembeli',
+                'pic_name'     => $user['name'] ?? ($buyer['pic_name'] ?? 'Bpk/Ibu Pimpinan'),
+                'position'     => $user['position'] ?? 'PIC Procurement',
                 'phone'        => 'Live Chat Web Resmi (Terverifikasi)',
-                'email'        => $buyer['email'] ?? '-',
+                'email'        => $buyer['email'] ?? ($user['email'] ?? '-'),
                 'address'      => $buyerAddress,
             ],
         ]);

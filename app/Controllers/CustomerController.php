@@ -787,9 +787,13 @@ class CustomerController extends BaseController
         $companyModel = new CompanyModel();
         $company = $companyModel->find($buyerId);
 
+        $userModel = new UserModel();
+        $user = session('user_id') ? $userModel->find(session('user_id')) : null;
+
         return view('customer/profile', [
             'title'   => 'Profil Legalitas Perusahaan - AkuAda B2B',
-            'company' => $company
+            'company' => $company,
+            'user'    => $user,
         ]);
     }
 
@@ -797,6 +801,11 @@ class CustomerController extends BaseController
     {
         $buyerId = $this->getBuyerCompanyId();
         $companyModel = new CompanyModel();
+
+        $picName = trim((string)$this->request->getPost('pic_name'));
+        $picPhone = trim((string)$this->request->getPost('pic_phone'));
+        $email = trim((string)$this->request->getPost('email'));
+        $position = trim((string)$this->request->getPost('position'));
 
         $companyModel->update($buyerId, [
             'company_name' => trim((string)$this->request->getPost('company_name')),
@@ -806,14 +815,29 @@ class CustomerController extends BaseController
             'address'      => trim((string)$this->request->getPost('address')),
             'city'         => trim((string)$this->request->getPost('city')),
             'province'     => trim((string)$this->request->getPost('province')),
-            'pic_name'     => trim((string)$this->request->getPost('pic_name')),
-            'pic_phone'    => trim((string)$this->request->getPost('pic_phone')),
-            'phone'        => trim((string)$this->request->getPost('pic_phone')),
-            'email'        => trim((string)$this->request->getPost('email')),
+            'pic_name'     => $picName,
+            'pic_phone'    => $picPhone,
+            'phone'        => $picPhone,
+            'email'        => $email,
             'updated_at'   => date('Y-m-d H:i:s'),
         ]);
 
-        session()->setFlashdata('success', 'Data profil legalitas, NPWP, dan kontak perusahaan berhasil diperbarui!');
+        // Perbarui juga data pengguna (nama gelar dan jabatan) di tabel users
+        if (session('user_id')) {
+            $userModel = new UserModel();
+            $updateUser = [];
+            if ($picName !== '') $updateUser['name'] = $picName;
+            if ($position !== '') $updateUser['position'] = $position;
+            if ($picPhone !== '') $updateUser['phone'] = $picPhone;
+            if (!empty($updateUser)) {
+                $userModel->update(session('user_id'), $updateUser);
+                session()->set([
+                    'user_name' => $picName ?: session('user_name'),
+                ]);
+            }
+        }
+
+        session()->setFlashdata('success', 'Data profil legalitas, alamat pengiriman, dan gelar/jabatan PIC berhasil diperbarui!');
         return redirect()->to('/customer/company-profile');
     }
 

@@ -64,8 +64,8 @@
                         <strong class="text-slate-800"><?= esc($company['city'] ?? '-') ?>, <?= esc($company['province'] ?? '-') ?></strong>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-slate-500">Lead PIC Procurement:</span>
-                        <strong class="text-slate-800"><?= esc($company['pic_name']) ?> (<?= esc($company['pic_phone'] ?? '-') ?>)</strong>
+                        <span class="text-slate-500">Lead PIC &amp; Jabatan:</span>
+                        <strong class="text-slate-800"><?= esc($company['pic_name']) ?><?= !empty($user['position']) ? ' (' . esc($user['position']) . ')' : '' ?></strong>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-slate-500">Email Resmi:</span>
@@ -118,8 +118,12 @@
                         <input type="text" name="province" required value="<?= esc($company['province'] ?? 'DKI Jakarta') ?>" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300">
                     </div>
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">Nama PIC Procurement *</label>
-                        <input type="text" name="pic_name" required value="<?= esc($company['pic_name']) ?>" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300">
+                        <label class="block font-bold text-slate-700 mb-1">Nama PIC &amp; Gelar Penandatangan *</label>
+                        <input type="text" name="pic_name" required value="<?= esc($company['pic_name']) ?>" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300" placeholder="Contoh: Budi Santoso, S.T., M.M.">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Jabatan Resmi PIC / Penandatangan *</label>
+                        <input type="text" name="position" required value="<?= esc($user['position'] ?? 'PIC Procurement') ?>" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300" placeholder="Contoh: PIC Procurement / Direktur Operasional">
                     </div>
                     <div>
                         <label class="block font-bold text-slate-700 mb-1">No. HP / WhatsApp PIC *</label>

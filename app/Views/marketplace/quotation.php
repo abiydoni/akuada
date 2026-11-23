@@ -27,16 +27,16 @@
 <body class="bg-slate-100 text-slate-800 antialiased min-h-screen py-6 sm:py-10 px-4">
 <?php
     $appName       = get_system_setting('app_name', 'AkuAda');
+    $appWebsite    = get_system_setting('app_website', 'akuada.appsbee.my.id');
     $issuerName    = get_system_setting('inv_issuer_name', 'PT AKUADA TEKNOLOGI PENGADAAN NUSANTARA');
     $issuerSub     = get_system_setting('inv_issuer_subtitle', 'Marketplace B2B & Platform Pengadaan Operasional Terpadu');
-    $issuerAddr1   = get_system_setting('inv_issuer_address_1', 'Sahid Sudirman Center Lt. 28, Jl. Jend. Sudirman Kav. 86');
-    $issuerAddr2   = get_system_setting('inv_issuer_address_2', 'Karet Tengsin, Tanah Abang, Jakarta Pusat 10220');
-    $issuerNpwp    = get_system_setting('inv_issuer_npwp', '01.999.888.7-011.000');
-    $issuerNib     = get_system_setting('inv_issuer_nib', '9120008899112');
-    $billingEmail  = get_system_setting('inv_billing_email', 'b2b@akuada.co.id');
-    $billingPhone  = get_system_setting('inv_billing_phone', '(021) 5088-9900');
+    $issuerAddr1   = get_system_setting('inv_issuer_address_1', 'Randuares Kel. Kumpulrejo, Kec. Argomulyo');
+    $issuerAddr2   = get_system_setting('inv_issuer_address_2', 'Kota Salatiga 50734');
+    $issuerNpwp    = get_system_setting('inv_issuer_npwp', '-');
+    $issuerNib     = get_system_setting('inv_issuer_nib', '-');
+    $billingEmail  = get_system_setting('contact_email') ?: get_system_setting('inv_billing_email', 'akuada@appsbee.my.id');
 
-    $signName      = get_system_setting('inv_sign_name', 'Dra. Maya Anggraini, Ak., CA.');
+    $signName      = get_system_setting('inv_sign_name', 'Doni Abiyantoro');
     $signTitle     = get_system_setting('inv_sign_title', 'Finance & Treasury Director');
     $signDivision  = get_system_setting('inv_sign_division', 'Commercial & Corporate Sales Division');
     $sealText      = get_system_setting('inv_seal_text', 'AKUADA');
@@ -90,8 +90,12 @@
                     </div>
                 </div>
                 <p class="text-xs text-slate-600 max-w-lg pt-1 leading-relaxed">
-                    <?= esc($issuerAddr1) ?>, <?= esc($issuerAddr2) ?><br>
-                    <strong>NPWP:</strong> <?= esc($issuerNpwp) ?> &bull; <strong>NIB:</strong> <?= esc($issuerNib) ?> &bull; <strong>Web Resmi:</strong> www.akuada.com &bull; <strong>Layanan:</strong> Live Chat Web Platform &bull; <strong>Email:</strong> <?= esc($billingEmail) ?>
+                    <?= esc($issuerAddr1) ?><?= (!empty($issuerAddr2) ? ', ' . esc($issuerAddr2) : '') ?><br>
+                    <?php if (!empty($issuerNpwp) && $issuerNpwp !== '-'): ?><strong>NPWP:</strong> <?= esc($issuerNpwp) ?> &bull; <?php endif; ?>
+                    <?php if (!empty($issuerNib) && $issuerNib !== '-'): ?><strong>NIB:</strong> <?= esc($issuerNib) ?> &bull; <?php endif; ?>
+                    <strong>Web Resmi:</strong> <a href="https://<?= esc($appWebsite) ?>" target="_blank" class="hover:underline font-bold text-purple-700"><?= esc($appWebsite) ?></a> &bull; 
+                    <strong>Layanan:</strong> <a href="<?= base_url('chat') ?>" target="_blank" class="hover:underline font-bold text-blue-600 inline-flex items-center gap-0.5"><span class="material-symbols-outlined text-[13px] text-blue-600">forum</span> Live Chat Web Platform AkuAda</a> &bull; 
+                    <strong>Email:</strong> <?= esc($billingEmail) ?>
                 </p>
             </div>
 
@@ -133,7 +137,7 @@
                 <h3 class="text-sm font-black text-slate-900"><?= esc($buyer['company_name'] ?? 'Corporate Buyer') ?></h3>
                 <p class="text-slate-600 leading-snug">
                     <strong>UP:</strong> <?= esc($buyer['pic_name'] ?? 'Bpk/Ibu Pimpinan Procurement') ?> (<?= esc($buyer['position'] ?? 'Procurement Officer') ?>)<br>
-                    <strong>Email:</strong> <?= esc($buyer['email'] ?? '-') ?> &bull; <strong>Saluran Koordinasi:</strong> Live Chat Portal AkuAda (Terverifikasi)
+                    <strong>Email:</strong> <?= esc($buyer['email'] ?? '-') ?> &bull; <strong>Saluran Koordinasi:</strong> <a href="<?= base_url('chat') ?>" target="_blank" class="hover:underline font-bold text-purple-700 inline-flex items-center gap-0.5"><span class="material-symbols-outlined text-[13px] text-purple-600">forum</span> Live Chat Portal AkuAda (Terverifikasi)</a>
                 </p>
             </div>
             <div class="space-y-1 sm:border-l sm:border-slate-200 sm:pl-4">
@@ -225,7 +229,7 @@
                         <li><strong>Faktur Pajak e-Faktur:</strong> Harga barang dikenakan PPN <?= esc($ppnRateLabel) ?> resmi DJP dan faktur pajak elektronik akan diterbitkan atas nama perusahaan pemesan.</li>
                         <li><strong>Fasilitas Kredit TOP:</strong> Bagi Corporate Buyer terverifikasi, pembayaran dapat menggunakan fasilitas Term of Payment (TOP 14 / 30 / 60 / 90 hari) terhitung sejak Berita Acara Serah Terima (BAST) ditandatangani.</li>
                         <li><strong>Rekening Escrow Resmi:</strong> Pembayaran sah ditransfer ke rekening penampung resmi: <strong>Bank Mandiri (122-00-1122334-5) a/n AkuAda</strong> atau <strong>Bank BCA (535-088-9900)</strong>.</li>
-                        <li><strong>Konfirmasi Pemesanan:</strong> Untuk melanjutkan penawaran ini menjadi pesanan resmi, silakan klik tombol <em>Lanjut Terbitkan PO</em> atau hubungi tim via fitur Live Chat resmi di portal web AkuAda (https://akuada.com). Seluruh komunikasi &amp; negosiasi diproses melalui sistem chat terpadu platform.</li>
+                        <li><strong>Konfirmasi Pemesanan:</strong> Untuk melanjutkan penawaran ini menjadi pesanan resmi, silakan klik tombol <em>Lanjut Terbitkan PO</em> atau hubungi tim via <a href="<?= base_url('chat') ?>" target="_blank" class="text-purple-700 underline font-bold">Live Chat resmi di web portal AkuAda (<?= esc($appWebsite) ?>)</a>. Seluruh komunikasi &amp; negosiasi diproses melalui sistem chat terpadu platform.</li>
                     </ol>
                 </div>
             </div>

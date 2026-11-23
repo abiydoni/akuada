@@ -82,6 +82,12 @@
                     <input type="text" name="app_subtitle" value="<?= esc($val($gen, 'app_subtitle', 'B2B E-Procurement')) ?>"
                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600">
                 </div>
+                <div class="md:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-1">Website Resmi Platform (URL / Domain Utama):</label>
+                    <input type="text" name="app_website" value="<?= esc($val($gen, 'app_website', 'akuada.appsbee.my.id')) ?>"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-purple-600 font-mono text-purple-900 font-bold"
+                           placeholder="akuada.appsbee.my.id">
+                </div>
 
                 <div class="md:col-span-2">
                     <label class="block font-bold text-slate-700 mb-1">Tagline Resmi Platform (Hero & Meta):</label>

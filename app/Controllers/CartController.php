@@ -221,14 +221,23 @@ class CartController extends BaseController
             $buyer = $companyModel->find($buyerCompanyId);
         }
 
+        $userModel = new UserModel();
+        $user = session('user_id') ? $userModel->find(session('user_id')) : null;
+
         $buyerName = $this->request->getPost('buyer_company_name') 
-            ?: ($buyer['company_name'] ?? session('company_name') ?? 'PT Pelanggan Korporat Indonesia');
+            ?: ($buyer['company_name'] ?? session('company_name') ?? 'Perusahaan Pembeli');
+
+        // Nama & Gelar Penandatangan diambil murni dari tabel users.name (atau companies.pic_name)
         $picName = $this->request->getPost('buyer_pic_name') 
-            ?: ($buyer['pic_name'] ?? session('user_name') ?? 'Tim Procurement & Pengadaan');
+            ?: ($user['name'] ?? ($buyer['pic_name'] ?? session('user_name') ?? 'Bpk/Ibu Pimpinan'));
+
+        // Jabatan Penandatangan diambil murni dari tabel users.position
         $picPosition = $this->request->getPost('buyer_position') 
-            ?: ($buyer['position'] ?? 'Procurement Manager');
+            ?: ($user['position'] ?? 'PIC Procurement');
+
+        // Email Pemesan diambil murni dari tabel companies atau tabel users
         $buyerEmail = $this->request->getPost('buyer_email') 
-            ?: ($buyer['email'] ?? session('user_email') ?? 'procurement@perusahaan.co.id');
+            ?: ($buyer['email'] ?? ($user['email'] ?? session('user_email') ?? '-'));
 
         // Alamat Pengiriman Kebutuhan: ambil data riil dari tabel companies (address, city, province)
         $buyerAddress = '';

@@ -253,7 +253,7 @@ $ppnLabel      = format_tax_rate();
             </p>
             <div class="text-xs space-y-1 text-slate-400">
                 <p>📍 <?= esc($officeAddress) ?></p>
-                <p>🌐 Web Resmi: www.akuada.com | 💬 Live Chat Web Terpadu | ✉️ Email: <?= esc($contactEmail) ?></p>
+                <p>🌐 Web Resmi: <a href="https://<?= esc(get_system_setting('app_website', 'akuada.appsbee.my.id')) ?>" target="_blank" class="hover:underline text-slate-300"><?= esc(get_system_setting('app_website', 'akuada.appsbee.my.id')) ?></a> | 💬 <a href="<?= base_url('chat') ?>" class="hover:underline text-purple-300">Live Chat Web Terpadu</a> | ✉️ Email: <?= esc($contactEmail) ?></p>
             </div>
         </div>
 
