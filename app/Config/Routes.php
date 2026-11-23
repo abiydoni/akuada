@@ -210,6 +210,7 @@ $routes->group('customer', ['filter' => 'auth'], function ($routes) {
 });
 
 // 8. Live Chat & Messaging API
+$routes->get('chat', 'ChatController::index');
 $routes->get('chat/conversations', 'ChatController::getConversations');
 $routes->get('chat/messages/(:segment)', 'ChatController::getMessages/$1');
 $routes->post('chat/send', 'ChatController::sendMessage');

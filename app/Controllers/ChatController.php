@@ -8,6 +8,23 @@ use CodeIgniter\Controller;
 
 class ChatController extends Controller
 {
+    /**
+     * Smart routing for Live Chat based on active session role
+     */
+    public function index()
+    {
+        $role = session('user_role') ?: (session('role') ?: '');
+        if ($role === 'admin') {
+            return redirect()->to('/admin/chat');
+        } elseif ($role === 'vendor') {
+            return redirect()->to('/vendor/chat');
+        } elseif ($role === 'customer') {
+            return redirect()->to('/customer/chat');
+        }
+
+        return redirect()->to('/customer/chat');
+    }
+
     protected function getGuestKey(): string
     {
         $sessId = session_id();
