@@ -131,6 +131,68 @@
         </div>
     </div>
 
+    <?php
+        $orderStatus = $order['order_status'] ?? 'pending_payment';
+        $isPoStage = in_array($orderStatus, ['pending_payment', 'po_issued', 'pending_vendor', 'confirmed', 'processing'], true);
+        $isTop = str_starts_with($order['payment_method'] ?? '', 'top_');
+        $isPaid = ($order['payment_status'] ?? '') === 'paid';
+        $isDeliveredOrComplete = in_array($orderStatus, ['delivered', 'bast_signed', 'completed'], true);
+
+        if ($isPaid) {
+            $invoiceDocTitle = 'Faktur Penjualan Resmi (Lunas)';
+            $invoiceBadgeClass = 'bg-emerald-100 text-emerald-900 border-emerald-300';
+        } elseif ($isDeliveredOrComplete) {
+            $invoiceDocTitle = 'Faktur Penjualan Definitif (Customer Invoice)';
+            $invoiceBadgeClass = 'bg-purple-100 text-purple-900 border-purple-200';
+        } elseif ($isTop) {
+            $invoiceDocTitle = 'Proforma Invoice / Estimasi Tagihan PO';
+            $invoiceBadgeClass = 'bg-amber-100 text-amber-900 border-amber-300';
+        } else {
+            $invoiceDocTitle = 'Invoice Tagihan Pembayaran PO';
+            $invoiceBadgeClass = 'bg-purple-100 text-purple-900 border-purple-200';
+        }
+
+        $topDays = (int)str_replace('top_', '', $order['payment_method'] ?? '30');
+        if ($topDays <= 0) $topDays = 30;
+
+        if ($isTop) {
+            if ($isDeliveredOrComplete && !empty($order['due_date'])) {
+                $dueDateText = date('d F Y', strtotime($order['due_date']));
+            } else {
+                $dueDateText = $topDays . ' Hari Kalender Setelah BAST Disahkan';
+            }
+        } else {
+            $dueDateText = !empty($order['due_date']) ? date('d F Y', strtotime($order['due_date'])) : 'Sesuai Jadwal Pembayaran';
+        }
+
+        if ($isDeliveredOrComplete && !empty($order['bast_number'])) {
+            $bastNumberDisplay = esc($order['bast_number']);
+        } else {
+            $bastNumberDisplay = '<span class="text-slate-400 italic">Menunggu Pengiriman & BAST (Belum Terbit)</span>';
+        }
+
+        if (!empty($order['tax_invoice_required'])) {
+            if (!empty($order['tax_invoice_number'])) {
+                $taxInvoiceDisplay = esc($order['tax_invoice_number']);
+            } elseif (!$isPoStage || $isPaid) {
+                $taxInvoiceDisplay = '010.002-26.' . rand(10000000, 99999999);
+            } else {
+                $taxInvoiceDisplay = '<span class="text-slate-400 italic">Diterbitkan Saat Penyerahan Barang / Pelunasan</span>';
+            }
+        } else {
+            $taxInvoiceDisplay = '<span class="text-slate-400">Tidak Mengajukan e-Faktur</span>';
+        }
+    ?>
+
+    <?php if ($isPoStage && $isTop && !$isPaid): ?>
+        <div class="max-w-4xl mx-auto mb-4 p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-center gap-2.5 no-print shadow-xs">
+            <span class="material-symbols-outlined text-amber-600 text-xl flex-shrink-0">info</span>
+            <p>
+                <strong>Dokumen Proforma (Tahap PO):</strong> Pesanan ini masih dalam tahap Purchase Order (PO) dengan metode pembayaran tempo TOP <?= $topDays ?> hari. Tagihan komersial definitif dan tanggal jatuh tempo resmi mulai dihitung setelah Berita Acara Serah Terima (BAST) fisik diterbitkan dan ditandatangani.
+            </p>
+        </div>
+    <?php endif; ?>
+
     <!-- Official Invoice Document Paper (A4 Formatted) -->
     <div class="max-w-4xl mx-auto bg-white rounded-3xl border border-slate-200 shadow-2xl p-8 sm:p-12 print:p-0 print:border-none print:shadow-none print-shadow-none space-y-8">
 
@@ -159,8 +221,8 @@
 
             <!-- Right: Document Title, Invoice Number & Date -->
             <div class="text-left sm:text-right space-y-1.5 self-stretch sm:self-auto">
-                <span class="inline-block px-3 py-1 rounded-full bg-purple-100 text-purple-900 font-extrabold text-xs uppercase tracking-wider border border-purple-200">
-                    Faktur Penjualan Resmi (Customer Invoice)
+                <span class="inline-block px-3 py-1 rounded-full <?= $invoiceBadgeClass ?> font-extrabold text-xs uppercase tracking-wider border">
+                    <?= esc($invoiceDocTitle) ?>
                 </span>
                 
                 <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight pt-1">
@@ -169,7 +231,7 @@
 
                 <div class="text-xs text-slate-600 space-y-1 pt-1">
                     <div>Tanggal Terbit: <strong class="text-slate-900 font-bold"><?= date('d F Y', strtotime($order['created_at'])) ?></strong></div>
-                    <div>Jatuh Tempo (TOP): <strong class="text-rose-700 font-bold"><?= $order['due_date'] ? date('d F Y', strtotime($order['due_date'])) : '30 Hari Setelah BAST' ?></strong></div>
+                    <div>Jatuh Tempo (TOP): <strong class="text-rose-700 font-bold"><?= $dueDateText ?></strong></div>
                     <div>Referensi No. PO: <strong class="font-mono font-bold text-purple-700"><?= esc($order['po_number'] ?? $order['order_number']) ?></strong></div>
                     <div>Metode Pembayaran: <?= badge_payment_method($order['payment_method']) ?></div>
                 </div>
@@ -197,11 +259,11 @@
                 <div class="pt-2 space-y-1 border-t border-slate-200 mt-2">
                     <div class="flex items-center justify-between">
                         <span class="text-slate-500">Nomor BAST Sah:</span>
-                        <strong class="font-mono text-slate-900"><?= esc($order['bast_number'] ?? 'BAST Terlampir') ?></strong>
+                        <strong class="font-mono text-slate-900"><?= $bastNumberDisplay ?></strong>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-slate-500">No. e-Faktur Pajak PPN:</span>
-                        <strong class="font-mono text-blue-700"><?= esc($order['tax_invoice_number'] ?? '010.002-26.' . rand(10000000, 99999999)) ?></strong>
+                        <strong class="font-mono text-blue-700"><?= $taxInvoiceDisplay ?></strong>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-slate-500">Status Pembayaran:</span>

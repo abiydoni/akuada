@@ -91,13 +91,13 @@
                                 <div class="flex flex-col gap-1.5">
                                     <?php if ($o['order_status'] === 'shipped'): ?>
                                         <a href="<?= base_url('customer/orders/' . $o['id']) ?>" 
-                                           class="w-full px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] transition inline-flex items-center justify-center gap-1 shadow-sm">
+                                            class="w-full px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] transition inline-flex items-center justify-center gap-1 shadow-sm">
                                             <span class="material-symbols-outlined text-[13px]">where_to_vote</span>
                                             <span>Terima Barang</span>
                                         </a>
                                     <?php elseif ($o['order_status'] === 'delivered'): ?>
                                         <a href="<?= base_url('customer/orders/' . $o['id']) ?>" 
-                                           class="w-full px-2 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-[11px] transition inline-flex items-center justify-center gap-1 shadow-sm">
+                                            class="w-full px-2 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-[11px] transition inline-flex items-center justify-center gap-1 shadow-sm">
                                             <span class="material-symbols-outlined text-[13px]">verified</span>
                                             <span>Sahkan BAST</span>
                                         </a>
@@ -105,22 +105,54 @@
 
                                     <?php if (empty($o['has_review']) && in_array($o['order_status'], ['delivered', 'bast_signed', 'completed'])): ?>
                                         <a href="<?= base_url('customer/orders/' . $o['id'] . '#reviewSection') ?>" 
-                                           class="w-full px-2 py-0.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-[10px] transition inline-flex items-center justify-center gap-1 border border-amber-300">
+                                            class="w-full px-2 py-0.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-[10px] transition inline-flex items-center justify-center gap-1 border border-amber-300">
                                             <span class="material-symbols-outlined text-[12px] text-amber-500">star</span>
                                             <span>Beri Bintang</span>
                                         </a>
                                     <?php endif; ?>
+
+                                    <?php
+                                        $rowStatus = $o['order_status'] ?? 'pending_payment';
+                                        $rowIsPo = in_array($rowStatus, ['pending_payment', 'po_issued', 'pending_vendor', 'confirmed', 'processing'], true);
+                                        $rowIsShipped = in_array($rowStatus, ['shipped', 'delivered', 'bast_signed', 'completed'], true);
+                                        $rowIsTop = str_starts_with($o['payment_method'] ?? '', 'top_');
+                                        $rowIsPaid = ($o['payment_status'] ?? '') === 'paid';
+
+                                        if ($rowIsPo) {
+                                            $poBtnLabel = 'Detail Lembar PO';
+                                            $poBtnIcon  = 'assignment';
+                                            $poBtnTitle = 'Lihat Lembar Purchase Order (PO) Resmi';
+                                        } elseif (in_array($rowStatus, ['bast_signed', 'completed'], true)) {
+                                            $poBtnLabel = 'PO & BAST Sah';
+                                            $poBtnIcon  = 'verified';
+                                            $poBtnTitle = 'Lihat Arsip PO & BAST Serah Terima Selesai';
+                                        } else {
+                                            $poBtnLabel = 'PO & Surat Jalan';
+                                            $poBtnIcon  = 'local_shipping';
+                                            $poBtnTitle = 'Lihat Status Pengiriman & Surat Jalan';
+                                        }
+
+                                        if ($rowIsPaid || in_array($rowStatus, ['bast_signed', 'completed'], true)) {
+                                            $invLabel = 'Faktur Resmi';
+                                        } elseif ($rowIsTop) {
+                                            $invLabel = 'Proforma PO';
+                                        } else {
+                                            $invLabel = 'Tagihan PO';
+                                        }
+                                    ?>
+
                                     <a href="<?= base_url('customer/orders/' . $o['id']) ?>" 
                                        class="w-full px-2.5 py-1.5 rounded-lg bg-pink-50 hover:bg-pink-100 text-pink-700 font-bold text-xs transition inline-flex items-center justify-center gap-1 border border-pink-200 shadow-sm" 
-                                       title="Lihat Rincian Status PO & Dokumen BAST">
-                                        <span class="material-symbols-outlined text-[14px]">visibility</span>
-                                        <span>PO & BAST</span>
+                                       title="<?= esc($poBtnTitle) ?>">
+                                        <span class="material-symbols-outlined text-[14px]"><?= $poBtnIcon ?></span>
+                                        <span><?= esc($poBtnLabel) ?></span>
                                     </a>
+
                                     <a href="<?= base_url('customer/orders/invoice/' . $o['id']) ?>" target="_blank" 
                                        class="w-full px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs transition inline-flex items-center justify-center gap-1 border border-purple-200" 
-                                       title="Cetak Faktur Penjualan Resmi AkuAda">
+                                       title="Cetak <?= esc($invLabel) ?> AkuAda">
                                         <span class="material-symbols-outlined text-[14px]">receipt_long</span>
-                                        <span>Faktur AkuAda</span>
+                                        <span><?= esc($invLabel) ?></span>
                                     </a>
                                 </div>
                             </td>

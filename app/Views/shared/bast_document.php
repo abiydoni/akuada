@@ -38,10 +38,25 @@ $driverDeliveryUrl = base_url('delivery/' . $deliveryToken);
 $qrCodeDriverUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' . urlencode($driverDeliveryUrl);
 ?>
 
+    <?php 
+        $isPoStageBast = in_array($order['order_status'] ?? '', ['pending_payment', 'po_issued', 'pending_vendor', 'confirmed', 'processing'], true);
+    ?>
+
+    <?php if ($isPoStageBast): ?>
+        <div class="max-w-4xl mx-auto mb-4 p-3.5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950 text-xs flex items-center gap-2.5 no-print shadow-xs">
+            <span class="material-symbols-outlined text-amber-600 text-2xl flex-shrink-0">warning</span>
+            <p>
+                <strong>DOKUMEN DRAFT (TAHAP PO):</strong> Pesanan ini masih dalam tahap Purchase Order (PO) dan menunggu proses pengiriman oleh vendor. Dokumen Surat Jalan dan BAST resmi baru berlaku sah secara hukum setelah fisik barang diberangkatkan dan serah terima diperiksa di lokasi pembeli.
+            </p>
+        </div>
+    <?php endif; ?>
+
     <!-- Top Floating Action Bar -->
     <div class="max-w-4xl mx-auto mb-5 flex flex-wrap items-center justify-between gap-3 bg-white px-5 py-3.5 rounded-2xl border border-slate-200 shadow-sm no-print">
         <div class="flex items-center gap-2.5 text-xs">
-            <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-extrabold uppercase">Dokumen Legal 3-Way Matching</span>
+            <span class="px-2.5 py-1 rounded-lg <?= $isPoStageBast ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800' ?> font-extrabold uppercase">
+                <?= $isPoStageBast ? 'Draf Acuan Surat Jalan & BAST' : 'Dokumen Legal 3-Way Matching' ?>
+            </span>
             <span class="font-mono font-bold text-slate-700"><?= esc($bastNo) ?></span>
         </div>
         <div class="flex items-center gap-2">
@@ -57,6 +72,13 @@ $qrCodeDriverUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&dat
 
     <!-- Printable Document Sheet -->
     <div class="max-w-4xl mx-auto bg-white rounded-3xl border border-slate-200 shadow-xl p-8 sm:p-12 space-y-7 print-sheet">
+
+        <?php if ($isPoStageBast): ?>
+            <div class="p-3 bg-amber-50/90 border border-amber-300 rounded-xl text-amber-950 text-[11px] leading-relaxed">
+                <span class="font-bold uppercase tracking-wider block text-[10px] text-amber-800">Status Dokumen: Draft Acuan (Menunggu Pengiriman Vendor)</span>
+                Surat Jalan & BAST resmi baru berlaku sah saat barang diserahkan oleh kurir/driver armada vendor dan disahkan oleh penerima barang.
+            </div>
+        <?php endif; ?>
 
         <!-- Header Kop Dokumen -->
         <div class="flex flex-col sm:flex-row justify-between items-start gap-4 pb-6 border-b-2 border-slate-900">

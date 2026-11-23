@@ -29,10 +29,25 @@ $nsfp          = $order['tax_invoice_number'] ?: ('010.002-' . date('y', strtoti
 $taxRateLabel  = format_tax_rate();
 ?>
 
+    <?php
+        $isPoStageTax = in_array($order['order_status'] ?? '', ['pending_payment', 'po_issued', 'pending_vendor', 'confirmed', 'processing'], true) && ($order['payment_status'] ?? '') !== 'paid';
+    ?>
+
+    <?php if ($isPoStageTax): ?>
+        <div class="max-w-4xl mx-auto mb-4 p-3.5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950 text-xs flex items-center gap-2.5 no-print shadow-xs">
+            <span class="material-symbols-outlined text-amber-600 text-2xl flex-shrink-0">warning</span>
+            <p>
+                <strong>DRAFT ESTIMASI FAKTUR PAJAK (BELUM TERBIT DJP):</strong> Pesanan ini masih dalam tahap Purchase Order (PO) dan belum diserahkan/dibayar. Sesuai ketentuan PER-03/PJ/2022 Ditjen Pajak, Faktur Pajak sah baru diterbitkan pada saat penyerahan Barang Kena Pajak (Surat Jalan/BAST) atau saat pembayaran diterima.
+            </p>
+        </div>
+    <?php endif; ?>
+
     <!-- Top Action Bar -->
     <div class="max-w-4xl mx-auto mb-5 flex flex-wrap items-center justify-between gap-3 bg-white px-5 py-3.5 rounded-2xl border border-slate-200 shadow-sm no-print">
         <div class="flex items-center gap-2.5 text-xs">
-            <span class="px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800 font-extrabold uppercase">e-Faktur DJP (PPN <?= esc($taxRateLabel) ?>)</span>
+            <span class="px-2.5 py-1 rounded-lg <?= $isPoStageTax ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800' ?> font-extrabold uppercase">
+                <?= $isPoStageTax ? 'Draf e-Faktur Pajak' : 'e-Faktur DJP (PPN ' . esc($taxRateLabel) . ')' ?>
+            </span>
             <span class="font-mono font-bold text-slate-700">NSFP: <?= esc($nsfp) ?></span>
         </div>
         <div class="flex items-center gap-2">
@@ -48,6 +63,13 @@ $taxRateLabel  = format_tax_rate();
 
     <!-- Official DJP e-Faktur Sheet -->
     <div class="max-w-4xl mx-auto bg-white rounded-2xl border-2 border-slate-800 shadow-xl p-8 sm:p-10 space-y-5 text-xs print-sheet">
+
+        <?php if ($isPoStageTax): ?>
+            <div class="p-3 bg-amber-50 border border-amber-300 rounded-xl text-amber-950 text-[11px] leading-relaxed">
+                <span class="font-bold uppercase tracking-wider block text-[10px] text-amber-800">Status Faktur Pajak: Draft Acuan Pra-Penyerahan BKP</span>
+                Faktur Pajak resmi DJP diterbitkan pada saat penyerahan barang (Surat Jalan) atau saat pembayaran pelunasan diterima.
+            </div>
+        <?php endif; ?>
 
         <!-- Title Block -->
         <div class="text-center border-b-2 border-slate-800 pb-4">

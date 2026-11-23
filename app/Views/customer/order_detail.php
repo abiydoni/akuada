@@ -2,9 +2,66 @@
 
 <?= $this->section('customer_content') ?>
 
+<style>
+@media print {
+    body { background: #fff !important; }
+    header, nav, aside, footer, .no-print, #customerChatWidget { display: none !important; }
+    .print-only-po { display: block !important; border: 1px solid #0f172a !important; box-shadow: none !important; padding: 24px !important; margin: 0 !important; }
+}
+</style>
+
+<?php
+    $orderStatus         = $order['order_status'] ?? 'pending_payment';
+    $paymentStatus       = $order['payment_status'] ?? 'unpaid';
+    $paymentMethod       = $order['payment_method'] ?? 'top_30';
+    $isTopMethod         = str_starts_with($paymentMethod, 'top_');
+
+    // 1. Tahapan Pesanan B2B:
+    // Tahap Baru PO: pending_payment, po_issued, pending_vendor, confirmed, processing
+    $isPoStage           = in_array($orderStatus, ['pending_payment', 'po_issued', 'pending_vendor', 'confirmed', 'processing'], true);
+    // Tahap Pengiriman: shipped
+    $isShippedStage      = ($orderStatus === 'shipped');
+    // Tahap Tiba di Lokasi: delivered
+    $isDeliveredStage    = ($orderStatus === 'delivered');
+    // Tahap Selesai / BAST Sah: bast_signed, completed
+    $isCompletedStage    = in_array($orderStatus, ['bast_signed', 'completed'], true);
+
+    // 2. Ketersediaan Dokumen Legal Pengadaan:
+    // A. Surat Jalan: Baru terbit saat vendor memberangkatkan barang (shipped / delivered / completed)
+    $canAccessSuratJalan = in_array($orderStatus, ['shipped', 'delivered', 'bast_signed', 'completed'], true);
+
+    // B. BAST: Baru sah dan bisa diserahterimakan saat barang tiba di lokasi pembeli (delivered / bast_signed / completed)
+    $canAccessBast       = in_array($orderStatus, ['delivered', 'bast_signed', 'completed'], true);
+
+    // C. e-Faktur PPN: Hanya jika meminta Faktur Pajak DAN barang sudah mulai dikirim / sudah bayar
+    $taxInvoiceRequested = !empty($order['tax_invoice_required']);
+    $canAccessTaxInvoice = $taxInvoiceRequested && ($canAccessSuratJalan || $paymentStatus === 'paid');
+
+    // D. Invoice Status Label:
+    // - Jika pesanan selesai / lunas: "Faktur / Invoice Resmi"
+    // - Jika baru PO & TOP: "Proforma Invoice (Estimasi PO)" -> Tagihan komersial resmi jatuh tempo setelah BAST
+    // - Jika baru PO & Non-TOP (CBD/Transfer): "Tagihan Pembayaran PO"
+    if ($isCompletedStage || $paymentStatus === 'paid') {
+        $invoiceBtnLabel  = 'Faktur / Invoice Resmi';
+        $invoiceBtnClass  = 'bg-purple-100 hover:bg-purple-200 text-purple-900 border-purple-200';
+        $invoiceIconColor = 'text-purple-700';
+        $invoiceTooltip   = 'Faktur Penjualan Sah AkuAda & Rincian Pembayaran';
+    } elseif ($isTopMethod) {
+        $invoiceBtnLabel  = 'Proforma Invoice (Estimasi PO)';
+        $invoiceBtnClass  = 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-200';
+        $invoiceIconColor = 'text-amber-700';
+        $invoiceTooltip   = 'Estimasi Proforma Invoice untuk kebutuhan verifikasi anggaran. Tagihan definitif jatuh tempo berlaku setelah BAST disahkan.';
+    } else {
+        $invoiceBtnLabel  = 'Tagihan Pembayaran PO';
+        $invoiceBtnClass  = 'bg-purple-100 hover:bg-purple-200 text-purple-900 border-purple-200';
+        $invoiceIconColor = 'text-purple-700';
+        $invoiceTooltip   = 'Invoice tagihan transfer pembayaran PO ke rekening escrow AkuAda.';
+    }
+?>
+
 <div class="space-y-6">
     <!-- Header with Breadcrumbs & Actions -->
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 no-print">
         <div>
             <div class="flex items-center gap-2 text-xs text-slate-500 mb-1">
                 <a href="<?= base_url('customer/orders') ?>" class="hover:text-pink-600">Riwayat Purchase Order</a>
@@ -14,26 +71,54 @@
             <h1 class="text-xl font-extrabold text-slate-900">Status Pemrosesan & Pelacakan PO</h1>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-            <a href="<?= base_url('customer/orders/invoice/' . $order['id']) ?>" target="_blank" class="px-3.5 py-2 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-extrabold text-xs transition flex items-center gap-1.5 shadow-sm border border-purple-200">
-                <span class="material-symbols-outlined text-[18px] text-purple-700">receipt_long</span>
-                <span>Faktur / Invoice AkuAda</span>
-            </a>
-            <a href="<?= base_url('customer/orders/bast/' . $order['id']) ?>" target="_blank" class="px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold text-xs transition flex items-center gap-1.5 shadow-sm border border-blue-200">
-                <span class="material-symbols-outlined text-[18px] text-blue-700">contract</span>
-                <span>BAST & Surat Jalan</span>
-            </a>
-            <a href="<?= base_url('customer/orders/tax-invoice/' . $order['id']) ?>" target="_blank" class="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-bold text-xs transition flex items-center gap-1.5 shadow-sm border border-emerald-200">
-                <span class="material-symbols-outlined text-[18px] text-emerald-700">receipt</span>
-                <span>e-Faktur PPN</span>
-            </a>
-            <a href="<?= base_url('customer/chat?key=admin_comp_' . $order['customer_company_id']) ?>" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs transition flex items-center gap-1.5 shadow-md shadow-purple-600/20">
-                <span class="material-symbols-outlined text-[18px]">forum</span>
-                <span>Chat dengan Tim AkuAda</span>
-            </a>
-            <button type="button" onclick="window.print()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center gap-1.5 shadow-sm">
-                <span class="material-symbols-outlined text-[16px]">print</span>
+            <!-- 1. Tombol Lembar PO (Purchase Order) - Dokumen Utama Tahap Pemesanan -->
+            <button type="button" onclick="window.print()" class="px-3.5 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs transition flex items-center gap-1.5 shadow-md shadow-purple-700/20" title="Cetak Lembar Purchase Order (PO) Resmi">
+                <span class="material-symbols-outlined text-[18px]">print</span>
                 <span>Cetak Lembar PO</span>
             </button>
+
+            <!-- 2. Tombol Invoice / Faktur Penjualan AkuAda -->
+            <a href="<?= base_url('customer/orders/invoice/' . $order['id']) ?>" target="_blank" class="px-3.5 py-2 rounded-xl <?= $invoiceBtnClass ?> font-bold text-xs transition flex items-center gap-1.5 shadow-sm border" title="<?= esc($invoiceTooltip) ?>">
+                <span class="material-symbols-outlined text-[18px] <?= $invoiceIconColor ?>">receipt_long</span>
+                <span><?= esc($invoiceBtnLabel) ?></span>
+            </a>
+
+            <!-- 3. Tombol Surat Jalan (Delivery Order / DO) -->
+            <?php if ($canAccessSuratJalan): ?>
+                <a href="<?= base_url('customer/orders/bast/' . $order['id']) ?>" target="_blank" class="px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold text-xs transition flex items-center gap-1.5 shadow-sm border border-blue-200" title="Surat Jalan Sah dari Vendor & Kurir Pengirim">
+                    <span class="material-symbols-outlined text-[18px] text-blue-700">local_shipping</span>
+                    <span>Surat Jalan & BAST</span>
+                </a>
+            <?php else: ?>
+                <div class="px-3 py-2 rounded-xl bg-slate-100 text-slate-400 font-medium text-xs flex items-center gap-1.5 border border-slate-200 cursor-not-allowed select-none" title="Surat Jalan belum terbit. Barang masih dalam persiapan/antrean gudang vendor dan belum diberangkatkan.">
+                    <span class="material-symbols-outlined text-[16px] text-slate-400">lock</span>
+                    <span>Surat Jalan (Menunggu Kirim)</span>
+                </div>
+            <?php endif; ?>
+
+            <!-- 4. Tombol e-Faktur Pajak PPN (DJP) -->
+            <?php if (!$taxInvoiceRequested): ?>
+                <div class="px-3 py-2 rounded-xl bg-slate-50 text-slate-400 font-medium text-xs flex items-center gap-1 border border-slate-200 select-none" title="Pesanan ini tidak mengajukan e-Faktur Pajak PPN (Non-PKP / Dibebaskan)">
+                    <span class="material-symbols-outlined text-[16px] text-slate-400">info</span>
+                    <span>Tanpa e-Faktur</span>
+                </div>
+            <?php elseif ($canAccessTaxInvoice): ?>
+                <a href="<?= base_url('customer/orders/tax-invoice/' . $order['id']) ?>" target="_blank" class="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-bold text-xs transition flex items-center gap-1.5 shadow-sm border border-emerald-200" title="Faktur Pajak PPN Resmi DJP">
+                    <span class="material-symbols-outlined text-[18px] text-emerald-700">receipt</span>
+                    <span>e-Faktur PPN</span>
+                </a>
+            <?php else: ?>
+                <div class="px-3 py-2 rounded-xl bg-slate-100 text-slate-400 font-medium text-xs flex items-center gap-1.5 border border-slate-200 cursor-not-allowed select-none" title="Sesuai PER-03/PJ/2022 DJP, Faktur Pajak baru diterbitkan saat penyerahan barang oleh vendor atau saat pelunasan diterima.">
+                    <span class="material-symbols-outlined text-[16px] text-slate-400">lock</span>
+                    <span>e-Faktur (Saat Kirim/Lunas)</span>
+                </div>
+            <?php endif; ?>
+
+            <!-- 5. Tombol Chat Bantuan -->
+            <a href="<?= base_url('customer/chat?key=admin_comp_' . $order['customer_company_id']) ?>" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center gap-1.5 shadow-sm border border-slate-200">
+                <span class="material-symbols-outlined text-[18px] text-purple-600">forum</span>
+                <span>Bantuan</span>
+            </a>
 
             <!-- Return / Claim Damaged Goods Button -->
             <?php if (in_array($order['order_status'], ['shipped', 'delivered', 'bast_signed', 'completed', 'return_requested'])): ?>
@@ -62,6 +147,29 @@
             <?php endif; ?>
         </div>
     </div>
+
+    <!-- Banner Informasi Siklus Pengadaan: Khusus Saat Baru Tahap PO -->
+    <?php if ($isPoStage): ?>
+        <div class="p-4 rounded-2xl bg-gradient-to-r from-purple-50 via-indigo-50 to-white border border-purple-200 text-xs text-purple-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs no-print">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-purple-200 text-purple-800 flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-[22px]">assignment</span>
+                </div>
+                <div>
+                    <h4 class="font-extrabold text-slate-900 text-xs">Tahap Pengadaan: Purchase Order (PO) Aktif</h4>
+                    <p class="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                        Dokumen sah yang mengikat saat ini adalah <strong>Lembar Purchase Order (PO)</strong>. Surat Jalan (DO) dan e-Faktur PPN akan terbit otomatis saat vendor memberangkatkan barang. BAST serah terima disahkan setelah barang tiba fisik di lokasi Anda.
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 self-stretch sm:self-auto justify-end flex-shrink-0">
+                <button type="button" onclick="window.print()" class="px-3.5 py-2 rounded-xl bg-white hover:bg-purple-100 text-purple-800 font-bold text-xs border border-purple-300 transition flex items-center gap-1.5 shadow-xs">
+                    <span class="material-symbols-outlined text-[16px]">print</span>
+                    <span>Cetak PO Resmi</span>
+                </button>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <!-- 0. KARTU TAGIHAN & PEMBAYARAN RESMI AKUADA (SIMPLE & EASY PAYMENT) -->
     <?php
