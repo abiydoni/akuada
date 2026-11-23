@@ -1139,7 +1139,7 @@ class VendorController extends BaseController
 
         foreach ($orders as $o) {
             $fee = (float)($o['total_vendor_fee'] ?? 0);
-            $net = (float)($o['vendor_net_payout'] ?? ($o['subtotal'] - $fee)) + (float)($o['ppn_amount'] ?? 0);
+            $net = (float)($o['vendor_net_payout'] ?? ($o['subtotal'] - $fee));
             $payoutDue = $o['vendor_payout_due_date'] ?: date('Y-m-d', strtotime($o['created_at'] . ' +7 days'));
             if (($o['vendor_payout_status'] ?? 'unpaid') === 'paid') {
                 $totalPaidNet += $net;
@@ -1212,7 +1212,7 @@ class VendorController extends BaseController
 
         $now = date('Y-m-d H:i:s');
         $fee = (float)($order['total_vendor_fee'] ?? 0);
-        $net = (float)($order['vendor_net_payout'] ?? ($order['subtotal'] - $fee)) + (float)($order['ppn_amount'] ?? 0);
+        $net = (float)($order['vendor_net_payout'] ?? ($order['subtotal'] - $fee));
 
         $orderModel->update($orderId, [
             'vendor_payout_status' => 'pending_payout',

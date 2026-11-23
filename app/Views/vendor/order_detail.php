@@ -5,7 +5,7 @@
 <?php
     $fee = (float)($order['total_vendor_fee'] ?? 0);
     $netDpp = (float)($order['vendor_net_payout'] ?? ($order['subtotal'] - $fee));
-    $totalReceive = $netDpp + (float)($order['ppn_amount'] ?? 0);
+    $totalReceive = $netDpp;
     $vPayoutStatus = $order['vendor_payout_status'] ?? 'unpaid';
     $canRequest = in_array($order['order_status'], ['delivered', 'bast_signed', 'completed']);
     $isTop = str_starts_with($order['payment_method'] ?? '', 'top_');
@@ -791,7 +791,7 @@
                     <?= $canRequest ? 'Dana Bersih yang Diterima Vendor' : 'Estimasi Hak Bersih yang Akan Diterima' ?>
                 </span>
                 <span class="text-2xl font-black font-mono text-emerald-300 block mt-0.5"><?= format_rupiah($totalReceive) ?></span>
-                <span class="text-[10px] text-blue-200 block mt-0.5">(DPP: <?= format_rupiah($order['subtotal']) ?> - Fee: <?= format_rupiah($fee) ?> + PPN)</span>
+                <span class="text-[10px] text-blue-200 block mt-0.5">(DPP: <?= format_rupiah($order['subtotal']) ?> - Fee Layanan: <?= format_rupiah($fee) ?>)</span>
             </div>
         </div>
 

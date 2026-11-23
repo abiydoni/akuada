@@ -333,7 +333,7 @@
                             <?php
                                 $fee = (float)($o['total_vendor_fee'] ?? 0);
                                 $netDpp = (float)($o['vendor_net_payout'] ?? ($o['subtotal'] - $fee));
-                                $totalPayableToVendor = $netDpp + (float)($o['ppn_amount'] ?? 0);
+                                $totalPayableToVendor = $netDpp;
                                 $vDue = $o['vendor_payout_due_date'] ?: date('Y-m-d', strtotime($o['created_at'] . ' +7 days'));
                                 $vDays = (int)floor((strtotime($vDue) - strtotime($today)) / 86400);
                                 $vPaid = (($o['vendor_payout_status'] ?? 'unpaid') === 'paid');

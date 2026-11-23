@@ -111,7 +111,7 @@
                         <?php
                             $fee = (float)($o['total_vendor_fee'] ?? 0);
                             $netDpp = (float)($o['vendor_net_payout'] ?? ($o['subtotal'] - $fee));
-                            $totalReceive = $netDpp + (float)($o['ppn_amount'] ?? 0);
+                            $totalReceive = $netDpp;
                             $vDue = $o['vendor_payout_due_date'] ?: date('Y-m-d', strtotime($o['created_at'] . ' +7 days'));
                             $vDays = (int)floor((strtotime($vDue) - strtotime($today)) / 86400);
                             $vPaid = (($o['vendor_payout_status'] ?? 'unpaid') === 'paid');
@@ -143,7 +143,7 @@
                             <td class="px-4 py-3.5 align-top text-right font-mono">
                                 <div class="font-black text-emerald-700 text-sm"><?= format_rupiah($totalReceive) ?></div>
                                 <div class="text-[10px] text-slate-500">DPP: <?= format_rupiah($o['subtotal']) ?> | Fee: -<?= format_rupiah($fee) ?></div>
-                                <div class="text-[10px] text-blue-700">+PPN: <?= format_rupiah($o['ppn_amount']) ?></div>
+                                <div class="text-[10px] text-slate-400">e-Faktur PPN disetor AkuAda</div>
                             </td>
                             <td class="px-4 py-3.5 align-top text-center">
                                 <?php if ($vPaid): ?>

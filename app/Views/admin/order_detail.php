@@ -510,7 +510,7 @@
     <?php
         $fee = (float)($order['total_vendor_fee'] ?? 0);
         $netDpp = (float)($order['vendor_net_payout'] ?? ($order['subtotal'] - $fee));
-        $vendorReceive = $netDpp + (float)($order['ppn_amount'] ?? 0);
+        $vendorReceive = $netDpp;
         $vPayoutPaid = (($order['vendor_payout_status'] ?? 'unpaid') === 'paid');
         $bPaid = ($order['payment_status'] === 'paid');
     ?>

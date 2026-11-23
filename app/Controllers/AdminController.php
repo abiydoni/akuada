@@ -1519,7 +1519,7 @@ class AdminController extends BaseController
             }
 
             $fee = (float)($o['total_vendor_fee'] ?? 0);
-            $vendorNet = (float)($o['vendor_net_payout'] ?? ($o['subtotal'] - $fee)) + (float)($o['ppn_amount'] ?? 0);
+            $vendorNet = (float)($o['vendor_net_payout'] ?? ($o['subtotal'] - $fee));
             $vendorDue = $o['vendor_payout_due_date'] ?: date('Y-m-d', strtotime($o['created_at'] . ' +7 days'));
             if (($o['vendor_payout_status'] ?? 'unpaid') === 'paid') {
                 $vendorPaidTotal += $vendorNet;
@@ -1620,7 +1620,7 @@ class AdminController extends BaseController
         if (($order['vendor_payout_status'] ?? 'unpaid') !== 'paid') {
             $now = date('Y-m-d H:i:s');
             $fee = (float)($order['total_vendor_fee'] ?? 0);
-            $netTotal = (float)($order['vendor_net_payout'] ?? ($order['subtotal'] - $fee)) + (float)($order['ppn_amount'] ?? 0);
+            $netTotal = (float)($order['vendor_net_payout'] ?? ($order['subtotal'] - $fee));
 
             $orderModel->update($orderId, [
                 'vendor_payout_status' => 'paid',
@@ -1750,7 +1750,7 @@ class AdminController extends BaseController
 
         $now = date('Y-m-d H:i:s');
         $fee = (float)($order['total_vendor_fee'] ?? 0);
-        $netTotal = (float)($order['vendor_net_payout'] ?? ($order['subtotal'] - $fee)) + (float)($order['ppn_amount'] ?? 0);
+        $netTotal = (float)($order['vendor_net_payout'] ?? ($order['subtotal'] - $fee));
 
         $orderModel->update($orderId, [
             'vendor_payout_status' => 'paid',

@@ -40,7 +40,7 @@
         $ppnRateLabel = format_tax_rate();
         $feeTotal = (float)($order['total_vendor_fee'] ?? 0);
         $netPayout = (float)($order['vendor_net_payout'] ?? ($order['subtotal'] - $feeTotal));
-        $totalSettlementWithPpn = $netPayout + (float)$order['ppn_amount'];
+        $totalSettlement = $netPayout;
     ?>
 
     <div class="max-w-4xl mx-auto bg-white rounded-3xl border border-slate-200 shadow-2xl p-8 sm:p-12 space-y-8">
@@ -130,12 +130,12 @@
                         <td class="px-4 py-2.5 text-right font-mono text-emerald-800 whitespace-nowrap"><?= format_rupiah($netPayout) ?></td>
                     </tr>
                     <tr>
-                        <td colspan="5" class="px-4 py-2.5 text-right text-blue-700">PPN <?= esc($ppnRateLabel) ?> Sesuai e-Faktur Vendor:</td>
-                        <td class="px-4 py-2.5 text-right font-mono text-blue-700 whitespace-nowrap">+<?= format_rupiah($order['ppn_amount']) ?></td>
+                        <td colspan="5" class="px-4 py-2 text-right text-slate-500 italic text-[11px]">PPN <?= esc($ppnRateLabel) ?> (<?= format_rupiah($order['ppn_amount']) ?>) dikelola & disetorkan resmi oleh AkuAda ke Kas Negara (DJP):</td>
+                        <td class="px-4 py-2 text-right font-mono text-slate-500 text-[11px] whitespace-nowrap">Disetor AkuAda ke DJP</td>
                     </tr>
                     <tr class="bg-emerald-50 text-sm">
                         <td colspan="5" class="px-4 py-3.5 text-right text-emerald-950 font-black">TOTAL PENCAIRAN KE REKENING VENDOR:</td>
-                        <td class="px-4 py-3.5 text-right font-mono text-emerald-900 font-black text-base whitespace-nowrap"><?= format_rupiah($totalSettlementWithPpn) ?></td>
+                        <td class="px-4 py-3.5 text-right font-mono text-emerald-900 font-black text-base whitespace-nowrap"><?= format_rupiah($totalSettlement) ?></td>
                     </tr>
                 </tfoot>
             </table>
@@ -143,7 +143,7 @@
 
         <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 text-xs">
             <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-widest block mb-0.5">Terbilang:</span>
-            <p class="font-extrabold text-emerald-950 italic text-sm"># <?= esc(terbilang_rupiah($totalSettlementWithPpn)) ?> #</p>
+            <p class="font-extrabold text-emerald-950 italic text-sm"># <?= esc(terbilang_rupiah($totalSettlement)) ?> #</p>
         </div>
 
         <!-- Signatory & Verification Block -->

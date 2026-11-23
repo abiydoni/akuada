@@ -845,7 +845,7 @@ if (!function_exists('calculate_aging_summary')) {
             if ($mode === 'vendor') {
                 $isPaid = (($o['vendor_payout_status'] ?? 'unpaid') === 'paid');
                 $fee = (float)($o['total_vendor_fee'] ?? 0);
-                $amount = (float)($o['vendor_net_payout'] ?? ($o['subtotal'] - $fee)) + (float)($o['ppn_amount'] ?? 0);
+                $amount = (float)($o['vendor_net_payout'] ?? ($o['subtotal'] - $fee));
                 $dueDate = $o['vendor_payout_due_date'] ?: date('Y-m-d', strtotime($o['created_at'] . ' +7 days'));
                 $defaultField = 'vendor_name';
             } else {
