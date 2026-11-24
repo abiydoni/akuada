@@ -208,7 +208,7 @@
                             </div>
                             <div class="text-right flex-shrink-0">
                                 <span class="px-2 py-0.5 rounded-lg bg-blue-100 text-blue-900 font-extrabold font-mono text-xs">
-                                    <?= (int)$item['quantity'] ?> <?= esc($item['unit'] ?? 'Unit') ?>
+                                    <?= number_format((float)($item['qty'] ?? $item['quantity'] ?? 1)) ?> <?= esc($item['uom'] ?? $item['unit'] ?? 'Pcs') ?>
                                 </span>
                             </div>
                         </div>
