@@ -84,9 +84,10 @@
                                     $cbVal = (float)(($o['cashback_amount'] ?? 0) > 0 ? $o['cashback_amount'] : round(((float)$o['total_amount'] * $cbRate) / 100, 2));
                                 ?>
                                 <?php if ($cbVal > 0): ?>
-                                    <div class="mt-1 text-[10px] text-pink-700 font-bold inline-flex items-center gap-0.5" title="Cashback <?= esc($cbRate) ?>%">
-                                        <span class="material-symbols-outlined text-[12px]">savings</span>
-                                        <span>+<?= format_rupiah($cbVal) ?></span>
+                                    <?php $isPaid = ($o['payment_status'] ?? '') === 'paid'; ?>
+                                    <div class="mt-1 text-[10px] font-bold inline-flex items-center gap-0.5 <?= $isPaid ? 'text-pink-700' : 'text-slate-400' ?>" title="<?= $isPaid ? 'Cashback telah masuk ke saldo' : 'Estimasi cashback saat pembayaran lunas' ?>">
+                                        <span class="material-symbols-outlined text-[12px] <?= $isPaid ? 'text-pink-600' : 'text-slate-400' ?>">savings</span>
+                                        <span><?= $isPaid ? '+' . format_rupiah($cbVal) : 'Est. +' . format_rupiah($cbVal) ?></span>
                                     </div>
                                 <?php endif; ?>
                             </td>

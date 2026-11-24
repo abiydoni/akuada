@@ -560,8 +560,8 @@
                     <span class="text-pink-700 font-bold">Reward Cashback Buyer (<?= esc($bCbRate) ?>%):</span>
                     <span class="font-mono font-bold text-pink-700">
                         <?= format_rupiah($bCbVal) ?>
-                        <span class="text-[9px] <?= !empty($order['is_cashback_awarded']) ? 'text-emerald-700 font-bold' : 'text-slate-400' ?>">
-                            <?= !empty($order['is_cashback_awarded']) ? '(Telah Masuk Saldo)' : '(Cair saat BAST Sah)' ?>
+                        <span class="text-[9px] <?= ($order['payment_status'] === 'paid' && !empty($order['is_cashback_awarded'])) ? 'text-emerald-700 font-bold' : 'text-slate-400' ?>">
+                            <?= ($order['payment_status'] === 'paid' && !empty($order['is_cashback_awarded'])) ? '(Telah Masuk Saldo)' : '(Cair setelah pembayaran lunas)' ?>
                         </span>
                     </span>
                 </div>

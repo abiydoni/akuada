@@ -75,8 +75,8 @@ class CustomerController extends BaseController
             $order['status_logs'] = $logModel->filterLogsForBuyer($order['status_logs']);
         }
 
-        // Jika pesanan telah selesai & BAST sah tapi belum terhitung cashback-nya, hitung dan kreditkan sekarang
-        if (in_array($order['order_status'] ?? '', ['bast_signed', 'completed'], true) && empty($order['is_cashback_awarded'])) {
+        // Jika pembayaran tagihan telah lunas tapi belum terhitung cashback-nya, kreditkan sekarang
+        if (($order['payment_status'] ?? '') === 'paid' && empty($order['is_cashback_awarded'])) {
             process_buyer_order_cashback((int)$id);
             $order = $orderModel->getOrderWithItems($id);
             if (!empty($order['status_logs'])) {

@@ -343,7 +343,7 @@
                             <td colspan="2" class="p-2.5 text-right text-pink-800 font-black text-sm whitespace-nowrap">
                                 + <?= format_rupiah($cbVal) ?>
                                 <span class="text-[9px] block text-slate-500 font-normal">
-                                    <?= !empty($order['is_cashback_awarded']) ? '(Telah Masuk ke Saldo Buyer)' : '(Cair saat BAST Sah)' ?>
+                                    <?= ($order['payment_status'] === 'paid' && !empty($order['is_cashback_awarded'])) ? '(Telah Masuk ke Saldo Buyer)' : '(Otomatis masuk ke saldo setelah tagihan lunas)' ?>
                                 </span>
                             </td>
                         </tr>

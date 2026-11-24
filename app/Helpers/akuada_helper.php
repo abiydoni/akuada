@@ -343,8 +343,7 @@ if (!function_exists('get_buyer_unpaid_notes_count')) {
 
 if (!function_exists('process_buyer_order_cashback')) {
     /**
-     * Otomatis berikan cashback ke saldo buyer saat pesanan berstatus 'bast_signed' / 'completed' (BAST Sah)
-     * atau saat pembayaran tagihan telah lunas 'paid'.
+     * Otomatis berikan cashback ke saldo buyer saat pembayaran tagihan telah lunas diverifikasi ('paid').
      * Kecuali buyer yang tidak terdaftar / belum terverifikasi (is_verified != 1) tidak menerima apa-apa.
      */
     function process_buyer_order_cashback(int $orderId): ?float
@@ -355,19 +354,14 @@ if (!function_exists('process_buyer_order_cashback')) {
             return null;
         }
 
+        // Cashback HANYA diberikan jika pembayaran tagihan telah lunas terverifikasi (paid)
+        if (($order['payment_status'] ?? '') !== 'paid') {
+            return null;
+        }
+
         // Sudah pernah menerima cashback? Jangan duplikasi
         if (!empty($order['is_cashback_awarded'])) {
             return (float)($order['cashback_amount'] ?? 0);
-        }
-
-        // Syarat pemberian cashback:
-        // 1. Pesanan telah selesai & BAST sah (bast_signed, completed)
-        // ATAU 2. Pembayaran tagihan telah diverifikasi lunas (paid)
-        $isCompleted = in_array($order['order_status'] ?? '', ['bast_signed', 'completed'], true);
-        $isPaid = ($order['payment_status'] ?? '') === 'paid';
-
-        if (!$isCompleted && !$isPaid) {
-            return null;
         }
 
         $companyModel = new \App\Models\CompanyModel();
@@ -405,9 +399,7 @@ if (!function_exists('process_buyer_order_cashback')) {
         // Catat mutasi kredit saldo cashback
         $mutationModel = new \App\Models\BuyerCashbackMutationModel();
         $poNum = $order['po_number'] ?: $order['order_number'];
-        $mutationDesc = $isCompleted 
-            ? "Cashback {$cbPercent}% Pesanan Selesai & BAST Sah PO #{$poNum}" 
-            : "Cashback {$cbPercent}% Transaksi Lunas PO #{$poNum}";
+        $mutationDesc = "Cashback {$cbPercent}% Transaksi Lunas PO #{$poNum}";
 
         $mutationModel->recordMutation(
             (int)$buyer['id'],
@@ -425,7 +417,7 @@ if (!function_exists('process_buyer_order_cashback')) {
             $orderId,
             $order['order_status'],
             'Cashback Saldo Buyer Diberikan',
-            "Cashback sebesar " . format_rupiah($cbAmount) . " ({$cbPercent}%) otomatis ditambahkan ke Saldo Cashback {$buyer['company_name']} (Pesanan Selesai & BAST Sah).",
+            "Cashback sebesar " . format_rupiah($cbAmount) . " ({$cbPercent}%) otomatis ditambahkan ke Saldo Cashback {$buyer['company_name']} setelah pembayaran tagihan lunas terverifikasi.",
             'Sistem Cashback AkuAda'
         );
 

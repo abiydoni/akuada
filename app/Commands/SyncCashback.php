@@ -12,20 +12,20 @@ class SyncCashback extends BaseCommand
 {
     protected $group       = 'Custom';
     protected $name        = 'app:sync-cashback';
-    protected $description = 'Sinkronkan nominal cashback untuk pesanan yang telah selesai & BAST sah';
+    protected $description = 'Sinkronkan nominal cashback untuk pesanan yang telah lunas dibayar buyer';
 
     public function run(array $params)
     {
         helper('akuada');
-        CLI::write("Memeriksa pesanan selesai & BAST sah untuk sinkronisasi cashback...", "yellow");
+        CLI::write("Memeriksa pesanan lunas untuk sinkronisasi cashback...", "yellow");
 
         $orderModel = new OrderModel();
-        $orders = $orderModel->whereIn('order_status', ['bast_signed', 'completed'])
+        $orders = $orderModel->where('payment_status', 'paid')
                              ->where('is_cashback_awarded', 0)
                              ->findAll();
 
         if (empty($orders)) {
-            CLI::write("Tidak ada pesanan selesai yang tertunda cashback-nya.", "green");
+            CLI::write("Tidak ada pesanan lunas yang tertunda cashback-nya.", "green");
             return;
         }
 

@@ -58,11 +58,11 @@
         $invoiceTooltip   = 'Invoice tagihan transfer pembayaran PO ke rekening escrow AkuAda.';
     }
 
-    // 3. Perhitungan Cashback Saldo Buyer (Otomatis Terhitung saat BAST Sah / Selesai)
+    // 3. Perhitungan Cashback Saldo Buyer (Otomatis Cair ke Saldo setelah Pembayaran Lunas)
     $buyerCompanyId = (int)($order['customer_company_id'] ?? 0);
     $cbRate = (float)(($order['cashback_percent'] ?? 0) > 0 ? $order['cashback_percent'] : get_buyer_cashback_rate($buyerCompanyId));
     $cbVal = (float)(($order['cashback_amount'] ?? 0) > 0 ? $order['cashback_amount'] : round(((float)$order['total_amount'] * $cbRate) / 100, 2));
-    $isCbAwarded = !empty($order['is_cashback_awarded']);
+    $isCbAwarded = !empty($order['is_cashback_awarded']) && ($paymentStatus === 'paid');
 ?>
 
 <div class="space-y-6">
@@ -152,10 +152,17 @@
                         <span>Pesanan Telah Selesai & BAST Sah</span>
                     </span>
                     <?php if ($cbVal > 0): ?>
-                        <span class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-pink-100 text-pink-900 font-bold text-xs border border-pink-300 shadow-xs" title="Cashback <?= esc($cbRate) ?>% telah masuk ke saldo">
-                            <span class="material-symbols-outlined text-[18px] text-pink-600">savings</span>
-                            <span>Cashback: <?= format_rupiah($cbVal) ?> (<?= esc($cbRate) ?>%)</span>
-                        </span>
+                        <?php if ($isCbAwarded): ?>
+                            <span class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-pink-100 text-pink-900 font-bold text-xs border border-pink-300 shadow-xs" title="Cashback <?= esc($cbRate) ?>% telah masuk ke saldo">
+                                <span class="material-symbols-outlined text-[18px] text-pink-600">savings</span>
+                                <span>Cashback: <?= format_rupiah($cbVal) ?> (<?= esc($cbRate) ?>%)</span>
+                            </span>
+                        <?php else: ?>
+                            <span class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-50 text-purple-900 font-bold text-xs border border-purple-200" title="Cashback <?= esc($cbRate) ?>% cair setelah pembayaran lunas">
+                                <span class="material-symbols-outlined text-[18px] text-purple-600">savings</span>
+                                <span>Est. Cashback: <?= format_rupiah($cbVal) ?> (Cair Saat Lunas)</span>
+                            </span>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
@@ -164,7 +171,7 @@
 
     <!-- Banner Informasi Cashback Reward Transaksi Buyer -->
     <?php if ($cbVal > 0): ?>
-        <?php if ($isCompletedStage): ?>
+        <?php if ($isCbAwarded): ?>
             <div class="p-4 rounded-2xl bg-gradient-to-r from-pink-50 via-purple-50 to-indigo-50 border-2 border-pink-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs no-print">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
@@ -172,13 +179,13 @@
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
-                            <h4 class="font-black text-purple-950 text-xs">Reward Cashback Transaksi B2B</h4>
+                            <h4 class="font-black text-purple-950 text-xs">Reward Cashback Transaksi Lunas</h4>
                             <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] border border-emerald-300">
-                                <?= $isCbAwarded ? 'Telah Dikreditkan ke Saldo' : 'Telah Terhitung Sah' ?>
+                                Telah Masuk ke Saldo
                             </span>
                         </div>
                         <p class="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
-                            Karena pesanan telah berstatus <strong>Pesanan Telah Selesai & BAST Sah</strong>, reward cashback sebesar <strong class="text-pink-700 font-mono font-bold"><?= format_rupiah($cbVal) ?></strong> (<?= esc($cbRate) ?>% dari total nilai transaksi) telah terhitung sah dan otomatis masuk ke saldo dompet akun Anda.
+                            Karena pembayaran tagihan PO telah lunas diverifikasi, reward cashback sebesar <strong class="text-pink-700 font-mono font-bold"><?= format_rupiah($cbVal) ?></strong> (<?= esc($cbRate) ?>% dari total nilai transaksi) telah aktif dan masuk ke saldo dompet akun Anda.
                         </p>
                     </div>
                 </div>
@@ -196,7 +203,7 @@
                     <div>
                         <span class="font-bold text-pink-950">Estimasi Cashback Transaksi:</span>
                         <strong class="font-mono text-pink-700 ml-1"><?= format_rupiah($cbVal) ?> (<?= esc($cbRate) ?>%)</strong>
-                        <span class="text-[11px] text-slate-500 ml-1">• Nominal cashback otomatis dikreditkan ke saldo akun Anda segera saat Pesanan Telah Selesai & BAST Sah.</span>
+                        <span class="text-[11px] text-slate-500 ml-1">• Nominal cashback otomatis dicairkan ke saldo akun Anda segera setelah tagihan pembayaran PO ini lunas terbayar.</span>
                     </div>
                 </div>
                 <a href="<?= base_url('customer/cashback') ?>" class="text-[11px] text-pink-600 font-bold hover:underline self-end sm:self-auto">Ketentuan Cashback &rarr;</a>
@@ -1200,7 +1207,7 @@
                                 <td class="px-3.5 py-2 text-right font-mono text-pink-700 font-black">
                                     + <?= format_rupiah($cbVal) ?>
                                     <span class="text-[9px] block text-slate-500 font-normal">
-                                        <?= $isCbAwarded ? '✓ Masuk Saldo Buyer' : '(Cair saat BAST Sah)' ?>
+                                        <?= $isCbAwarded ? '✓ Masuk Saldo Buyer' : '(Cair setelah tagihan lunas)' ?>
                                     </span>
                                 </td>
                             </tr>
