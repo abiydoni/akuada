@@ -327,6 +327,27 @@
                             <?= format_rupiah($order['total_amount']) ?>
                         </td>
                     </tr>
+                    <?php
+                        $buyerCompanyId = (int)($order['customer_company_id'] ?? 0);
+                        $cbRate = (float)(($order['cashback_percent'] ?? 0) > 0 ? $order['cashback_percent'] : get_buyer_cashback_rate($buyerCompanyId));
+                        $cbVal = (float)(($order['cashback_amount'] ?? 0) > 0 ? $order['cashback_amount'] : round(((float)$order['total_amount'] * $cbRate) / 100, 2));
+                    ?>
+                    <?php if ($cbVal > 0): ?>
+                        <tr class="bg-pink-50/60 border-t border-pink-200">
+                            <td colspan="4" class="px-4 py-2.5 text-right text-pink-900 font-bold">
+                                <span class="inline-flex items-center gap-1.5 justify-end">
+                                    <span class="material-symbols-outlined text-pink-600 text-[18px]">savings</span>
+                                    <span>Hak Reward Cashback Buyer (<?= esc($cbRate) ?>%):</span>
+                                </span>
+                            </td>
+                            <td colspan="2" class="p-2.5 text-right text-pink-800 font-black text-sm whitespace-nowrap">
+                                + <?= format_rupiah($cbVal) ?>
+                                <span class="text-[9px] block text-slate-500 font-normal">
+                                    <?= !empty($order['is_cashback_awarded']) ? '(Telah Masuk ke Saldo Buyer)' : '(Cair saat BAST Sah)' ?>
+                                </span>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
                 </tfoot>
             </table>
         </div>

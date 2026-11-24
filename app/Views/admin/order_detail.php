@@ -552,6 +552,19 @@
                         <span class="text-slate-700"><?= date('d M Y, H:i', strtotime($order['buyer_paid_at'])) ?> WIB</span>
                     </div>
                 <?php endif; ?>
+                <?php
+                    $bCbRate = (float)(($order['cashback_percent'] ?? 0) > 0 ? $order['cashback_percent'] : get_buyer_cashback_rate((int)($order['customer_company_id'] ?? 0)));
+                    $bCbVal = (float)(($order['cashback_amount'] ?? 0) > 0 ? $order['cashback_amount'] : round(((float)$order['total_amount'] * $bCbRate) / 100, 2));
+                ?>
+                <div class="flex justify-between items-center text-[11px] pt-1.5 border-t border-slate-200">
+                    <span class="text-pink-700 font-bold">Reward Cashback Buyer (<?= esc($bCbRate) ?>%):</span>
+                    <span class="font-mono font-bold text-pink-700">
+                        <?= format_rupiah($bCbVal) ?>
+                        <span class="text-[9px] <?= !empty($order['is_cashback_awarded']) ? 'text-emerald-700 font-bold' : 'text-slate-400' ?>">
+                            <?= !empty($order['is_cashback_awarded']) ? '(Telah Masuk Saldo)' : '(Cair saat BAST Sah)' ?>
+                        </span>
+                    </span>
+                </div>
             </div>
 
             <!-- Bukti Bayar Preview jika ada -->

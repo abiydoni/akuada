@@ -656,6 +656,9 @@ class CartController extends BaseController
         $now = date('Y-m-d H:i:s');
 
         $orderModel = new OrderModel();
+        $buyerCashbackRate = get_buyer_cashback_rate($buyerCompanyId);
+        $estimatedCashback = round(($grandTotal * $buyerCashbackRate) / 100, 2);
+
         $orderId = $orderModel->insert([
             'order_number'         => $orderNumber,
             'po_number'            => $poNumber,
@@ -667,6 +670,9 @@ class CartController extends BaseController
             'vendor_net_payout'    => $vendorNetPayout,
             'shipping_amount'      => $shippingAmount,
             'total_amount'         => $grandTotal,
+            'cashback_percent'     => $buyerCashbackRate,
+            'cashback_amount'      => $estimatedCashback,
+            'is_cashback_awarded'  => 0,
             'payment_method'       => $paymentMethod,
             'payment_status'       => $isOverlimitRequest ? 'pending_approval' : 'unpaid',
             'order_status'         => 'po_issued',

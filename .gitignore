@@ -48,6 +48,7 @@ Vagrantfile
 
 # User Uploads
 public/uploads/designs/*
+public/uploads/delivery_proofs/*
 !public/uploads/designs/.gitkeep
 #-------------------------
 /writable/cache/*

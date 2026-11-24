@@ -343,8 +343,9 @@ if (!function_exists('get_buyer_unpaid_notes_count')) {
 
 if (!function_exists('process_buyer_order_cashback')) {
     /**
-     * Otomatis berikan cashback ke saldo buyer saat pesanan berstatus 'paid'
-     * Kecuali buyer yang tidak terdaftar (is_verified != 1) tidak menerima apa-apa.
+     * Otomatis berikan cashback ke saldo buyer saat pesanan berstatus 'bast_signed' / 'completed' (BAST Sah)
+     * atau saat pembayaran tagihan telah lunas 'paid'.
+     * Kecuali buyer yang tidak terdaftar / belum terverifikasi (is_verified != 1) tidak menerima apa-apa.
      */
     function process_buyer_order_cashback(int $orderId): ?float
     {
@@ -354,15 +355,25 @@ if (!function_exists('process_buyer_order_cashback')) {
             return null;
         }
 
-        // Hanya jika status lunas dan belum pernah diberikan cashback
-        if (($order['payment_status'] ?? '') !== 'paid' || !empty($order['is_cashback_awarded'])) {
+        // Sudah pernah menerima cashback? Jangan duplikasi
+        if (!empty($order['is_cashback_awarded'])) {
+            return (float)($order['cashback_amount'] ?? 0);
+        }
+
+        // Syarat pemberian cashback:
+        // 1. Pesanan telah selesai & BAST sah (bast_signed, completed)
+        // ATAU 2. Pembayaran tagihan telah diverifikasi lunas (paid)
+        $isCompleted = in_array($order['order_status'] ?? '', ['bast_signed', 'completed'], true);
+        $isPaid = ($order['payment_status'] ?? '') === 'paid';
+
+        if (!$isCompleted && !$isPaid) {
             return null;
         }
 
         $companyModel = new \App\Models\CompanyModel();
         $buyer = $companyModel->find($order['customer_company_id']);
 
-        // Aturan Keras: Kecuali buyer yang tidak terdaftar, mereka tidak akan menerima apa-apa
+        // Aturan Keras: Kecuali buyer yang tidak terdaftar/terverifikasi, mereka tidak akan menerima apa-apa
         if (!$buyer || ($buyer['type'] ?? '') !== 'buyer' || (int)($buyer['is_verified'] ?? 0) !== 1) {
             $orderModel->update($orderId, [
                 'cashback_percent'    => 0.00,
@@ -372,9 +383,9 @@ if (!function_exists('process_buyer_order_cashback')) {
             return 0.0;
         }
 
-        $cbPercent = get_buyer_cashback_rate((int)$buyer['id']);
+        $cbPercent = (float)(($order['cashback_percent'] ?? 0) > 0 ? $order['cashback_percent'] : get_buyer_cashback_rate((int)$buyer['id']));
         $totalAmount = (float)$order['total_amount'];
-        $cbAmount = round(($totalAmount * $cbPercent) / 100, 2);
+        $cbAmount = (float)(($order['cashback_amount'] ?? 0) > 0 ? $order['cashback_amount'] : round(($totalAmount * $cbPercent) / 100, 2));
 
         $currentBalance = (float)($buyer['cashback_balance'] ?? 0);
         $newBalance = $currentBalance + $cbAmount;
@@ -394,12 +405,16 @@ if (!function_exists('process_buyer_order_cashback')) {
         // Catat mutasi kredit saldo cashback
         $mutationModel = new \App\Models\BuyerCashbackMutationModel();
         $poNum = $order['po_number'] ?: $order['order_number'];
+        $mutationDesc = $isCompleted 
+            ? "Cashback {$cbPercent}% Pesanan Selesai & BAST Sah PO #{$poNum}" 
+            : "Cashback {$cbPercent}% Transaksi Lunas PO #{$poNum}";
+
         $mutationModel->recordMutation(
             (int)$buyer['id'],
             'credit',
             $cbAmount,
             $newBalance,
-            "Cashback {$cbPercent}% Transaksi Lunas PO #{$poNum}",
+            $mutationDesc,
             $orderId,
             null
         );
@@ -410,7 +425,7 @@ if (!function_exists('process_buyer_order_cashback')) {
             $orderId,
             $order['order_status'],
             'Cashback Saldo Buyer Diberikan',
-            "Cashback sebesar " . format_rupiah($cbAmount) . " ({$cbPercent}%) otomatis ditambahkan ke Saldo Cashback {$buyer['company_name']}.",
+            "Cashback sebesar " . format_rupiah($cbAmount) . " ({$cbPercent}%) otomatis ditambahkan ke Saldo Cashback {$buyer['company_name']} (Pesanan Selesai & BAST Sah).",
             'Sistem Cashback AkuAda'
         );
 

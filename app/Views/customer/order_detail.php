@@ -57,6 +57,12 @@
         $invoiceIconColor = 'text-purple-700';
         $invoiceTooltip   = 'Invoice tagihan transfer pembayaran PO ke rekening escrow AkuAda.';
     }
+
+    // 3. Perhitungan Cashback Saldo Buyer (Otomatis Terhitung saat BAST Sah / Selesai)
+    $buyerCompanyId = (int)($order['customer_company_id'] ?? 0);
+    $cbRate = (float)(($order['cashback_percent'] ?? 0) > 0 ? $order['cashback_percent'] : get_buyer_cashback_rate($buyerCompanyId));
+    $cbVal = (float)(($order['cashback_amount'] ?? 0) > 0 ? $order['cashback_amount'] : round(((float)$order['total_amount'] * $cbRate) / 100, 2));
+    $isCbAwarded = !empty($order['is_cashback_awarded']);
 ?>
 
 <div class="space-y-6">
@@ -140,13 +146,63 @@
                     <span>Konfirmasi Selesai & Terima Barang</span>
                 </button>
             <?php elseif (in_array($order['order_status'], ['bast_signed', 'completed'])): ?>
-                <span class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300">
-                    <span class="material-symbols-outlined text-[18px]">check_circle</span>
-                    <span>Pesanan Telah Selesai & BAST Sah</span>
-                </span>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300">
+                        <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                        <span>Pesanan Telah Selesai & BAST Sah</span>
+                    </span>
+                    <?php if ($cbVal > 0): ?>
+                        <span class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-pink-100 text-pink-900 font-bold text-xs border border-pink-300 shadow-xs" title="Cashback <?= esc($cbRate) ?>% telah masuk ke saldo">
+                            <span class="material-symbols-outlined text-[18px] text-pink-600">savings</span>
+                            <span>Cashback: <?= format_rupiah($cbVal) ?> (<?= esc($cbRate) ?>%)</span>
+                        </span>
+                    <?php endif; ?>
+                </div>
             <?php endif; ?>
         </div>
     </div>
+
+    <!-- Banner Informasi Cashback Reward Transaksi Buyer -->
+    <?php if ($cbVal > 0): ?>
+        <?php if ($isCompletedStage): ?>
+            <div class="p-4 rounded-2xl bg-gradient-to-r from-pink-50 via-purple-50 to-indigo-50 border-2 border-pink-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs no-print">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <span class="material-symbols-outlined text-[22px]">savings</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h4 class="font-black text-purple-950 text-xs">Reward Cashback Transaksi B2B</h4>
+                            <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] border border-emerald-300">
+                                <?= $isCbAwarded ? 'Telah Dikreditkan ke Saldo' : 'Telah Terhitung Sah' ?>
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                            Karena pesanan telah berstatus <strong>Pesanan Telah Selesai & BAST Sah</strong>, reward cashback sebesar <strong class="text-pink-700 font-mono font-bold"><?= format_rupiah($cbVal) ?></strong> (<?= esc($cbRate) ?>% dari total nilai transaksi) telah terhitung sah dan otomatis masuk ke saldo dompet akun Anda.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 self-stretch sm:self-auto justify-end flex-shrink-0">
+                    <a href="<?= base_url('customer/cashback') ?>" class="px-3.5 py-2 rounded-xl bg-white hover:bg-pink-50 text-pink-700 font-bold text-xs border border-pink-300 transition flex items-center gap-1 shadow-xs">
+                        <span>Buka Dompet Saldo Cashback</span>
+                        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                    </a>
+                </div>
+            </div>
+        <?php else: ?>
+            <div class="p-3.5 rounded-2xl bg-pink-50/70 border border-pink-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 no-print">
+                <div class="flex items-center gap-2.5">
+                    <span class="material-symbols-outlined text-pink-600 text-[20px]">savings</span>
+                    <div>
+                        <span class="font-bold text-pink-950">Estimasi Cashback Transaksi:</span>
+                        <strong class="font-mono text-pink-700 ml-1"><?= format_rupiah($cbVal) ?> (<?= esc($cbRate) ?>%)</strong>
+                        <span class="text-[11px] text-slate-500 ml-1">• Nominal cashback otomatis dikreditkan ke saldo akun Anda segera saat Pesanan Telah Selesai & BAST Sah.</span>
+                    </div>
+                </div>
+                <a href="<?= base_url('customer/cashback') ?>" class="text-[11px] text-pink-600 font-bold hover:underline self-end sm:self-auto">Ketentuan Cashback &rarr;</a>
+            </div>
+        <?php endif; ?>
+    <?php endif; ?>
 
     <!-- Banner Informasi Siklus Pengadaan: Khusus Saat Baru Tahap PO -->
     <?php if ($isPoStage): ?>
@@ -1133,6 +1189,22 @@
                             <td colspan="4" class="px-3.5 py-2.5 text-right text-purple-950 font-black">TOTAL NILAI PO:</td>
                             <td class="px-3.5 py-2.5 text-right font-mono text-purple-950 font-black text-sm"><?= format_rupiah($order['total_amount']) ?></td>
                         </tr>
+                        <?php if ($cbVal > 0): ?>
+                            <tr class="text-xs bg-pink-50/60 border-t border-pink-200">
+                                <td colspan="4" class="px-3.5 py-2 text-right text-pink-900 font-bold">
+                                    <span class="inline-flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[15px] text-pink-600">savings</span>
+                                        <span>Reward Cashback Buyer (<?= esc($cbRate) ?>%):</span>
+                                    </span>
+                                </td>
+                                <td class="px-3.5 py-2 text-right font-mono text-pink-700 font-black">
+                                    + <?= format_rupiah($cbVal) ?>
+                                    <span class="text-[9px] block text-slate-500 font-normal">
+                                        <?= $isCbAwarded ? '✓ Masuk Saldo Buyer' : '(Cair saat BAST Sah)' ?>
+                                    </span>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
                     </tfoot>
                 </table>
             </div>

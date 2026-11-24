@@ -79,6 +79,16 @@
                             <td class="px-4 py-3.5 align-top text-right font-mono">
                                 <div class="font-black text-slate-900 text-sm"><?= format_rupiah($o['total_amount']) ?></div>
                                 <div class="mt-1"><?= badge_payment_method($o['payment_method']) ?></div>
+                                <?php
+                                    $cbRate = (float)(($o['cashback_percent'] ?? 0) > 0 ? $o['cashback_percent'] : get_buyer_cashback_rate((int)($o['customer_company_id'] ?? 0)));
+                                    $cbVal = (float)(($o['cashback_amount'] ?? 0) > 0 ? $o['cashback_amount'] : round(((float)$o['total_amount'] * $cbRate) / 100, 2));
+                                ?>
+                                <?php if ($cbVal > 0): ?>
+                                    <div class="mt-1 text-[10px] text-pink-700 font-bold inline-flex items-center gap-0.5" title="Cashback <?= esc($cbRate) ?>%">
+                                        <span class="material-symbols-outlined text-[12px]">savings</span>
+                                        <span>+<?= format_rupiah($cbVal) ?></span>
+                                    </div>
+                                <?php endif; ?>
                             </td>
 
                             <!-- Status -->

@@ -75,6 +75,15 @@ class CustomerController extends BaseController
             $order['status_logs'] = $logModel->filterLogsForBuyer($order['status_logs']);
         }
 
+        // Jika pesanan telah selesai & BAST sah tapi belum terhitung cashback-nya, hitung dan kreditkan sekarang
+        if (in_array($order['order_status'] ?? '', ['bast_signed', 'completed'], true) && empty($order['is_cashback_awarded'])) {
+            process_buyer_order_cashback((int)$id);
+            $order = $orderModel->getOrderWithItems($id);
+            if (!empty($order['status_logs'])) {
+                $order['status_logs'] = (new \App\Models\OrderStatusLogModel())->filterLogsForBuyer($order['status_logs']);
+            }
+        }
+
         $reviewModel = new OrderReviewModel();
         $review = $reviewModel->getByOrder((int)$id);
 
@@ -179,6 +188,10 @@ class CustomerController extends BaseController
 
         $orderModel->update($orderId, $updateData);
 
+        // Berikan cashback ke buyer saat pesanan selesai & BAST sah
+        $cbAmount = process_buyer_order_cashback($orderId);
+        $cbMsg = ($cbAmount && $cbAmount > 0) ? ' & Saldo cashback ' . format_rupiah($cbAmount) . ' otomatis ditambahkan!' : '';
+
         $logModel = new \App\Models\OrderStatusLogModel();
         $logModel->logStatus(
             $orderId, 
@@ -195,11 +208,11 @@ class CustomerController extends BaseController
             (int)session('user_id'),
             $signerName,
             'customer',
-            "✅ Pesanan PO resmi dikonfirmasi SELESAI oleh {$signerName}. Seluruh barang telah diterima dalam kondisi baik. Dokumen BAST sah.",
+            "✅ Pesanan PO resmi dikonfirmasi SELESAI oleh {$signerName}. Seluruh barang telah diterima dalam kondisi baik. Dokumen BAST sah." . ($cbAmount && $cbAmount > 0 ? " Saldo cashback " . format_rupiah($cbAmount) . " telah dikreditkan ke saldo buyer." : ""),
             session('company_name') ?? 'Corporate Buyer'
         );
 
-        session()->setFlashdata('success', 'Pesanan berhasil diselesaikan oleh ' . $signerName . '! Terima kasih telah bertransaksi. Silakan berikan penilaian bintang untuk mitra vendor.');
+        session()->setFlashdata('success', 'Pesanan berhasil diselesaikan oleh ' . $signerName . '!' . $cbMsg . ' Terima kasih telah bertransaksi. Silakan berikan penilaian bintang untuk mitra vendor.');
         return redirect()->back();
     }
 
@@ -214,6 +227,10 @@ class CustomerController extends BaseController
             'updated_at'   => date('Y-m-d H:i:s')
         ]);
 
+        // Berikan cashback ke buyer saat pesanan selesai & BAST sah
+        $cbAmount = process_buyer_order_cashback($orderId);
+        $cbMsg = ($cbAmount && $cbAmount > 0) ? ' & Saldo cashback ' . format_rupiah($cbAmount) . ' otomatis ditambahkan ke akun Anda!' : '';
+
         $logModel = new \App\Models\OrderStatusLogModel();
         $logModel->logStatus(
             $orderId, 
@@ -223,7 +240,7 @@ class CustomerController extends BaseController
             $signerName
         );
 
-        session()->setFlashdata('success', 'Berita Acara Serah Terima (BAST) berhasil disahkan oleh ' . $signerName . ' dan pesanan resmi SELESAI! Periode jatuh tempo Term of Payment berjalan.');
+        session()->setFlashdata('success', 'Berita Acara Serah Terima (BAST) berhasil disahkan oleh ' . $signerName . ' dan pesanan resmi SELESAI!' . $cbMsg . ' Periode jatuh tempo Term of Payment berjalan.');
         return redirect()->back();
     }
 
@@ -556,6 +573,9 @@ class CustomerController extends BaseController
         }
 
         $orderModel = new OrderModel();
+        $buyerCashbackRate = get_buyer_cashback_rate($buyerId);
+        $estimatedCashback = round(($totalAmount * $buyerCashbackRate) / 100, 2);
+
         $orderId = (int)$orderModel->insert([
             'order_number'           => $orderNumber,
             'po_number'              => $poNumber,
@@ -567,6 +587,9 @@ class CustomerController extends BaseController
             'vendor_net_payout'      => $totalVendorNet,
             'shipping_amount'        => 0,
             'total_amount'           => $totalAmount,
+            'cashback_percent'       => $buyerCashbackRate,
+            'cashback_amount'        => $estimatedCashback,
+            'is_cashback_awarded'    => 0,
             'payment_method'         => $paymentMethod,
             'payment_status'         => $paymentStatus,
             'order_status'           => 'po_issued',
