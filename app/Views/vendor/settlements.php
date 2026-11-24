@@ -22,7 +22,7 @@
                 <span class="material-symbols-outlined text-blue-600">schedule</span>
             </div>
             <div class="text-xl font-black font-mono text-blue-900"><?= format_rupiah($totalUnpaidNet) ?></div>
-            <div class="text-[11px] text-slate-500 mt-0.5">Hak bersih + PPN yang belum dicairkan</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">Hak bersih (DPP dikurangi fee platform)</div>
         </div>
 
         <div class="bg-white rounded-2xl p-5 border border-rose-200 shadow-sm">

@@ -619,12 +619,12 @@
 
             <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
                 <div class="flex justify-between items-center">
-                    <span class="text-slate-500">Hak Bersih Vendor (+PPN):</span>
+                    <span class="text-slate-500">Hak Bersih Vendor (Net Payout):</span>
                     <strong class="font-mono font-black text-base text-emerald-700"><?= format_rupiah($vendorReceive) ?></strong>
                 </div>
                 <div class="flex justify-between items-center text-[11px] text-slate-400">
                     <span>Rincian Perhitungan:</span>
-                    <span>DPP <?= format_rupiah($order['subtotal']) ?> - Fee <?= format_rupiah($fee) ?> + PPN</span>
+                    <span>DPP <?= format_rupiah($order['subtotal']) ?> - Fee Layanan <?= format_rupiah($fee) ?></span>
                 </div>
                 <div class="pt-2 border-t border-slate-200 space-y-0.5 text-[11px]">
                     <div class="flex justify-between">

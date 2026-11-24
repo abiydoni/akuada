@@ -92,23 +92,19 @@
                 </div>
             </div>
 
-            <!-- Quick Progress Bar -->
+            <!-- Quick Progress Bar (2 Langkah Efisien: OTW -> Selesai Serah Terima) -->
             <?php
                 $statusDetail = $order['delivery_status_detail'] ?? ($order['order_status'] === 'delivered' ? 'delivered' : 'on_the_way');
                 $isDelivered = ($order['order_status'] === 'delivered' || $statusDetail === 'delivered' || in_array($order['order_status'], ['bast_signed', 'completed']));
-                $isArrived = ($statusDetail === 'arrived');
-                $isOnTheWay = ($statusDetail === 'on_the_way' || $order['order_status'] === 'shipped');
             ?>
             <div class="pt-2 border-t border-white/10">
                 <div class="flex items-center justify-between text-[10px] font-bold mb-1.5">
-                    <span class="<?= $isOnTheWay ? 'text-amber-300' : 'text-slate-400' ?>">1. OTW</span>
-                    <span class="<?= $isArrived ? 'text-amber-300' : 'text-slate-400' ?>">2. Tiba di Lokasi</span>
-                    <span class="<?= $isDelivered ? 'text-emerald-400' : 'text-slate-400' ?>">3. Selesai Serah Terima</span>
+                    <span class="<?= !$isDelivered ? 'text-amber-300 font-extrabold' : 'text-slate-400' ?>">1. Sedang Diantar (OTW)</span>
+                    <span class="<?= $isDelivered ? 'text-emerald-400 font-extrabold' : 'text-slate-400' ?>">2. Selesai Diserahkan (Lokasi Buyer)</span>
                 </div>
                 <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden flex">
-                    <div class="h-full bg-blue-500" style="width: 33%"></div>
-                    <div class="h-full <?= ($isArrived || $isDelivered) ? 'bg-amber-400' : 'bg-slate-700' ?>" style="width: 34%"></div>
-                    <div class="h-full <?= $isDelivered ? 'bg-emerald-400' : 'bg-slate-700' ?>" style="width: 33%"></div>
+                    <div class="h-full bg-blue-500" style="width: 50%"></div>
+                    <div class="h-full <?= $isDelivered ? 'bg-emerald-400' : 'bg-slate-700' ?>" style="width: 50%"></div>
                 </div>
             </div>
         </div>
@@ -227,168 +223,190 @@
             </div>
         </div>
 
-        <!-- FORM UPDATE STATUS PERJALANAN (HP TOUCH FIRST) -->
-        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-                <div class="flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-amber-500 text-[20px]">electric_bolt</span>
-                    <h2 class="font-extrabold text-xs text-slate-900 uppercase tracking-wide">Update Status Pengiriman</h2>
-                </div>
-                <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                    Kamera Aktif
-                </span>
-            </div>
-
-            <form action="<?= base_url('delivery/update/' . $token) ?>" method="POST" enctype="multipart/form-data" class="space-y-4">
-                <?= csrf_field() ?>
-
-                <input type="hidden" name="delivery_latitude" id="delivery_lat" value="<?= esc($order['delivery_latitude'] ?? '') ?>">
-                <input type="hidden" name="delivery_longitude" id="delivery_lng" value="<?= esc($order['delivery_longitude'] ?? '') ?>">
-
-                <!-- Tahapan Status: Radio Button Bergaya Tombol Besar -->
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-700 mb-2">Pilih Tahap Pengiriman Saat Ini:</label>
-                    <div class="grid grid-cols-1 gap-2">
-                        <!-- OTW -->
-                        <label class="relative flex items-center p-3 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50/70 transition shadow-xs">
-                            <input type="radio" name="stage" value="on_the_way" class="sr-only" <?= ($statusDetail === 'on_the_way' || $order['order_status'] === 'shipped') ? 'checked' : '' ?>>
-                            <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0 mr-3">
-                                <span class="material-symbols-outlined text-[18px]">local_shipping</span>
-                            </div>
-                            <div class="flex-grow">
-                                <div class="font-extrabold text-xs text-slate-900">1. Dalam Perjalanan (OTW)</div>
-                                <div class="text-[10px] text-slate-500 leading-tight">Barang telah dimuat dan sedang meluncur ke lokasi buyer.</div>
-                            </div>
-                            <span class="material-symbols-outlined text-blue-600 text-[20px] ml-2 hidden [[type=radio]:checked~*>&]:block">check_circle</span>
-                        </label>
-
-                        <!-- Tiba di Lokasi -->
-                        <label class="relative flex items-center p-3 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 has-[:checked]:border-amber-600 has-[:checked]:bg-amber-50/70 transition shadow-xs">
-                            <input type="radio" name="stage" value="arrived" class="sr-only" <?= ($statusDetail === 'arrived') ? 'checked' : '' ?>>
-                            <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0 mr-3">
-                                <span class="material-symbols-outlined text-[18px]">where_to_vote</span>
-                            </div>
-                            <div class="flex-grow">
-                                <div class="font-extrabold text-xs text-slate-900">2. Tiba di Lokasi Buyer</div>
-                                <div class="text-[10px] text-slate-500 leading-tight">Driver sudah sampai di pos satpam / gerbang / titik penurunan.</div>
-                            </div>
-                            <span class="material-symbols-outlined text-amber-600 text-[20px] ml-2 hidden [[type=radio]:checked~*>&]:block">check_circle</span>
-                        </label>
-
-                        <!-- Selesai Serah Terima -->
-                        <label class="relative flex items-center p-3 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50/70 transition shadow-xs">
-                            <input type="radio" name="stage" value="delivered" class="sr-only" <?= ($isDelivered) ? 'checked' : '' ?>>
-                            <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 mr-3">
-                                <span class="material-symbols-outlined text-[18px]">task_alt</span>
-                            </div>
-                            <div class="flex-grow">
-                                <div class="font-extrabold text-xs text-slate-900">3. Barang Diserahkan & Selesai</div>
-                                <div class="text-[10px] text-slate-500 leading-tight">Barang telah tuntas diturunkan dan diterima oleh pihak buyer.</div>
-                            </div>
-                            <span class="material-symbols-outlined text-emerald-600 text-[20px] ml-2 hidden [[type=radio]:checked~*>&]:block">check_circle</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Foto Bukti Pengantaran (POD) Langsung Kamera HP -->
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-700 mb-1">
-                        Foto Bukti Serah Terima / Barang di Lokasi (POD):
-                    </label>
-                    <div class="mt-1">
-                        <label for="delivery_proof_input" class="w-full border-2 border-dashed border-blue-300 rounded-2xl p-4 bg-blue-50/40 hover:bg-blue-50 text-center flex flex-col items-center justify-center cursor-pointer transition">
-                            <span class="material-symbols-outlined text-blue-600 text-3xl mb-1">photo_camera</span>
-                            <span class="font-bold text-xs text-blue-900">Buka Kamera HP & Ambil Foto</span>
-                            <span class="text-[10px] text-slate-500 mt-0.5">Atau pilih dari galeri foto (JPG, PNG, WebP)</span>
-                            <input type="file" name="delivery_proof" id="delivery_proof_input" accept="image/*" capture="environment" class="hidden" onchange="previewPhoto(this)">
-                        </label>
-
-                        <!-- Preview Container -->
-                        <div id="photoPreviewContainer" class="hidden mt-2 relative rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-black">
-                            <img id="photoPreviewImg" src="" alt="Bukti Foto" class="w-full max-h-56 object-contain mx-auto">
-                            <div class="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">
-                                Foto Siap Dikirim
-                            </div>
-                        </div>
-
-                        <?php if (!empty($order['delivery_proof_photo'])): ?>
-                            <div class="mt-2 p-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
-                                <span class="text-slate-600 font-semibold flex items-center gap-1 text-[11px]">
-                                    <span class="material-symbols-outlined text-emerald-600 text-[16px]">image</span>
-                                    Foto sebelumnya tersimpan
-                                </span>
-                                <a href="<?= base_url($order['delivery_proof_photo']) ?>" target="_blank" class="text-blue-600 font-bold text-[11px] hover:underline">
-                                    Lihat Foto
-                                </a>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-
-                <!-- Form Driver & Kendaraan -->
-                <div class="grid grid-cols-2 gap-2 text-xs">
+        <!-- FORM UPDATE STATUS PERJALANAN (HP TOUCH FIRST: 1 KALI UPDATE POD) -->
+        <?php if ($isDelivered): ?>
+            <!-- CARD PENGANTARAN SELESAI (SUDAH DISERAHKAN) -->
+            <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl p-5 shadow-md space-y-3">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-white text-2xl">verified</span>
                     <div>
-                        <label class="block text-[11px] font-bold text-slate-700 mb-1">Nama Driver: <span class="text-rose-500">*</span></label>
-                        <input type="text" name="driver_name" value="<?= esc($order['driver_name'] ?? '') ?>" required placeholder="Contoh: Pak Herman" 
-                               class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600 bg-white font-semibold">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-700 mb-1">Plat Kendaraan:</label>
-                        <input type="text" name="vehicle_plate" value="<?= esc($order['vehicle_plate'] ?? '') ?>" placeholder="B 1234 ABC" 
-                               class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600 bg-white font-mono uppercase">
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-[11px] font-bold text-slate-700 mb-1">Nomor WhatsApp / HP Driver:</label>
-                        <input type="tel" name="driver_phone" value="<?= esc($order['driver_phone'] ?? '') ?>" placeholder="08123456789" 
-                               class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600 bg-white font-mono">
+                        <h2 class="font-black text-sm uppercase tracking-wide">Pengantaran Selesai & Tuntas</h2>
+                        <p class="text-[11px] text-emerald-100">Barang telah diserahkan di lokasi tujuan buyer.</p>
                     </div>
                 </div>
 
-                <!-- Form Penerima di Lapangan -->
-                <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-2 text-xs">
-                    <div class="font-bold text-slate-800 text-[11px] flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[15px] text-blue-600">person_pin</span>
-                        <span>Identitas Penerima di Lokasi Buyer:</span>
+                <div class="bg-black/20 rounded-xl p-3 text-xs space-y-1.5 border border-white/10">
+                    <div class="flex justify-between">
+                        <span class="text-emerald-200 text-[11px]">Waktu Penyerahan:</span>
+                        <strong class="text-white"><?= !empty($order['delivered_at']) ? date('d M Y, H:i', strtotime($order['delivered_at'])) . ' WIB' : 'Tercatat Selesai' ?></strong>
                     </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <input type="text" name="recipient_name" value="<?= esc($order['recipient_name'] ?? '') ?>" placeholder="Nama Penerima (Misal: Pak Budi Gudang)" 
-                                   class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs">
+                    <div class="flex justify-between">
+                        <span class="text-emerald-200 text-[11px]">Penerima di Lokasi:</span>
+                        <strong class="text-white"><?= esc($order['recipient_name'] ?: 'Pihak Buyer') ?></strong>
+                    </div>
+                    <?php if (!empty($order['recipient_phone'])): ?>
+                        <div class="flex justify-between">
+                            <span class="text-emerald-200 text-[11px]">No. Kontak Penerima:</span>
+                            <span class="font-mono text-white"><?= esc($order['recipient_phone']) ?></span>
                         </div>
-                        <div>
-                            <input type="tel" name="recipient_phone" value="<?= esc($order['recipient_phone'] ?? '') ?>" placeholder="No. Telp Penerima" 
-                                   class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-mono text-xs">
-                        </div>
+                    <?php endif; ?>
+                    <div class="flex justify-between">
+                        <span class="text-emerald-200 text-[11px]">Diserahkan Oleh:</span>
+                        <span class="text-white"><?= esc($order['delivered_by_name'] ?: $order['driver_name'] ?: 'Driver Vendor') ?> <?= !empty($order['vehicle_plate']) ? '(' . esc($order['vehicle_plate']) . ')' : '' ?></span>
                     </div>
+                    <?php if (!empty($order['delivery_notes'])): ?>
+                        <div class="pt-1.5 border-t border-white/10 text-[11px] text-emerald-100">
+                            <span class="font-bold">Catatan Penyerahan:</span> <?= esc($order['delivery_notes']) ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
-                <!-- Catatan Pengiriman -->
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-700 mb-1">Catatan Tambahan Kurir / Kondisi Penyerahan:</label>
-                    <textarea name="delivery_notes" rows="2" placeholder="Contoh: Barang diturunkan 15 karton dalam keadaan segel utuh, diterima bagian security pos 2..." 
-                              class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600 bg-white text-xs leading-relaxed"><?= esc($order['delivery_notes'] ?? '') ?></textarea>
-                </div>
-
-                <!-- GPS Location Capture -->
-                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-100 text-xs">
-                    <div class="flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-blue-600 text-[18px]">my_location</span>
-                        <span id="gpsStatusText" class="text-[11px] text-slate-600 font-medium">
-                            <?= (!empty($order['delivery_latitude'])) ? 'Lokasi tercatat' : 'GPS belum terdeteksi' ?>
+                <?php if (!empty($order['delivery_proof_photo'])): ?>
+                    <div class="rounded-xl overflow-hidden border border-white/20 bg-black/40 p-2 space-y-1">
+                        <span class="text-[10px] text-emerald-200 font-bold block flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">photo_camera</span>
+                            Foto Bukti Serah Terima (POD):
                         </span>
+                        <a href="<?= base_url($order['delivery_proof_photo']) ?>" target="_blank" class="block group relative">
+                            <img src="<?= base_url($order['delivery_proof_photo']) ?>" alt="Bukti Serah Terima" class="w-full max-h-56 object-cover rounded-lg">
+                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition rounded-lg">
+                                Klik untuk Perbesar Foto
+                            </div>
+                        </a>
                     </div>
-                    <button type="button" onclick="detectGpsLocation()" class="px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-blue-700 font-bold text-[11px] shadow-xs active:scale-95 transition">
-                        Deteksi GPS
-                    </button>
+                <?php endif; ?>
+
+                <div class="p-3 bg-white/10 rounded-xl text-[11px] text-emerald-50 leading-relaxed">
+                    ℹ️ <strong>Langkah Selanjutnya:</strong> Tim Corporate Buyer telah menerima laporan pengantaran dan akan memeriksa fisik barang sebelum menandatangani BAST resmi.
+                </div>
+            </div>
+        <?php else: ?>
+            <!-- FORM 1 KALI UPDATE SAAT TIBA & SERAH TERIMA BARANG (POD) -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <div class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-emerald-600 text-[20px]">task_alt</span>
+                        <h2 class="font-extrabold text-xs text-slate-900 uppercase tracking-wide">Konfirmasi Serah Terima (POD)</h2>
+                    </div>
+                    <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        1 Kali Update
+                    </span>
                 </div>
 
-                <!-- Submit Button -->
-                <button type="submit" class="w-full py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 active:scale-98 transition">
-                    <span class="material-symbols-outlined text-[20px]">send</span>
-                    <span>Kirim Pembaruan Status Sekarang</span>
-                </button>
-            </form>
-        </div>
+                <div class="p-3 bg-blue-50/70 rounded-xl border border-blue-200/60 text-xs text-blue-900 leading-relaxed">
+                    🚚 <strong>Cukup Sekali Update Saat Tiba:</strong> Buka tautan ini saat Anda telah sampai di lokasi buyer dan menyerahkan barang. Cukup ambil foto bukti serah terima/surat jalan dan isi nama penerima.
+                </div>
+
+                <form action="<?= base_url('delivery/update/' . $token) ?>" method="POST" enctype="multipart/form-data" class="space-y-4">
+                    <?= csrf_field() ?>
+
+                    <!-- Otomatis Stage Delivered (1 Kali Update saat Tiba di Lokasi Buyer) -->
+                    <input type="hidden" name="stage" value="delivered">
+                    <input type="hidden" name="delivery_latitude" id="delivery_lat" value="<?= esc($order['delivery_latitude'] ?? '') ?>">
+                    <input type="hidden" name="delivery_longitude" id="delivery_lng" value="<?= esc($order['delivery_longitude'] ?? '') ?>">
+
+                    <!-- Foto Bukti Pengantaran (POD) Langsung Kamera HP -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-700 mb-1">
+                            Foto Bukti Serah Terima / Barang di Lokasi (POD): <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <label for="delivery_proof_input" class="w-full border-2 border-dashed border-emerald-300 rounded-2xl p-4 bg-emerald-50/40 hover:bg-emerald-50 text-center flex flex-col items-center justify-center cursor-pointer transition">
+                                <span class="material-symbols-outlined text-emerald-600 text-3xl mb-1">photo_camera</span>
+                                <span class="font-bold text-xs text-emerald-950">Buka Kamera HP & Ambil Foto</span>
+                                <span class="text-[10px] text-slate-500 mt-0.5">Foto barang diturunkan atau surat jalan yang ditandatangani</span>
+                                <input type="file" name="delivery_proof" id="delivery_proof_input" accept="image/*" capture="environment" class="hidden" onchange="previewPhoto(this)">
+                            </label>
+
+                            <!-- Preview Container -->
+                            <div id="photoPreviewContainer" class="hidden mt-2 relative rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-black">
+                                <img id="photoPreviewImg" src="" alt="Bukti Foto" class="w-full max-h-56 object-contain mx-auto">
+                                <div class="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">
+                                    Foto Siap Dikirim
+                                </div>
+                            </div>
+
+                            <?php if (!empty($order['delivery_proof_photo'])): ?>
+                                <div class="mt-2 p-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+                                    <span class="text-slate-600 font-semibold flex items-center gap-1 text-[11px]">
+                                        <span class="material-symbols-outlined text-emerald-600 text-[16px]">image</span>
+                                        Foto tersimpan sebelumnya
+                                    </span>
+                                    <a href="<?= base_url($order['delivery_proof_photo']) ?>" target="_blank" class="text-blue-600 font-bold text-[11px] hover:underline">
+                                        Lihat Foto
+                                    </a>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Identitas Penerima di Lapangan -->
+                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+                        <div class="font-bold text-slate-800 text-[11px] flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[16px] text-emerald-600">person_pin</span>
+                            <span>Penerima di Lokasi Buyer:</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nama Penerima: <span class="text-rose-500">*</span></label>
+                                <input type="text" name="recipient_name" value="<?= esc($order['recipient_name'] ?? '') ?>" required placeholder="Contoh: Pak Budi (Gudang)" 
+                                       class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold focus:border-emerald-600">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">No. Telp / HP Penerima:</label>
+                                <input type="tel" name="recipient_phone" value="<?= esc($order['recipient_phone'] ?? '') ?>" placeholder="08123456789" 
+                                       class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-mono text-xs focus:border-emerald-600">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Driver & Kendaraan -->
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-700 mb-1">Nama Driver: <span class="text-rose-500">*</span></label>
+                            <input type="text" name="driver_name" value="<?= esc($order['driver_name'] ?? '') ?>" required placeholder="Contoh: Pak Herman" 
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-emerald-600 bg-white font-semibold">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-700 mb-1">Plat Kendaraan:</label>
+                            <input type="text" name="vehicle_plate" value="<?= esc($order['vehicle_plate'] ?? '') ?>" placeholder="B 1234 ABC" 
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-emerald-600 bg-white font-mono uppercase">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-[11px] font-bold text-slate-700 mb-1">Nomor WhatsApp / HP Driver:</label>
+                            <input type="tel" name="driver_phone" value="<?= esc($order['driver_phone'] ?? '') ?>" placeholder="08123456789" 
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-emerald-600 bg-white font-mono">
+                        </div>
+                    </div>
+
+                    <!-- Catatan Pengiriman -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-700 mb-1">Catatan Tambahan Kurir / Kondisi Barang:</label>
+                        <textarea name="delivery_notes" rows="2" placeholder="Contoh: Barang diturunkan 15 karton segel utuh, diterima pos security gerbang barat..." 
+                                  class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-emerald-600 bg-white text-xs leading-relaxed"><?= esc($order['delivery_notes'] ?? '') ?></textarea>
+                    </div>
+
+                    <!-- GPS Location Capture -->
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-100 text-xs">
+                        <div class="flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-blue-600 text-[18px]">my_location</span>
+                            <span id="gpsStatusText" class="text-[11px] text-slate-600 font-medium">
+                                <?= (!empty($order['delivery_latitude'])) ? 'Lokasi tercatat' : 'GPS belum terdeteksi' ?>
+                            </span>
+                        </div>
+                        <button type="button" onclick="detectGpsLocation()" class="px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-blue-700 font-bold text-[11px] shadow-xs active:scale-95 transition">
+                            Deteksi GPS
+                        </button>
+                    </div>
+
+                    <!-- Submit Button 1 Kali POD -->
+                    <button type="submit" class="w-full py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 active:scale-98 transition">
+                        <span class="material-symbols-outlined text-[20px]">task_alt</span>
+                        <span>Konfirmasi Barang Selesai Diserahkan (POD)</span>
+                    </button>
+                </form>
+            </div>
+        <?php endif; ?>
 
         <!-- Histori Catatan Pengiriman -->
         <?php if (!empty($order['status_logs'])): ?>

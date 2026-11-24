@@ -407,7 +407,7 @@
                     </div>
 
                     <p class="text-xs text-blue-200 leading-relaxed">
-                        Khusus pengantaran sendiri oleh armada vendor, bagikan tautan ini ke pengirim. Driver dapat memperbarui status OTW, Tiba di Lokasi, dan memotret bukti serah terima langsung dari HP tanpa perlu login.
+                        Khusus pengantaran sendiri oleh armada vendor, bagikan tautan ini ke kurir/driver. Driver cukup membuka tautan dari HP sekali saja saat tiba di lokasi untuk memotret bukti serah terima (POD) & mengisi nama penerima tanpa perlu login.
                     </p>
 
                     <div class="p-3 rounded-xl bg-white/5 border border-white/10 grid grid-cols-2 gap-2 text-xs">

@@ -51,7 +51,7 @@ class DeliveryController extends BaseController
             return redirect()->back();
         }
 
-        $stage = trim((string)$this->request->getPost('stage')); // 'on_the_way', 'arrived', 'delivered'
+        $stage = trim((string)$this->request->getPost('stage')) ?: 'delivered'; // Alur 1-kali serah terima POD langsung delivered
         $driverName = trim((string)$this->request->getPost('driver_name')) ?: ($order['driver_name'] ?? 'Kurir Armada Vendor');
         $driverPhone = trim((string)$this->request->getPost('driver_phone')) ?: ($order['driver_phone'] ?? '');
         $vehiclePlate = trim((string)$this->request->getPost('vehicle_plate')) ?: ($order['vehicle_plate'] ?? '');
