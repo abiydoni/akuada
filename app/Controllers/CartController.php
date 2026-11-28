@@ -139,9 +139,29 @@ class CartController extends BaseController
     /**
      * Generate & Download Surat Penawaran Harga Resmi (Official B2B Quotation)
      * Dibuat otomatis berdasarkan item-item yang dipilih oleh Buyer di keranjang.
+     * Hanya dapat diakses oleh perusahaan atau buyer yang sudah terdaftar.
      */
     public function quotation()
     {
+        $isLoggedIn = !empty(session('is_logged_in')) && !empty(session('user_id'));
+        $userRole = session('user_role') ?: (session('role') ?: '');
+        $companyModel = new CompanyModel();
+        $userModel = new UserModel();
+
+        $buyerCompanyId = (int)(session('company_id') ?: 0);
+        if (!$buyerCompanyId && $isLoggedIn) {
+            $u = $userModel->find(session('user_id'));
+            if ($u && !empty($u['company_id'])) {
+                $buyerCompanyId = (int)$u['company_id'];
+            }
+        }
+        $registeredCompany = $buyerCompanyId ? $companyModel->find($buyerCompanyId) : null;
+
+        if (!$isLoggedIn || !in_array($userRole, ['customer', 'admin'], true) || ($userRole === 'customer' && !$registeredCompany)) {
+            session()->setFlashdata('error', 'Surat Penawaran Harga Resmi (Quotation) hanya dapat dibuat oleh perusahaan atau Corporate Buyer yang sudah terdaftar. Silakan daftarkan perusahaan Anda terlebih dahulu.');
+            return redirect()->to('/auth/register');
+        }
+
         $cart = session('cart') ?? [];
         if (empty($cart)) {
             session()->setFlashdata('error', 'Keranjang pengadaan Anda masih kosong. Silakan tambahkan barang terlebih dahulu.');

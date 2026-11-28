@@ -27,9 +27,9 @@ class RfqController extends BaseController
 
     public function create()
     {
-        if (!session('is_logged_in') || session('user_role') !== 'customer') {
-            session()->setFlashdata('error', 'Silakan masuk dengan akun Corporate Buyer untuk membuat dan mengajukan RFQ.');
-            return redirect()->to('/auth/login');
+        if (!session('is_logged_in') || session('user_role') !== 'customer' || empty(session('company_id'))) {
+            session()->setFlashdata('error', 'Permintaan & Surat Penawaran Harga Resmi (RFQ / Quotation) hanya dapat diajukan oleh perusahaan atau Corporate Buyer yang sudah terdaftar. Silakan daftarkan perusahaan Anda terlebih dahulu.');
+            return redirect()->to('/auth/register');
         }
 
         $companyModel = new CompanyModel();
@@ -47,9 +47,9 @@ class RfqController extends BaseController
 
     public function store()
     {
-        if (!session('is_logged_in') || session('user_role') !== 'customer') {
-            session()->setFlashdata('error', 'Silakan masuk dengan akun Corporate Buyer untuk membuat dan mengajukan RFQ.');
-            return redirect()->to('/auth/login');
+        if (!session('is_logged_in') || session('user_role') !== 'customer' || empty(session('company_id'))) {
+            session()->setFlashdata('error', 'Permintaan & Surat Penawaran Harga Resmi (RFQ / Quotation) hanya dapat diajukan oleh perusahaan atau Corporate Buyer yang sudah terdaftar. Silakan daftarkan perusahaan Anda terlebih dahulu.');
+            return redirect()->to('/auth/register');
         }
 
         $title = $this->request->getPost('title');
@@ -149,6 +149,13 @@ class RfqController extends BaseController
      */
     public function quotation($id)
     {
+        $isLoggedIn = !empty(session('is_logged_in')) && !empty(session('user_id'));
+        $userRole = session('user_role') ?: (session('role') ?: '');
+        if (!$isLoggedIn || !in_array($userRole, ['customer', 'admin', 'vendor'], true) || ($userRole === 'customer' && empty(session('company_id')))) {
+            session()->setFlashdata('error', 'Surat Penawaran Harga Resmi (Quotation) hanya dapat diakses oleh perusahaan atau Corporate Buyer yang sudah terdaftar. Silakan daftarkan perusahaan Anda terlebih dahulu.');
+            return redirect()->to('/auth/register');
+        }
+
         $rfqModel = new RfqModel();
         $rfq = $rfqModel->getRfqWithItems($id);
 

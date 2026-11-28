@@ -31,6 +31,18 @@
         </div>
 
         <!-- Compliance & Risk Mitigation Notice -->
+        <?php if (session()->getFlashdata('error')): ?>
+            <div class="p-4 rounded-2xl bg-rose-50 border-2 border-rose-300 text-xs text-rose-950 flex items-start gap-3 shadow-sm">
+                <span class="material-symbols-outlined text-rose-600 text-2xl flex-shrink-0 mt-0.5">lock_person</span>
+                <div class="space-y-1">
+                    <strong class="font-extrabold text-rose-900 block text-xs">Registrasi Perusahaan Diperlukan</strong>
+                    <p class="text-rose-800 text-[11px] leading-relaxed">
+                        <?= esc(session()->getFlashdata('error')) ?>
+                    </p>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <div class="p-4 rounded-2xl bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 border border-purple-200 text-xs text-purple-950 flex items-start gap-3 shadow-xs">
             <span class="material-symbols-outlined text-purple-600 text-2xl flex-shrink-0 mt-0.5">verified_user</span>
             <div class="space-y-1">

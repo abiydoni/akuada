@@ -148,7 +148,10 @@
                 </div>
 
                 <!-- Hidden Form for Quotation Generation -->
-                <form id="quotationForm" action="<?= base_url('cart/quotation') ?>" method="POST" target="_blank" class="hidden">
+                <?php
+                    $isRegisteredBuyer = !empty(session('is_logged_in')) && !empty(session('user_id')) && in_array(session('user_role') ?: session('role'), ['customer', 'admin'], true) && (!empty(session('company_id')) || (session('user_role') ?: session('role')) === 'admin');
+                ?>
+                <form id="quotationForm" action="<?= base_url('cart/quotation') ?>" method="POST" <?= $isRegisteredBuyer ? 'target="_blank"' : '' ?> class="hidden">
                     <?= csrf_field() ?>
                     <div id="quotationHiddenInputs"></div>
                 </form>
