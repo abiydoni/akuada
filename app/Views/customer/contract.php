@@ -1,6 +1,9 @@
-<?= $this->extend('layouts/customer') ?>
+<?php
+$useAdminLayout = !empty($isAdminView);
+?>
+<?= $this->extend($useAdminLayout ? 'layouts/admin' : 'layouts/customer') ?>
 
-<?= $this->section('customer_content') ?>
+<?= $this->section($useAdminLayout ? 'admin_content' : 'customer_content') ?>
 <?php
 $issuerCompany  = get_system_setting('inv_issuer_company', 'PT AkuAda Indonesia');
 $issuerAddress  = get_system_setting('inv_issuer_address', 'Gedung Cyber Tower Lt. 12, Jl. HR. Rasuna Said, Jakarta Selatan');
@@ -40,6 +43,12 @@ $picPosition    = $user['position'] ?? 'PIC Procurement / Perwakilan Sah';
             <p class="text-xs text-slate-500 mt-0.5">Dokumen perjanjian kerjasama resmi beserta hak istimewa dan fasilitas korporat yang diberikan oleh AkuAda kepada perusahaan Anda.</p>
         </div>
         <div class="flex items-center gap-2">
+            <?php if (!empty($isAdminView)): ?>
+                <a href="<?= base_url('admin/buyers') ?>" class="px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                    <span>Kembali ke Daftar Buyer</span>
+                </a>
+            <?php endif; ?>
             <button type="button" onclick="window.print()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-xs transition flex items-center gap-1.5 shadow-md">
                 <span class="material-symbols-outlined text-[18px]">print</span>
                 <span>Cetak / Unduh PDF Kontrak</span>

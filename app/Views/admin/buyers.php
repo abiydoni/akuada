@@ -111,13 +111,21 @@
                                         <?php
                                             $docCount = (!empty($b['npwp_file']) ? 1 : 0) + (!empty($b['nib_file']) ? 1 : 0) + (!empty($b['deed_file']) ? 1 : 0) + (!empty($b['id_card_file']) ? 1 : 0) + (!empty($b['sppkp_file']) ? 1 : 0);
                                         ?>
-                                        <div class="pt-1 flex flex-wrap items-center gap-1">
+                                        <div class="pt-1 flex flex-wrap items-center gap-1.5">
                                             <button type="button" 
                                                     onclick="openDocsModal('<?= esc($b['company_name']) ?>', <?= $b['is_verified'] ? 'true' : 'false' ?>, '<?= base_url('admin/buyers/toggle/' . $b['id']) ?>', '<?= esc($b['npwp_file'] ?? '') ?>', '<?= esc($b['nib_file'] ?? '') ?>', '<?= esc($b['deed_file'] ?? '') ?>', '<?= esc($b['id_card_file'] ?? '') ?>', '<?= esc($b['sppkp_file'] ?? '') ?>', '<?= esc($b['business_field'] ?? '-') ?>', '<?= esc($b['city'] ?? '-') ?>', '<?= esc($b['province'] ?? '-') ?>', '<?= esc(addslashes($b['address'] ?? '-')) ?>')"
                                                     class="px-2 py-0.5 rounded-lg <?= $docCount > 0 ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-500' ?> text-[10px] font-bold inline-flex items-center gap-1 transition">
                                                 <span class="material-symbols-outlined text-[13px]">folder_open</span>
                                                 <span>Berkas Legalitas (<?= $docCount ?> Dokumen)</span>
                                             </button>
+                                            <?php if ($b['is_verified']): ?>
+                                                <a href="<?= base_url('admin/buyers/contract/' . $b['id']) ?>"
+                                                   class="px-2.5 py-0.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold inline-flex items-center gap-1 transition shadow-2xs"
+                                                   title="Lihat Kontrak Kerjasama & Benefit Buyer">
+                                                    <span class="material-symbols-outlined text-[13px] text-emerald-600">gavel</span>
+                                                    <span>Kontrak & Benefit</span>
+                                                </a>
+                                            <?php endif; ?>
                                         </div>
 
                                         <?php if ($hasPendingIncrease): ?>
@@ -182,6 +190,16 @@
                             <!-- Actions -->
                             <td class="px-4 py-3.5 align-top text-center">
                                 <div class="grid grid-cols-2 gap-1.5">
+                                    <?php if ($b['is_verified']): ?>
+                                        <!-- Lihat Kontrak Kerjasama -->
+                                        <a href="<?= base_url('admin/buyers/contract/' . $b['id']) ?>" 
+                                           class="col-span-2 px-2.5 py-1.5 rounded-lg text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white transition inline-flex items-center justify-center gap-1 shadow-xs"
+                                           title="Lihat & Cetak Kontrak Kerjasama Beserta Benefit Buyer">
+                                            <span class="material-symbols-outlined text-[15px]">gavel</span>
+                                            <span>Lihat Kontrak & Benefit</span>
+                                        </a>
+                                    <?php endif; ?>
+
                                     <!-- Edit Profil -->
                                     <a href="<?= base_url('admin/buyers/edit/' . $b['id']) ?>" 
                                        class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 transition inline-flex items-center justify-center gap-1 border border-purple-200"

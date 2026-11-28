@@ -67,6 +67,7 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->post('buyers/update/(:num)', 'AdminController::updateBuyer/$1');
     $routes->get('buyers/delete/(:num)', 'AdminController::deleteBuyer/$1');
     $routes->get('buyers/toggle/(:num)', 'AdminController::toggleBuyerVerification/$1');
+    $routes->get('buyers/contract/(:num)', 'AdminController::buyerContract/$1');
     $routes->post('buyers/limit', 'AdminController::updateBuyerLimit');
     $routes->post('buyers/update-cashback', 'AdminController::updateBuyerCashbackRate');
 

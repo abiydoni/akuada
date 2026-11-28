@@ -437,6 +437,32 @@ class AdminController extends BaseController
         ]);
     }
 
+    public function buyerContract($id)
+    {
+        $companyModel = new CompanyModel();
+        $company = $companyModel->find((int)$id);
+
+        if (!$company || $company['type'] !== 'buyer') {
+            session()->setFlashdata('error', 'Data perusahaan buyer tidak ditemukan.');
+            return redirect()->to('/admin/buyers');
+        }
+
+        if ((int)($company['is_verified'] ?? 0) !== 1) {
+            session()->setFlashdata('error', 'Perusahaan ' . $company['company_name'] . ' belum diverifikasi. Silakan klik tombol "Verif" terlebih dahulu untuk menerbitkan Kontrak Kerjasama & Benefit.');
+            return redirect()->to('/admin/buyers');
+        }
+
+        $userModel = new UserModel();
+        $user = $userModel->where('company_id', (int)$id)->first();
+
+        return view('customer/contract', [
+            'title'       => 'Kontrak Kerjasama B2B & Benefit: ' . $company['company_name'] . ' - Superadmin AkuAda',
+            'company'     => $company,
+            'user'        => $user,
+            'isAdminView' => true,
+        ]);
+    }
+
     public function createBuyer()
     {
         $defaultCredit = (float)get_system_setting('default_credit_limit', 100000000);

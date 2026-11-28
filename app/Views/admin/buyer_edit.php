@@ -16,10 +16,18 @@
             </div>
             <p class="text-xs text-slate-500 mt-0.5">Perbarui profil korporat, kontak PIC procurement, fasilitas plafon kredit TOP, tarif cashback, dan dokumen legalitas.</p>
         </div>
-        <a href="<?= base_url('admin/buyers') ?>" class="px-3.5 py-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 text-xs font-semibold flex items-center gap-1.5 transition">
-            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
-            <span>Kembali</span>
-        </a>
+        <div class="flex items-center gap-2">
+            <?php if (!empty($buyer['is_verified'])): ?>
+                <a href="<?= base_url('admin/buyers/contract/' . $buyer['id']) ?>" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
+                    <span class="material-symbols-outlined text-[16px]">gavel</span>
+                    <span>Lihat Kontrak & Benefit</span>
+                </a>
+            <?php endif; ?>
+            <a href="<?= base_url('admin/buyers') ?>" class="px-3.5 py-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 text-xs font-semibold flex items-center gap-1.5 transition">
+                <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                <span>Kembali</span>
+            </a>
+        </div>
     </div>
 
     <form action="<?= base_url('admin/buyers/update/' . $buyer['id']) ?>" method="POST" enctype="multipart/form-data" class="space-y-6 text-xs">
