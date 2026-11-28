@@ -109,11 +109,18 @@ $fullChatUrl = ($currentUserRole === 'customer') ? base_url('customer/chat') : (
                         <span class="truncate">Chat sebagai: <strong class="text-slate-800"><?= esc($currentUserName) ?></strong> (<span class="text-purple-700 font-semibold"><?= esc($currentCompany) ?></span>)</span>
                     </div>
                 <?php else: ?>
-                    <!-- Guest PIC input for unauthenticated marketplace visitors -->
-                    <div id="guestIdentityInputs" class="space-y-1">
+                    <!-- Guest PIC input for unauthenticated marketplace visitors (Wajib Diisi) -->
+                    <div id="guestIdentityInputs" class="space-y-1.5 bg-purple-50/60 p-2 rounded-xl border border-purple-200/80">
+                        <div class="flex items-center justify-between text-[10px] text-purple-900 font-bold px-0.5">
+                            <span class="flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[13px] text-purple-700">badge</span>
+                                Identitas Pemohon (Wajib Diisi): <span class="text-rose-500">*</span>
+                            </span>
+                            <span class="text-[9px] text-purple-600 font-normal">Agar balasan terarah</span>
+                        </div>
                         <div class="grid grid-cols-2 gap-1.5 text-[10px]">
-                            <input type="text" id="floatingGuestName" name="guest_name" value="<?= esc(session('guest_name') ?? '') ?>" placeholder="Nama Anda (PIC)..." class="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-[11px] focus:bg-white focus:border-purple-600 focus:outline-none">
-                            <input type="text" id="floatingGuestCompany" name="guest_company" value="<?= esc(session('guest_company') ?? '') ?>" placeholder="Nama Perusahaan / PT..." class="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-[11px] focus:bg-white focus:border-purple-600 focus:outline-none">
+                            <input type="text" id="floatingGuestName" name="guest_name" required value="<?= esc(session('guest_name') ?? '') ?>" placeholder="Nama Anda (PIC) *" class="px-2.5 py-1.5 rounded-xl border border-purple-200 bg-white text-[11px] font-medium text-slate-800 focus:border-purple-600 focus:ring-2 focus:ring-purple-100 focus:outline-none">
+                            <input type="text" id="floatingGuestCompany" name="guest_company" required value="<?= esc(session('guest_company') ?? '') ?>" placeholder="Nama Perusahaan / PT *" class="px-2.5 py-1.5 rounded-xl border border-purple-200 bg-white text-[11px] font-medium text-slate-800 focus:border-purple-600 focus:ring-2 focus:ring-purple-100 focus:outline-none">
                         </div>
                     </div>
                     <div id="guestIdentityBadge" class="hidden items-center justify-between text-[10px] text-slate-600 bg-purple-50/70 border border-purple-200/80 rounded-xl px-2.5 py-1">
@@ -156,13 +163,13 @@ $fullChatUrl = ($currentUserRole === 'customer') ? base_url('customer/chat') : (
         const compInput = document.getElementById('floatingGuestCompany');
         if (!nameInput) return;
 
-        const savedName = localStorage.getItem('akuada_guest_name') || nameInput.value;
-        const savedComp = localStorage.getItem('akuada_guest_company') || (compInput ? compInput.value : '');
+        const savedName = (localStorage.getItem('akuada_guest_name') || nameInput.value || '').trim();
+        const savedComp = (localStorage.getItem('akuada_guest_company') || (compInput ? compInput.value : '') || '').trim();
 
         if (savedName) nameInput.value = savedName;
         if (compInput && savedComp) compInput.value = savedComp;
 
-        if (savedName || savedComp) {
+        if (savedName && savedComp) {
             updateGuestBadgeUI(savedName, savedComp);
         }
     }
@@ -173,14 +180,18 @@ $fullChatUrl = ($currentUserRole === 'customer') ? base_url('customer/chat') : (
         const display = document.getElementById('guestDisplayIdentity');
         if (!badge || !inputs || !display) return;
 
-        const currentName = name || document.getElementById('floatingGuestName')?.value || '';
-        const currentComp = comp || document.getElementById('floatingGuestCompany')?.value || '';
+        const currentName = (name || document.getElementById('floatingGuestName')?.value || '').trim();
+        const currentComp = (comp || document.getElementById('floatingGuestCompany')?.value || '').trim();
 
-        if (currentName || currentComp) {
-            display.textContent = currentName + (currentComp ? ' (' + currentComp + ')' : '');
+        if (currentName && currentComp) {
+            display.textContent = currentName + ' (' + currentComp + ')';
             badge.classList.remove('hidden');
             badge.classList.add('flex');
             inputs.classList.add('hidden');
+        } else {
+            badge.classList.add('hidden');
+            badge.classList.remove('flex');
+            inputs.classList.remove('hidden');
         }
     }
 
@@ -366,17 +377,44 @@ $fullChatUrl = ($currentUserRole === 'customer') ? base_url('customer/chat') : (
         const text = input ? input.value.trim() : '';
         if (!text) return;
 
-        const sendBtn = document.getElementById('floatingSendBtn');
-        if (sendBtn) sendBtn.disabled = true;
-
         const nameInput = document.getElementById('floatingGuestName');
         const compInput = document.getElementById('floatingGuestCompany');
-        if (nameInput && nameInput.value.trim()) {
-            localStorage.setItem('akuada_guest_name', nameInput.value.trim());
+        if (nameInput && compInput) {
+            const guestNameVal = nameInput.value.trim();
+            const guestCompVal = compInput.value.trim();
+
+            if (!guestNameVal || !guestCompVal) {
+                editGuestIdentity();
+                if (!guestNameVal) {
+                    nameInput.classList.add('border-rose-500', 'ring-2', 'ring-rose-100');
+                    nameInput.focus();
+                } else {
+                    nameInput.classList.remove('border-rose-500', 'ring-2', 'ring-rose-100');
+                }
+                if (!guestCompVal) {
+                    compInput.classList.add('border-rose-500', 'ring-2', 'ring-rose-100');
+                    if (guestNameVal) compInput.focus();
+                } else {
+                    compInput.classList.remove('border-rose-500', 'ring-2', 'ring-rose-100');
+                }
+
+                const warnMsg = 'Mohon lengkapi Nama Anda (PIC) dan Nama Perusahaan / PT terlebih dahulu agar balasan Tim AkuAda terarah.';
+                if (window.AkuAdaAlert) {
+                    AkuAdaAlert.toast('warning', warnMsg);
+                } else {
+                    alert(warnMsg);
+                }
+                return;
+            }
+
+            nameInput.classList.remove('border-rose-500', 'ring-2', 'ring-rose-100');
+            compInput.classList.remove('border-rose-500', 'ring-2', 'ring-rose-100');
+            localStorage.setItem('akuada_guest_name', guestNameVal);
+            localStorage.setItem('akuada_guest_company', guestCompVal);
         }
-        if (compInput && compInput.value.trim()) {
-            localStorage.setItem('akuada_guest_company', compInput.value.trim());
-        }
+
+        const sendBtn = document.getElementById('floatingSendBtn');
+        if (sendBtn) sendBtn.disabled = true;
 
         const formData = new FormData(document.getElementById('floatingChatForm'));
 

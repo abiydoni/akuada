@@ -240,15 +240,21 @@ class ChatController extends Controller
                 session()->set('guest_company', $inputCompany);
             }
 
-            $userName = session('guest_name') ?: ($inputName ?: 'Pengunjung Umum');
-            $companyName = session('guest_company') ?: ($inputCompany ?: 'Calon Pembeli');
+            $userName = trim((string)(session('guest_name') ?: $inputName));
+            $companyName = trim((string)(session('guest_company') ?: $inputCompany));
+
+            if (empty($userName) || empty($companyName)) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'status'  => 'error',
+                    'message' => 'Mohon lengkapi Nama Anda (PIC) dan Nama Perusahaan / PT terlebih dahulu agar balasan Tim AkuAda dapat terarah.'
+                ]);
+            }
+
             $userRole = 'guest';
             $companyId = null;
             $receiverRole = 'admin';
             $receiverCompanyId = null;
-            $subject = (!empty($companyName) && $companyName !== 'Calon Pembeli')
-                ? ('Inquiry: ' . $companyName)
-                : 'Inquiry Marketplace Publik';
+            $subject = 'Inquiry: ' . $companyName . ' (' . $userName . ')';
         } else {
             $companyId = session('company_id') ? (int)session('company_id') : null;
             $userRole = session('user_role') ?: (session('role') ?: 'customer');
