@@ -158,6 +158,17 @@ $appName         = get_system_setting('app_name', 'AkuAda');
                 <div>
                     <span class="text-[10px] font-bold uppercase tracking-wider text-slate-600 px-3">Fiskal & Legal Perusahaan</span>
                     <nav class="mt-2 space-y-1">
+                        <a href="<?= base_url('customer/contract') ?>" class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'customer/contract') ? 'bg-pink-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
+                            <div class="flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-[18px]">gavel</span>
+                                <span>Kontrak & Benefit B2B</span>
+                            </div>
+                            <?php if ($isCompVerified): ?>
+                                <span class="px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-black">SAH</span>
+                            <?php else: ?>
+                                <span class="material-symbols-outlined text-[14px] text-amber-500" title="Menunggu Verifikasi AkuAda">lock</span>
+                            <?php endif; ?>
+                        </a>
                         <a href="<?= base_url('customer/tax-invoices') ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold <?= str_contains(current_url(), 'customer/tax-invoices') ? 'bg-pink-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>">
                             <span class="material-symbols-outlined text-[18px]">receipt</span> e-Faktur Pajak PPN <?= esc(format_tax_rate()) ?>
                         </a>

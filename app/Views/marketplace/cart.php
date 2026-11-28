@@ -149,9 +149,17 @@
 
                 <!-- Hidden Form for Quotation Generation -->
                 <?php
-                    $isRegisteredBuyer = !empty(session('is_logged_in')) && !empty(session('user_id')) && in_array(session('user_role') ?: session('role'), ['customer', 'admin'], true) && (!empty(session('company_id')) || (session('user_role') ?: session('role')) === 'admin');
+                    $uRole = session('user_role') ?: (session('role') ?: '');
+                    $isRegisteredBuyer = !empty(session('is_logged_in')) && !empty(session('user_id')) && in_array($uRole, ['customer', 'admin'], true) && (!empty(session('company_id')) || $uRole === 'admin');
+                    $isVerifiedBuyer = false;
+                    if ($uRole === 'admin') {
+                        $isVerifiedBuyer = true;
+                    } elseif ($isRegisteredBuyer && !empty(session('company_id'))) {
+                        $cInfo = (new \App\Models\CompanyModel())->find((int)session('company_id'));
+                        $isVerifiedBuyer = !empty($cInfo['is_verified']);
+                    }
                 ?>
-                <form id="quotationForm" action="<?= base_url('cart/quotation') ?>" method="POST" <?= $isRegisteredBuyer ? 'target="_blank"' : '' ?> class="hidden">
+                <form id="quotationForm" action="<?= base_url('cart/quotation') ?>" method="POST" <?= $isVerifiedBuyer ? 'target="_blank"' : '' ?> class="hidden">
                     <?= csrf_field() ?>
                     <div id="quotationHiddenInputs"></div>
                 </form>

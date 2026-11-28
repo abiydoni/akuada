@@ -162,6 +162,11 @@ class CartController extends BaseController
             return redirect()->to('/auth/register');
         }
 
+        if ($userRole === 'customer' && (int)($registeredCompany['is_verified'] ?? 0) !== 1) {
+            session()->setFlashdata('error', 'Data legalitas perusahaan Anda sedang menunggu verifikasi Superadmin AkuAda. Surat Penawaran Harga Resmi (Quotation) & Kontrak Kerjasama baru dapat dibuka setelah data perusahaan Anda resmi diverifikasi.');
+            return redirect()->to('/customer/company-profile');
+        }
+
         $cart = session('cart') ?? [];
         if (empty($cart)) {
             session()->setFlashdata('error', 'Keranjang pengadaan Anda masih kosong. Silakan tambahkan barang terlebih dahulu.');

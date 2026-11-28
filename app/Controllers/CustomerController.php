@@ -865,6 +865,30 @@ class CustomerController extends BaseController
         return redirect()->to('/customer/company-profile');
     }
 
+    public function contract()
+    {
+        $buyerId = $this->getBuyerCompanyId();
+        $companyModel = new CompanyModel();
+        $company = $companyModel->find($buyerId);
+
+        if (!$company || (int)($company['is_verified'] ?? 0) !== 1) {
+            session()->setFlashdata('error', 'Kontrak Kerjasama Pengadaan B2B beserta rincian benefit korporat baru dapat dibuka setelah dokumen legalitas perusahaan Anda resmi diverifikasi oleh Superadmin AkuAda.');
+            return redirect()->to('/customer/company-profile');
+        }
+
+        $userModel = new \App\Models\UserModel();
+        $user = session('user_id') ? $userModel->find(session('user_id')) : null;
+        if (!$user) {
+            $user = $userModel->where('company_id', $buyerId)->first();
+        }
+
+        return view('customer/contract', [
+            'title'   => 'Kontrak Kerjasama Pengadaan B2B & Benefit Mitra - AkuAda',
+            'company' => $company,
+            'user'    => $user,
+        ]);
+    }
+
     public function payables()
     {
         $buyerId = $this->getBuyerCompanyId();

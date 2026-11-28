@@ -6,9 +6,45 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h1 class="text-xl font-extrabold text-slate-900">Profil Legalitas & NPWP Perusahaan Pembeli</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Identitas badan usaha yang tercantum pada seluruh dokumen Purchase Order (PO) dan e-Faktur Pajak resmi.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Identitas badan usaha yang tercantum pada seluruh dokumen Purchase Order (PO), Surat Penawaran Resmi, dan Kontrak Kerjasama.</p>
         </div>
+        <?php if (!empty($company['is_verified'])): ?>
+            <a href="<?= base_url('customer/contract') ?>" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md">
+                <span class="material-symbols-outlined text-[18px]">gavel</span>
+                <span>Buka Kontrak Kerjasama & Benefit Resmi</span>
+            </a>
+        <?php endif; ?>
     </div>
+
+    <?php if (empty($company['is_verified'])): ?>
+        <div class="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-xs text-amber-950 flex items-start gap-3 shadow-xs">
+            <span class="material-symbols-outlined text-amber-600 text-2xl flex-shrink-0 mt-0.5">hourglass_top</span>
+            <div class="space-y-1">
+                <strong class="font-extrabold text-amber-950 block text-xs">Data Legalitas Sedang Diverifikasi oleh Tim Compliance AkuAda</strong>
+                <p class="text-amber-800 text-[11px] leading-relaxed">
+                    Pembukaan <strong>Surat Penawaran Harga Resmi (Official Quotation)</strong>, fasilitas kredit tempo (TOP), serta dokumen <strong>Kontrak Kerjasama Pengadaan B2B beserta Rincian Benefit</strong> sedang menunggu pengesahan verifikasi data perusahaan Anda oleh Superadmin AkuAda.
+                </p>
+            </div>
+        </div>
+    <?php else: ?>
+        <div class="p-5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-purple-50 border-2 border-emerald-300 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <span class="material-symbols-outlined text-[22px]">verified</span>
+                </div>
+                <div>
+                    <strong class="font-extrabold text-emerald-950 text-sm block">Legalitas Perusahaan Telah Diverifikasi & Disahkan oleh AkuAda</strong>
+                    <p class="text-emerald-800 text-[11px] mt-0.5 leading-relaxed">
+                        Perusahaan Anda kini dapat membuka <strong>Surat Penawaran Harga Resmi (Quotation)</strong>, menikmati fasilitas Plafon Kredit Tempo (TOP), Reward Cashback <?= esc(get_buyer_cashback_rate((int)($company['id'] ?? 0))) ?>%, serta melihat <strong>Kontrak Kerjasama Lengkap sesuai Pasal-Pasalnya</strong>.
+                    </p>
+                </div>
+            </div>
+            <a href="<?= base_url('customer/contract') ?>" class="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs flex items-center gap-1.5 flex-shrink-0 shadow-sm">
+                <span class="material-symbols-outlined text-[16px]">description</span>
+                <span>Lihat Kontrak & Benefit &rarr;</span>
+            </a>
+        </div>
+    <?php endif; ?>
 
     <!-- View Card -->
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-6 text-xs">

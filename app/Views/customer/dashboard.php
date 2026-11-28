@@ -22,6 +22,12 @@
             </p>
         </div>
         <div class="flex flex-wrap items-center gap-2 flex-shrink-0 self-start md:self-auto">
+            <?php if (!empty($company['is_verified'])): ?>
+                <a href="<?= base_url('customer/contract') ?>" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[18px]">gavel</span>
+                    <span>Kontrak Kerjasama & Benefit</span>
+                </a>
+            <?php endif; ?>
             <a href="<?= base_url('products') ?>" class="px-4 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5">
                 <span class="material-symbols-outlined text-[18px]">shopping_cart</span>
                 <span>Buat Pengadaan Baru</span>

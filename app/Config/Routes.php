@@ -203,6 +203,7 @@ $routes->group('customer', ['filter' => 'auth'], function ($routes) {
     $routes->post('credit-limit/request', 'CustomerController::requestLimitIncrease');
     $routes->get('company-profile', 'CustomerController::companyProfile');
     $routes->post('company-profile/update', 'CustomerController::updateCompanyProfile');
+    $routes->get('contract', 'CustomerController::contract');
     $routes->get('payables', 'CustomerController::payables');
     $routes->post('payables/pay', 'CustomerController::payDebt');
     $routes->post('orders/pay', 'CustomerController::payOrderDirect');

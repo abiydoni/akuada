@@ -33,6 +33,12 @@ class RfqController extends BaseController
         }
 
         $companyModel = new CompanyModel();
+        $buyerComp = $companyModel->find((int)session('company_id'));
+        if (!$buyerComp || (int)($buyerComp['is_verified'] ?? 0) !== 1) {
+            session()->setFlashdata('error', 'Data legalitas perusahaan Anda sedang menunggu verifikasi Superadmin AkuAda. Pengajuan & pembukaan Surat Penawaran Harga Resmi baru dapat dilakukan setelah data perusahaan Anda diverifikasi.');
+            return redirect()->to('/customer/company-profile');
+        }
+
         $productModel = new ProductModel();
 
         $vendors = $companyModel->getVendors();
@@ -50,6 +56,13 @@ class RfqController extends BaseController
         if (!session('is_logged_in') || session('user_role') !== 'customer' || empty(session('company_id'))) {
             session()->setFlashdata('error', 'Permintaan & Surat Penawaran Harga Resmi (RFQ / Quotation) hanya dapat diajukan oleh perusahaan atau Corporate Buyer yang sudah terdaftar. Silakan daftarkan perusahaan Anda terlebih dahulu.');
             return redirect()->to('/auth/register');
+        }
+
+        $companyModel = new CompanyModel();
+        $buyerComp = $companyModel->find((int)session('company_id'));
+        if (!$buyerComp || (int)($buyerComp['is_verified'] ?? 0) !== 1) {
+            session()->setFlashdata('error', 'Data legalitas perusahaan Anda sedang menunggu verifikasi Superadmin AkuAda. Pengajuan & pembukaan Surat Penawaran Harga Resmi baru dapat dilakukan setelah data perusahaan Anda diverifikasi.');
+            return redirect()->to('/customer/company-profile');
         }
 
         $title = $this->request->getPost('title');
@@ -154,6 +167,14 @@ class RfqController extends BaseController
         if (!$isLoggedIn || !in_array($userRole, ['customer', 'admin', 'vendor'], true) || ($userRole === 'customer' && empty(session('company_id')))) {
             session()->setFlashdata('error', 'Surat Penawaran Harga Resmi (Quotation) hanya dapat diakses oleh perusahaan atau Corporate Buyer yang sudah terdaftar. Silakan daftarkan perusahaan Anda terlebih dahulu.');
             return redirect()->to('/auth/register');
+        }
+
+        if ($userRole === 'customer') {
+            $compCheck = (new CompanyModel())->find((int)session('company_id'));
+            if (!$compCheck || (int)($compCheck['is_verified'] ?? 0) !== 1) {
+                session()->setFlashdata('error', 'Data legalitas perusahaan Anda sedang menunggu verifikasi Superadmin AkuAda. Surat Penawaran Harga Resmi baru dapat dibuka setelah data perusahaan Anda diverifikasi.');
+                return redirect()->to('/customer/company-profile');
+            }
         }
 
         $rfqModel = new RfqModel();
